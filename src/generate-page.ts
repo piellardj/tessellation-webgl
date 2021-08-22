@@ -21,7 +21,22 @@ const data = {
         height: 512,
         enableFullscreen: true
     },
-    controlsSections: []
+    controlsSections: [
+        {
+            title: "General",
+            controls: [
+                {
+                    type: Demopage.supportedControls.Range,
+                    title: "Depth",
+                    id: "depth-range-id",
+                    min: 1,
+                    max: 16,
+                    value: 10,
+                    step: 1
+                },
+            ]
+        }
+    ]
 };
 
 const SRC_DIR = path.resolve(__dirname);

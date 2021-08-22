@@ -1,10 +1,10 @@
 import { Color } from "./color/color";
+import { Parameters } from "./parameters";
 import { ILine, ILinesBatch, PlotterCanvas2D } from "./plotter/plotter-canvas-2d";
-
-// import { Parameters } from "./parameters";
+import { EOrientation, Primitive } from "./primitives/primitive";
 
 import "./page-interface-generated";
-import { EOrientation, Primitive } from "./primitives/primitive";
+
 
 
 type Layer = Primitive[];
@@ -64,10 +64,11 @@ function main(): void {
     let linesBatches: ILinesBatch[];
 
     function reset(): void {
-        layers = computeLayers(10);
+        layers = computeLayers(Parameters.depth);
         linesBatches = computeLinesBatches(layers);
     }
 
+    Parameters.resetObservers.push(reset);
     reset();
 
     function mainLoop(): void {
