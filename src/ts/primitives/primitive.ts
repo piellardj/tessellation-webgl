@@ -1,3 +1,4 @@
+import { Parameters } from "../parameters";
 import { IPoint } from "../point";
 
 
@@ -45,8 +46,11 @@ class Primitive {
 
     public subdivide(): [Primitive, Primitive] {
         if (!this.children) {
-            const rand1 = random(0.3, 0.7);
-            const rand2 = random(0.3, 0.7);
+            const balance = Parameters.balance;
+            const minRand = 0.5 * balance;
+            const maxRand = 1 - minRand;
+            const rand1 = random(minRand, maxRand);
+            const rand2 = random(minRand, maxRand);
 
             if (this.subdivisionOrientation === EOrientation.VERTICAl) {
                 this.subdivision = [

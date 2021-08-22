@@ -6,7 +6,6 @@ import { EOrientation, Primitive } from "./primitives/primitive";
 import "./page-interface-generated";
 
 
-
 type Layer = Primitive[];
 
 function computeLayers(nbLayers: number): Layer[] {

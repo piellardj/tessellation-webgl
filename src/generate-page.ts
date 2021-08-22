@@ -34,6 +34,15 @@ const data = {
                     value: 10,
                     step: 1
                 },
+                {
+                    type: Demopage.supportedControls.Range,
+                    title: "Balance",
+                    id: "balance-range-id",
+                    min: 0,
+                    max: 1,
+                    value: 0.5,
+                    step: 0.01
+                },
             ]
         }
     ]
