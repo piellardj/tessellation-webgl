@@ -12,7 +12,6 @@ interface ILine {
 interface ILinesBatch {
     lines: ILine[];
     thickness: number;
-    color: Color;
 }
 
 class PlotterCanvas2D {
@@ -34,11 +33,11 @@ class PlotterCanvas2D {
         this.clearCanvas(backgroundColor);
     }
 
-    public drawLines(linesBatches: ILinesBatch[]): void {
+    public drawLines(linesBatches: ILinesBatch[], color: Color): void {
         this.context.fillStyle = "none";
+        this.context.strokeStyle = color.toString();
 
         for (const linesBatch of linesBatches) {
-            this.context.strokeStyle = linesBatch.color.toString();
             this.context.lineWidth = linesBatch.thickness;
 
             this.context.beginPath();

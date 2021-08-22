@@ -49,7 +49,6 @@ function computeLinesBatches(layers: Layer[]): ILinesBatch[] {
 
         linesBatches.push({
             lines,
-            color: Color.BLACK,
             thickness: 1 + MAX_THICKNESS * (layers.length - 2 - iLayer) / (layers.length - 2),
         });
     }
@@ -73,7 +72,7 @@ function main(): void {
 
     function mainLoop(): void {
         plotter.initialize(backgroundColor);
-        plotter.drawLines(linesBatches);
+        plotter.drawLines(linesBatches, Color.BLACK);
 
         requestAnimationFrame(mainLoop);
     }
