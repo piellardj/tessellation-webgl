@@ -4,13 +4,10 @@ import { IPoint } from "../point";
 import "../page-interface-generated";
 
 
-interface ILine {
-    p1: IPoint;
-    p2: IPoint;
-}
+type Line = IPoint[];
 
 interface ILinesBatch {
-    lines: ILine[];
+    lines: Line[];
     thickness: number;
 }
 
@@ -52,8 +49,13 @@ class PlotterCanvas2D {
 
             this.context.beginPath();
             for (const line of linesBatch.lines) {
-                this.context.moveTo(line.p1.x + halfWidth, line.p1.y + halfHeight);
-                this.context.lineTo(line.p2.x + halfWidth, line.p2.y + halfHeight);
+                if (line.length >= 2) {
+                    this.context.moveTo(line[0].x + halfWidth, line[0].y + halfHeight);
+
+                    for (let iP = 1; iP < line.length; iP++) {
+                        this.context.lineTo(line[iP].x + halfWidth, line[iP].y + halfHeight);
+                    }
+                }
             }
             this.context.stroke();
             this.context.closePath();
@@ -107,7 +109,7 @@ class PlotterCanvas2D {
 }
 
 export {
-    ILine,
+    Line,
     ILinesBatch,
     IPolygon,
     PlotterCanvas2D,

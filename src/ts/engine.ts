@@ -1,7 +1,9 @@
 import { Color } from "./color/color";
 import { Parameters } from "./parameters";
-import { ILine, ILinesBatch, PlotterCanvas2D } from "./plotter/plotter-canvas-2d";
-import { EOrientation, Primitive } from "./primitives/primitive";
+import { Line, ILinesBatch, PlotterCanvas2D } from "./plotter/plotter-canvas-2d";
+import { Primitive } from "./primitives/primitive";
+import { EOrientation, PrimitiveLines } from "./primitives/primitive-lines";
+
 
 type Layer = Primitive[];
 
@@ -9,7 +11,7 @@ class Engine {
     private rootPrimitive: Primitive;
     private layers: Layer[];
 
-    private linesBatches: ILinesBatch[] | null;
+    private linesBatches: ILinesBatch[] | null = null;
 
     public constructor() {
         this.reset(512, 512);
@@ -33,7 +35,7 @@ class Engine {
         const halfWidth = 0.5 * canvasWidth;
         const halfHeight = 0.5 * canvasHeight;
 
-        this.rootPrimitive = new Primitive(
+        this.rootPrimitive = new PrimitiveLines(
             { x: -halfWidth, y: -halfHeight }, { x: halfWidth, y: -halfHeight }, { x: -halfWidth, y: halfHeight }, { x: halfWidth, y: halfHeight },
             (canvasWidth >= canvasHeight) ? EOrientation.VERTICAL : EOrientation.HORIZONTAL,
             Color.random(),
@@ -71,7 +73,8 @@ class Engine {
 
                     const lastLayer = this.layers[this.layers.length - 1];
                     for (const parentPrimitive of lastLayer) {
-                        newLayer = newLayer.concat(parentPrimitive.subdivide());
+                        parentPrimitive.subdivide();
+                        newLayer = newLayer.concat(parentPrimitive.children);
                     }
 
                     this.layers.push(newLayer);
@@ -88,12 +91,11 @@ class Engine {
         for (let iLayer = 0; iLayer < this.layers.length - 1; iLayer++) {
             const layer = this.layers[iLayer];
 
-            const lines: ILine[] = [];
+            const lines: Line[] = [];
             for (const primitive of layer) {
-                lines.push({
-                    p1: primitive.subdivision[0],
-                    p2: primitive.subdivision[1],
-                });
+                if (primitive.subdivision) {
+                    lines.push(primitive.subdivision);
+                }
             }
 
             this.linesBatches.push({
