@@ -13,6 +13,8 @@ class Engine {
 
     private linesBatches: ILinesBatch[] | null = null;
 
+    private startTime: number;
+
     public constructor() {
         this.reset(512, 512);
     }
@@ -27,8 +29,23 @@ class Engine {
         }
 
         plotter.initialize(Color.BLACK);
-        plotter.drawPolygons(this.layers[this.layers.length - 1]);
-        plotter.drawLines(this.linesBatches, Parameters.linesColor);
+
+        const maxDepth = 0.001 * (performance.now() - this.startTime);
+        const lastSolidLayer = Math.min(Math.floor(maxDepth), this.layers.length - 1);
+
+        const hasEmergingLayer = (lastSolidLayer < this.layers.length - 1);
+        const emergingLayer = lastSolidLayer + 1;
+        const emergingLayerAlpha = maxDepth - Math.floor(maxDepth);
+
+        plotter.drawPolygons(this.layers[lastSolidLayer]);
+        if (hasEmergingLayer && emergingLayer < this.layers.length) {
+            plotter.drawPolygons(this.layers[emergingLayer], emergingLayerAlpha);
+        }
+
+        plotter.drawLines(this.linesBatches.slice(0, emergingLayer), Parameters.linesColor);
+        if (hasEmergingLayer && emergingLayer < this.linesBatches.length) {
+            plotter.drawLines([this.linesBatches[emergingLayer]], Parameters.linesColor, emergingLayerAlpha);
+        }
     }
 
     public reset(canvasWidth: number, canvasHeight: number): void {
@@ -44,6 +61,7 @@ class Engine {
         const rootLayer = [this.rootPrimitive];
         this.layers = [rootLayer];
         this.recomputeLines();
+        this.startTime = performance.now();
     }
 
     public recomputeColors(): void {
