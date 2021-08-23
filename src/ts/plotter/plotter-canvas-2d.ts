@@ -45,13 +45,15 @@ class PlotterCanvas2D {
         this.context.fillStyle = "none";
         this.context.strokeStyle = color.toString();
 
+        const halfWidth = 0.5 * this._width;
+        const halfHeight = 0.5 * this._height;
         for (const linesBatch of linesBatches) {
             this.context.lineWidth = linesBatch.thickness;
 
             this.context.beginPath();
             for (const line of linesBatch.lines) {
-                this.context.moveTo(line.p1.x, line.p1.y);
-                this.context.lineTo(line.p2.x, line.p2.y);
+                this.context.moveTo(line.p1.x + halfWidth, line.p1.y + halfHeight);
+                this.context.lineTo(line.p2.x + halfWidth, line.p2.y + halfHeight);
             }
             this.context.stroke();
             this.context.closePath();
@@ -61,14 +63,16 @@ class PlotterCanvas2D {
     public drawPolygons(polygons: IPolygon[]): void {
         this.context.strokeStyle = "none";
 
+        const halfWidth = 0.5 * this._width;
+        const halfHeight = 0.5 * this._height;
         for (const polygon of polygons) {
             if (polygon.points.length >= 3) {
                 this.context.fillStyle = polygon.color.toString();
 
                 this.context.beginPath();
-                this.context.moveTo(polygon.points[0].x, polygon.points[0].y);
+                this.context.moveTo(polygon.points[0].x + halfWidth, polygon.points[0].y + halfHeight);
                 for (let iP = 1; iP < polygon.points.length; iP++) {
-                    this.context.lineTo(polygon.points[iP].x, polygon.points[iP].y);
+                    this.context.lineTo(polygon.points[iP].x + halfWidth, polygon.points[iP].y + halfHeight);
                 }
                 this.context.closePath();
                 this.context.fill();

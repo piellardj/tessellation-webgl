@@ -30,8 +30,11 @@ class Engine {
     }
 
     public reset(canvasWidth: number, canvasHeight: number): void {
+        const halfWidth = 0.5 * canvasWidth;
+        const halfHeight = 0.5 * canvasHeight;
+
         this.rootPrimitive = new Primitive(
-            { x: 0, y: 0 }, { x: canvasWidth, y: 0 }, { x: 0, y: canvasHeight }, { x: canvasWidth, y: canvasHeight },
+            { x: -halfWidth, y: -halfHeight }, { x: halfWidth, y: -halfHeight }, { x: -halfWidth, y: halfHeight }, { x: halfWidth, y: halfHeight },
             (canvasWidth >= canvasHeight) ? EOrientation.VERTICAL : EOrientation.HORIZONTAL,
             Color.random(),
         );
