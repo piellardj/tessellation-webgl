@@ -58,6 +58,7 @@ function main(): void {
 
     function reset(): void {
         basePrimitive.removeChildren();
+        basePrimitive.color = Color.random();
         layers.length = 1;
         linesBatches = computeLinesBatches(layers);
     }

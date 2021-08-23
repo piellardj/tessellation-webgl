@@ -10,6 +10,7 @@ const controlId = {
     THICKNESS_RANGE_ID: "thickness-range-id",
     COLOR_VARIATION_RANGE_ID: "color-variation-range-id",
     LINES_COLOR_PICKER_ID: "lines-color-picker-id",
+    RESET_BUTTON_ID: "reset-button-id",
 };
 
 type Observer = () => unknown;
@@ -47,7 +48,10 @@ function callObservers(observers: Observer[]): void {
     }
 }
 
-Page.Range.addObserver(controlId.BALANCE_RANGE_ID, () => { callObservers(Parameters.resetObservers); });
+const callReset =  () => { callObservers(Parameters.resetObservers); };
+Page.Range.addObserver(controlId.BALANCE_RANGE_ID, callReset);
+Page.Button.addObserver(controlId.RESET_BUTTON_ID, callReset);
+
 Page.Range.addObserver(controlId.COLOR_VARIATION_RANGE_ID, () => { callObservers(Parameters.recomputeColorsObservers); });
 
 Page.Range.addObserver(controlId.THICKNESS_RANGE_ID, () => { callObservers(Parameters.redrawObservers); });

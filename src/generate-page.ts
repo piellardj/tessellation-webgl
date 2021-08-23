@@ -67,6 +67,11 @@ const data = {
                     id: "lines-color-picker-id",
                     defaultValueHex: "#000000",
                 },
+                {
+                    type: Demopage.supportedControls.Button,
+                    label: "Reset",
+                    id: "reset-button-id",
+                },
             ]
         }
     ]
