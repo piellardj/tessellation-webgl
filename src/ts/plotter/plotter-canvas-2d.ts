@@ -25,6 +25,9 @@ class PlotterCanvas2D {
 
     private readonly cssPixel: number;
 
+    private _width: number;
+    private _height: number;
+
     public constructor() {
         this.canvas = Page.Canvas.getCanvas();
         this.context = this.canvas.getContext("2d", { alpha: false });
@@ -73,6 +76,13 @@ class PlotterCanvas2D {
         }
     }
 
+    public get width(): number {
+        return this._width;
+    }
+    public get height(): number {
+        return this._height;
+    }
+
     private resizeCanvas(): void {
         const actualWidth = Math.floor(this.cssPixel * this.canvas.clientWidth);
         const actualHeight = Math.floor(this.cssPixel * this.canvas.clientHeight);
@@ -81,6 +91,9 @@ class PlotterCanvas2D {
             this.canvas.width = actualWidth;
             this.canvas.height = actualHeight;
         }
+
+        this._width = this.canvas.width;
+        this._height = this.canvas.height;
     }
 
     protected clearCanvas(color: Color): void {
