@@ -47,25 +47,25 @@ function main(): void {
     const plotter = new PlotterCanvas2D();
     const backgroundColor = new Color(255, 128, 128);
 
-    let layers: Layer[];
+    const basePrimitive = new Primitive(
+        { x: 0, y: 0 }, { x: 512, y: 0 }, { x: 0, y: 512 }, { x: 512, y: 512 },
+        EOrientation.VERTICAL,
+        Color.random(),
+    );
+
+    const layers: Layer[] = [[basePrimitive]];
     let linesBatches: ILinesBatch[];
 
     function reset(): void {
-        const firstLayer = [
-            new Primitive(
-                { x: 0, y: 0 }, { x: 512, y: 0 }, { x: 0, y: 512 }, { x: 512, y: 512 },
-                EOrientation.VERTICAL,
-                Color.random(),
-            )
-        ];
-        layers = [firstLayer];
+        basePrimitive.removeChildren();
+        layers.length = 1;
         linesBatches = computeLinesBatches(layers);
     }
 
     Parameters.resetObservers.push(reset);
     Parameters.redrawObservers.push(() => { linesBatches = computeLinesBatches(layers); });
     Parameters.recomputeColorsObservers.push(() => {
-        layers[0][0].color = Color.random();
+        basePrimitive.color = Color.random();
     });
     reset();
 
@@ -75,7 +75,7 @@ function main(): void {
             const somethingChanged = (layers.length !== wantedLayersCount);
 
             if (layers.length > wantedLayersCount) {
-                for (const primitive of layers[wantedLayersCount -1 ]) {
+                for (const primitive of layers[wantedLayersCount - 1]) {
                     primitive.removeChildren();
                 }
                 layers.length = wantedLayersCount;
