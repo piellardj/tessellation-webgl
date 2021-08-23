@@ -37,7 +37,7 @@ class Color {
      */
     public constructor(public r: number, public g: number, public b: number) { }
 
-    public toString(): string {
+    public toHexaString(): string {
         if (!this.hexString) {
             const rHex = this.r.toString(16).padStart(2, "0");
             const gHex = this.g.toString(16).padStart(2, "0");
