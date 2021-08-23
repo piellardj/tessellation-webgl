@@ -38,9 +38,9 @@ class PlotterCanvas2D {
         this.clearCanvas(backgroundColor);
     }
 
-    public drawLines(linesBatches: ILinesBatch[], color: Color): void {
+    public drawLines(linesBatches: ILinesBatch[], color: Color, alpha: number = 1): void {
         this.context.fillStyle = "none";
-        this.context.strokeStyle = color.toString();
+        this.context.strokeStyle = (alpha >= 1) ? color.toString() : color.toAlphaString(alpha);
 
         const halfWidth = 0.5 * this._width;
         const halfHeight = 0.5 * this._height;
@@ -62,14 +62,14 @@ class PlotterCanvas2D {
         }
     }
 
-    public drawPolygons(polygons: IPolygon[]): void {
+    public drawPolygons(polygons: IPolygon[], alpha: number = 1): void {
         this.context.strokeStyle = "none";
 
         const halfWidth = 0.5 * this._width;
         const halfHeight = 0.5 * this._height;
         for (const polygon of polygons) {
             if (polygon.points.length >= 3) {
-                this.context.fillStyle = polygon.color.toString();
+                this.context.fillStyle = (alpha >= 1) ? polygon.color.toString() : polygon.color.toAlphaString(alpha);
 
                 this.context.beginPath();
                 this.context.moveTo(polygon.points[0].x + halfWidth, polygon.points[0].y + halfHeight);

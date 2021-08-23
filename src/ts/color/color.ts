@@ -48,6 +48,10 @@ class Color {
         return this.hexString;
     }
 
+    public toRgbaString(alpha: number): string {
+        return `rgba(${this.r}, ${this.g}, ${this.b}, ${alpha})`;
+    }
+
     public computeCloseColor(): Color {
         return new Color(
             Color.computeCloseChannelValue(this.r),
