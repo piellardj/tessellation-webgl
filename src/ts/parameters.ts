@@ -52,7 +52,6 @@ function callRedrawObservers(): void {
     }
 }
 
-Page.Range.addObserver(controlId.DEPTH_RANGE_ID, callResetObservers);
 Page.Range.addObserver(controlId.BALANCE_RANGE_ID, callResetObservers);
 Page.Range.addObserver(controlId.COLOR_VARIATION_RANGE_ID, callResetObservers);
 

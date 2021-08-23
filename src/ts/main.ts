@@ -8,27 +8,14 @@ import "./page-interface-generated";
 
 type Layer = Primitive[];
 
-function computeLayers(nbLayers: number): Layer[] {
-    const basePrimitive = new Primitive(
-        { x: 0, y: 0 }, { x: 512, y: 0 }, { x: 0, y: 512 }, { x: 512, y: 512 },
-        EOrientation.VERTICAL,
-        Color.random(),
-    );
+function computeNextLayer(parentLayer: Layer): Layer {
+    let newLayer: Layer = [];
 
-    const layers: Layer[] = [];
-    layers.push([basePrimitive]);
-
-    for (let i = 0; i < nbLayers; i++) {
-        let newLayer: Layer = [];
-
-        const lastlayer: Layer = layers[layers.length - 1];
-        for (const parentPrimitive of lastlayer) {
-            newLayer = newLayer.concat(parentPrimitive.subdivide());
-        }
-
-        layers.push(newLayer);
+    for (const parentPrimitive of parentLayer) {
+        newLayer = newLayer.concat(parentPrimitive.subdivide());
     }
-    return layers;
+
+    return newLayer;
 }
 
 function computeLinesBatches(layers: Layer[]): ILinesBatch[] {
@@ -64,7 +51,14 @@ function main(): void {
     let linesBatches: ILinesBatch[];
 
     function reset(): void {
-        layers = computeLayers(Parameters.depth);
+        const firstLayer = [
+            new Primitive(
+                { x: 0, y: 0 }, { x: 512, y: 0 }, { x: 0, y: 512 }, { x: 512, y: 512 },
+                EOrientation.VERTICAL,
+                Color.random(),
+            )
+        ];
+        layers = [firstLayer];
         linesBatches = computeLinesBatches(layers);
     }
 
@@ -73,6 +67,28 @@ function main(): void {
     reset();
 
     function mainLoop(): void {
+        {
+            const wantedLayersCount = Parameters.depth;
+            const somethingChanged = (layers.length !== wantedLayersCount);
+
+            if (layers.length > wantedLayersCount) {
+                for (const primitive of layers[wantedLayersCount -1 ]) {
+                    primitive.removeChildren();
+                }
+                layers.length = wantedLayersCount;
+            } else {
+                while (layers.length < wantedLayersCount) {
+                    const lastLayer = layers[layers.length - 1];
+                    const newLayer = computeNextLayer(lastLayer);
+                    layers.push(newLayer);
+                }
+            }
+
+            if (somethingChanged) {
+                linesBatches = computeLinesBatches(layers);
+            }
+        }
+
         plotter.initialize(backgroundColor);
         plotter.drawPolygons(layers[layers.length - 1]);
         plotter.drawLines(linesBatches, Parameters.linesColor);

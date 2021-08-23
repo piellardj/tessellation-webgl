@@ -73,6 +73,11 @@ class Primitive implements IPolygon {
 
         return this.children;
     }
+
+    public removeChildren(): void {
+        this.subdivision = null;
+        this.children = null;
+    }
 }
 
 export {
