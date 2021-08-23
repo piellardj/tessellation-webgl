@@ -64,6 +64,9 @@ function main(): void {
 
     Parameters.resetObservers.push(reset);
     Parameters.redrawObservers.push(() => { linesBatches = computeLinesBatches(layers); });
+    Parameters.recomputeColorsObservers.push(() => {
+        layers[0][0].color = Color.random();
+    });
     reset();
 
     function mainLoop(): void {

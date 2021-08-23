@@ -17,6 +17,7 @@ type Observer = () => unknown;
 abstract class Parameters {
     public static readonly resetObservers: Observer[] = [];
     public static readonly redrawObservers: Observer[] = [];
+    public static readonly recomputeColorsObservers: Observer[] = [];
 
     public static get depth(): number {
         return Page.Range.getValue(controlId.DEPTH_RANGE_ID);
@@ -31,7 +32,7 @@ abstract class Parameters {
     }
 
     public static get colorVariation(): number {
-        return Page.Range.getValue(controlId.COLOR_VARIATION_RANGE_ID);
+        return 255 * Page.Range.getValue(controlId.COLOR_VARIATION_RANGE_ID);
     }
 
     public static get linesColor(): Color {
@@ -40,22 +41,16 @@ abstract class Parameters {
     }
 }
 
-function callResetObservers(): void {
-    for (const observer of Parameters.resetObservers) {
+function callObservers(observers: Observer[]): void {
+    for (const observer of observers) {
         observer();
     }
 }
 
-function callRedrawObservers(): void {
-    for (const observer of Parameters.redrawObservers) {
-        observer();
-    }
-}
+Page.Range.addObserver(controlId.BALANCE_RANGE_ID, () => { callObservers(Parameters.resetObservers); });
+Page.Range.addObserver(controlId.COLOR_VARIATION_RANGE_ID, () => { callObservers(Parameters.recomputeColorsObservers); });
 
-Page.Range.addObserver(controlId.BALANCE_RANGE_ID, callResetObservers);
-Page.Range.addObserver(controlId.COLOR_VARIATION_RANGE_ID, callResetObservers);
-
-Page.Range.addObserver(controlId.THICKNESS_RANGE_ID, callRedrawObservers);
+Page.Range.addObserver(controlId.THICKNESS_RANGE_ID, () => { callObservers(Parameters.redrawObservers); });
 
 export {
     Parameters,

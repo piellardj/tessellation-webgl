@@ -37,7 +37,7 @@ class Primitive implements IPolygon {
         private readonly bottomLeft: IPoint,
         private readonly bottomRight: IPoint,
         private readonly subdivisionOrientation: EOrientation,
-        public readonly color: Color) {
+        private _color: Color) {
     }
 
     public subdivide(): [Primitive, Primitive] {
@@ -77,6 +77,18 @@ class Primitive implements IPolygon {
     public removeChildren(): void {
         this.subdivision = null;
         this.children = null;
+    }
+
+    public get color(): Color {
+        return this._color;
+    }
+
+    public set color(color: Color) {
+        this._color = color;
+        if (this.children) {
+            this.children[0].color = this.color.computeCloseColor();
+            this.children[1].color = this.color.computeCloseColor();
+        }
     }
 }
 

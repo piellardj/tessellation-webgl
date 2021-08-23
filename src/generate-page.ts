@@ -57,9 +57,9 @@ const data = {
                     title: "Color variation",
                     id: "color-variation-range-id",
                     min: 0,
-                    max: 255,
-                    value: 50,
-                    step: 1
+                    max: 1,
+                    value: 0.3,
+                    step: 0.05
                 },
                 {
                     type: Demopage.supportedControls.ColorPicker,
