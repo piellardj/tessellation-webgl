@@ -61,6 +61,12 @@ const data = {
                     value: 50,
                     step: 1
                 },
+                {
+                    type: Demopage.supportedControls.ColorPicker,
+                    title: "Lines color",
+                    id: "lines-color-picker-id",
+                    defaultValueHex: "#000000",
+                },
             ]
         }
     ]

@@ -35,7 +35,7 @@ class Color {
      *  @param g in [0, 255]
      *  @param b in [0, 255]
      */
-    public constructor(public readonly r: number, public readonly g: number, public readonly b: number) { }
+    public constructor(public r: number, public g: number, public b: number) { }
 
     public toString(): string {
         if (!this.hexString) {

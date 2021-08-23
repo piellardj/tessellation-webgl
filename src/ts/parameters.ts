@@ -1,3 +1,5 @@
+import { Color } from "./color/color";
+
 import "./page-interface-generated";
 
 
@@ -7,6 +9,7 @@ const controlId = {
     BALANCE_RANGE_ID: "balance-range-id",
     THICKNESS_RANGE_ID: "thickness-range-id",
     COLOR_VARIATION_RANGE_ID: "color-variation-range-id",
+    LINES_COLOR_PICKER_ID: "lines-color-picker-id",
 };
 
 type Observer = () => unknown;
@@ -29,6 +32,11 @@ abstract class Parameters {
 
     public static get colorVariation(): number {
         return Page.Range.getValue(controlId.COLOR_VARIATION_RANGE_ID);
+    }
+
+    public static get linesColor(): Color {
+        const color = Page.ColorPicker.getValue(controlId.LINES_COLOR_PICKER_ID);
+        return new Color(color.r, color.g, color.b);
     }
 }
 

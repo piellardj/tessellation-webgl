@@ -75,7 +75,7 @@ function main(): void {
     function mainLoop(): void {
         plotter.initialize(backgroundColor);
         plotter.drawPolygons(layers[layers.length - 1]);
-        plotter.drawLines(linesBatches, Color.BLACK);
+        plotter.drawLines(linesBatches, Parameters.linesColor);
 
         requestAnimationFrame(mainLoop);
     }
