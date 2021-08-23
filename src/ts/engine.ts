@@ -1,6 +1,6 @@
 import { Color } from "./color/color";
 import { Parameters } from "./parameters";
-import { Line, ILinesBatch, PlotterCanvas2D } from "./plotter/plotter-canvas-2d";
+import { ILinesBatch, PlotterCanvas2D } from "./plotter/plotter-canvas-2d";
 import { Primitive } from "./primitives/primitive";
 import { EOrientation, PrimitiveLines } from "./primitives/primitive-lines";
 
@@ -10,8 +10,7 @@ type Layer = Primitive[];
 class Engine {
     private rootPrimitive: Primitive;
     private layers: Layer[];
-
-    private linesBatches: ILinesBatch[] | null = null;
+    private linesBatches: ILinesBatch[];
 
     private startTime: number;
 
@@ -24,9 +23,7 @@ class Engine {
     }
 
     public draw(plotter: PlotterCanvas2D): void {
-        if (!this.linesBatches) {
-            this.computeLinesBatches();
-        }
+        this.adjustLinesThickness();
 
         plotter.initialize(Color.BLACK);
 
@@ -60,16 +57,12 @@ class Engine {
 
         const rootLayer = [this.rootPrimitive];
         this.layers = [rootLayer];
-        this.recomputeLines();
+        this.linesBatches = [];
         this.startTime = performance.now();
     }
 
     public recomputeColors(): void {
         this.rootPrimitive.color = Color.random();
-    }
-
-    public recomputeLines(): void {
-        this.linesBatches = null;
     }
 
     private adjustLayersCount(wantedLayersCount: number): void {
@@ -78,48 +71,39 @@ class Engine {
         }
 
         if (this.layers.length !== wantedLayersCount) {
-            this.linesBatches = null;
-
             if (this.layers.length > wantedLayersCount) {
                 for (const primitive of this.layers[wantedLayersCount - 1]) {
                     primitive.removeChildren();
                 }
                 this.layers.length = wantedLayersCount;
+                this.linesBatches.length = wantedLayersCount - 1;
             } else {
                 while (this.layers.length < wantedLayersCount) {
                     let newLayer: Layer = [];
+                    const newLinesBatch: ILinesBatch = {
+                        lines: [],
+                        thickness: 1,
+                    };
 
                     const lastLayer = this.layers[this.layers.length - 1];
                     for (const parentPrimitive of lastLayer) {
                         parentPrimitive.subdivide();
+                        newLinesBatch.lines.push(parentPrimitive.subdivision);
                         newLayer = newLayer.concat(parentPrimitive.children);
                     }
 
                     this.layers.push(newLayer);
+                    this.linesBatches.push(newLinesBatch);
                 }
             }
         }
     }
 
-    private computeLinesBatches(): void {
-        this.linesBatches = [];
-
+    private adjustLinesThickness(): void {
         const MAX_THICKNESS = Parameters.thickness;
 
-        for (let iLayer = 0; iLayer < this.layers.length - 1; iLayer++) {
-            const layer = this.layers[iLayer];
-
-            const lines: Line[] = [];
-            for (const primitive of layer) {
-                if (primitive.subdivision) {
-                    lines.push(primitive.subdivision);
-                }
-            }
-
-            this.linesBatches.push({
-                lines,
-                thickness: 1 + MAX_THICKNESS * (this.layers.length - 2 - iLayer) / (this.layers.length - 2),
-            });
+        for (let iB = 0; iB < this.linesBatches.length; iB++) {
+            this.linesBatches[iB].thickness = 1 + MAX_THICKNESS * (this.linesBatches.length - 1 - iB) / (this.linesBatches.length - 1);
         }
     }
 }

@@ -17,7 +17,6 @@ type Observer = () => unknown;
 
 abstract class Parameters {
     public static readonly resetObservers: Observer[] = [];
-    public static readonly redrawObservers: Observer[] = [];
     public static readonly recomputeColorsObservers: Observer[] = [];
 
     public static get depth(): number {
@@ -53,8 +52,6 @@ Page.Range.addObserver(controlId.BALANCE_RANGE_ID, callReset);
 Page.Button.addObserver(controlId.RESET_BUTTON_ID, callReset);
 
 Page.Range.addObserver(controlId.COLOR_VARIATION_RANGE_ID, () => { callObservers(Parameters.recomputeColorsObservers); });
-
-Page.Range.addObserver(controlId.THICKNESS_RANGE_ID, () => { callObservers(Parameters.redrawObservers); });
 
 export {
     Parameters,

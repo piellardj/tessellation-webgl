@@ -10,7 +10,6 @@ function main(): void {
     const engine = new Engine();
 
     Parameters.resetObservers.push(() => { engine.reset(plotter.width, plotter.height); });
-    Parameters.redrawObservers.push(() => { engine.recomputeLines(); });
     Parameters.recomputeColorsObservers.push(() => { engine.recomputeColors(); });
 
     function mainLoop(): void {
