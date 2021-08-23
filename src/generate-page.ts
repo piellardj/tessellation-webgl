@@ -43,6 +43,24 @@ const data = {
                     value: 0.5,
                     step: 0.01
                 },
+                {
+                    type: Demopage.supportedControls.Range,
+                    title: "Thickness",
+                    id: "thickness-range-id",
+                    min: 0,
+                    max: 10,
+                    value: 3,
+                    step: 0.1
+                },
+                {
+                    type: Demopage.supportedControls.Range,
+                    title: "Color variation",
+                    id: "color-variation-range-id",
+                    min: 0,
+                    max: 255,
+                    value: 50,
+                    step: 1
+                },
             ]
         }
     ]

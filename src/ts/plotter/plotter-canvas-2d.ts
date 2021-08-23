@@ -14,6 +14,11 @@ interface ILinesBatch {
     thickness: number;
 }
 
+interface IPolygon {
+    points: IPoint[];
+    color: Color;
+}
+
 class PlotterCanvas2D {
     private readonly canvas: HTMLCanvasElement;
     private readonly context: CanvasRenderingContext2D;
@@ -48,8 +53,24 @@ class PlotterCanvas2D {
             this.context.stroke();
             this.context.closePath();
         }
+    }
 
+    public drawPolygons(polygons: IPolygon[]): void {
         this.context.strokeStyle = "none";
+
+        for (const polygon of polygons) {
+            if (polygon.points.length >= 3) {
+                this.context.fillStyle = polygon.color.toString();
+
+                this.context.beginPath();
+                this.context.moveTo(polygon.points[0].x, polygon.points[0].y);
+                for (let iP = 1; iP < polygon.points.length; iP++) {
+                    this.context.lineTo(polygon.points[iP].x, polygon.points[iP].y);
+                }
+                this.context.closePath();
+                this.context.fill();
+            }
+        }
     }
 
     private resizeCanvas(): void {
@@ -71,5 +92,6 @@ class PlotterCanvas2D {
 export {
     ILine,
     ILinesBatch,
+    IPolygon,
     PlotterCanvas2D,
 };

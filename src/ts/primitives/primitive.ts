@@ -1,9 +1,10 @@
+import { Color } from "../color/color";
 import { Parameters } from "../parameters";
+import { IPolygon } from "../plotter/plotter-canvas-2d";
 import { IPoint } from "../point";
 
-
 enum EOrientation {
-    VERTICAl,
+    VERTICAL,
     HORIZONTAL,
 }
 
@@ -22,26 +23,21 @@ function interpolatePoint(p1: IPoint, p2: IPoint, x: number): IPoint {
     };
 }
 
-class Primitive {
-    private readonly topLeft: IPoint;
-    private readonly topRight: IPoint;
-    private readonly bottomLeft: IPoint;
-    private readonly bottomRight: IPoint;
+class Primitive implements IPolygon {
+    public get points(): IPoint[] {
+        return [this.topLeft, this.topRight, this.bottomRight, this.bottomLeft];
+    }
 
-    private readonly subdivisionOrientation: EOrientation;
+    public subdivision: [IPoint, IPoint] | null = null;
+    private children: [Primitive, Primitive] | null = null;
 
-    public subdivision: [IPoint, IPoint] | null;
-    private children: [Primitive, Primitive] | null;
-
-    public constructor(topLeft: IPoint, topRight: IPoint, bottomLeft: IPoint, bottomRight: IPoint, subdivisionOrientation: EOrientation) {
-        this.topLeft = topLeft;
-        this.topRight = topRight;
-        this.bottomLeft = bottomLeft;
-        this.bottomRight = bottomRight;
-        this.subdivisionOrientation = subdivisionOrientation;
-
-        this.subdivision = null;
-        this.children = null;
+    public constructor(
+        private readonly topLeft: IPoint,
+        private readonly topRight: IPoint,
+        private readonly bottomLeft: IPoint,
+        private readonly bottomRight: IPoint,
+        private readonly subdivisionOrientation: EOrientation,
+        public readonly color: Color) {
     }
 
     public subdivide(): [Primitive, Primitive] {
@@ -52,15 +48,15 @@ class Primitive {
             const rand1 = random(minRand, maxRand);
             const rand2 = random(minRand, maxRand);
 
-            if (this.subdivisionOrientation === EOrientation.VERTICAl) {
+            if (this.subdivisionOrientation === EOrientation.VERTICAL) {
                 this.subdivision = [
                     interpolatePoint(this.topLeft, this.topRight, rand1),
                     interpolatePoint(this.bottomLeft, this.bottomRight, rand2),
                 ];
 
                 this.children = [
-                    new Primitive(this.topLeft, this.subdivision[0], this.bottomLeft, this.subdivision[1], EOrientation.HORIZONTAL),
-                    new Primitive(this.subdivision[0], this.topRight, this.subdivision[1], this.bottomRight, EOrientation.HORIZONTAL),
+                    new Primitive(this.topLeft, this.subdivision[0], this.bottomLeft, this.subdivision[1], EOrientation.HORIZONTAL, this.color.computeCloseColor()),
+                    new Primitive(this.subdivision[0], this.topRight, this.subdivision[1], this.bottomRight, EOrientation.HORIZONTAL, this.color.computeCloseColor()),
                 ];
             } else {
                 this.subdivision = [
@@ -69,8 +65,8 @@ class Primitive {
                 ];
 
                 this.children = [
-                    new Primitive(this.topLeft, this.topRight, this.subdivision[0], this.subdivision[1], EOrientation.VERTICAl),
-                    new Primitive(this.subdivision[0], this.subdivision[1], this.bottomLeft, this.bottomRight, EOrientation.VERTICAl),
+                    new Primitive(this.topLeft, this.topRight, this.subdivision[0], this.subdivision[1], EOrientation.VERTICAL, this.color.computeCloseColor()),
+                    new Primitive(this.subdivision[0], this.subdivision[1], this.bottomLeft, this.bottomRight, EOrientation.VERTICAL, this.color.computeCloseColor()),
                 ];
             }
         }

@@ -1,3 +1,5 @@
+import { Parameters } from "../parameters";
+
 function registerPadStartPolyfill(): void {
     if (typeof String.prototype.padStart !== "function") {
         String.prototype.padStart = function padStart(maxLength: number, fillString?: string): string {
@@ -25,6 +27,10 @@ class Color {
     public static readonly WHITE: Color = new Color(255, 255, 255);
     public static readonly GREEN: Color = new Color(0, 255, 0);
 
+    public static random(): Color {
+        return new Color(Color.randomChannel(), Color.randomChannel(), Color.randomChannel());
+    }
+
     /** @param r in [0, 255]
      *  @param g in [0, 255]
      *  @param b in [0, 255]
@@ -40,6 +46,29 @@ class Color {
         }
 
         return this.hexString;
+    }
+
+    public computeCloseColor(): Color {
+        return new Color(
+            Color.computeCloseChannelValue(this.r),
+            Color.computeCloseChannelValue(this.g),
+            Color.computeCloseChannelValue(this.b),
+        );
+    }
+
+    private static randomChannel(): number {
+        return Math.floor(256 * Math.random());
+    }
+
+    private static computeCloseChannelValue(v: number): number {
+        const variation = Parameters.colorVariation;
+        const raw = v + Math.round(variation * (Math.random() - 0.5));
+        if (raw < 0) {
+            return 0;
+        } else if (raw > 255) {
+            return 255;
+        }
+        return raw;
     }
 
     private hexString: string;

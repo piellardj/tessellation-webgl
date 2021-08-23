@@ -11,7 +11,8 @@ type Layer = Primitive[];
 function computeLayers(nbLayers: number): Layer[] {
     const basePrimitive = new Primitive(
         { x: 0, y: 0 }, { x: 512, y: 0 }, { x: 0, y: 512 }, { x: 512, y: 512 },
-        EOrientation.VERTICAl,
+        EOrientation.VERTICAL,
+        Color.random(),
     );
 
     const layers: Layer[] = [];
@@ -33,7 +34,7 @@ function computeLayers(nbLayers: number): Layer[] {
 function computeLinesBatches(layers: Layer[]): ILinesBatch[] {
     const linesBatches: ILinesBatch[] = [];
 
-    const MAX_THICKNESS = 2;
+    const MAX_THICKNESS = Parameters.thickness;
 
     for (let iLayer = 0; iLayer < layers.length - 1; iLayer++) {
         const layer = layers[iLayer];
@@ -68,10 +69,12 @@ function main(): void {
     }
 
     Parameters.resetObservers.push(reset);
+    Parameters.redrawObservers.push(() => { linesBatches = computeLinesBatches(layers); });
     reset();
 
     function mainLoop(): void {
         plotter.initialize(backgroundColor);
+        plotter.drawPolygons(layers[layers.length - 1]);
         plotter.drawLines(linesBatches, Color.BLACK);
 
         requestAnimationFrame(mainLoop);
