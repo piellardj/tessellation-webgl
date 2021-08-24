@@ -21,7 +21,7 @@ class Engine {
     }
 
     public update(viewport: Rectangle, zooming: Zooming): void {
-        this.adjustLayersCount(Parameters.depth);
+        this.adjustLayersCount();
         this.handleZoom(zooming);
         this.handleRecycling(viewport);
     }
@@ -84,37 +84,34 @@ class Engine {
         }
     }
 
-    private adjustLayersCount(wantedLayersCount: number): void {
-        if (wantedLayersCount < 1) {
-            wantedLayersCount = 1;
-        }
+    private adjustLayersCount(): void {
+        const lastLayer = this.layers[this.layers.length - 1];
+        const idealPrimitivesCountForLastLayer = Math.pow(2, Parameters.depth - 1);
+        const currentPrimitivesCountForLastLayer = lastLayer.length;
 
-        if (this.layers.length !== wantedLayersCount) {
-            if (this.layers.length > wantedLayersCount) {
-                for (const primitive of this.layers[wantedLayersCount - 1]) {
-                    primitive.removeChildren();
-                }
-                this.layers.length = wantedLayersCount;
-                this.linesBatches.length = wantedLayersCount - 1;
-            } else {
-                while (this.layers.length < wantedLayersCount) {
-                    let newLayer: Layer = [];
-                    const newLinesBatch: ILinesBatch = {
-                        lines: [],
-                        thickness: 1,
-                    };
+        if (currentPrimitivesCountForLastLayer <= 0.5 * idealPrimitivesCountForLastLayer) {
+            // subdivide once more
+            let newLayer: Layer = [];
+            const newLinesBatch: ILinesBatch = {
+                lines: [],
+                thickness: 1,
+            };
 
-                    const lastLayer = this.layers[this.layers.length - 1];
-                    for (const parentPrimitive of lastLayer) {
-                        parentPrimitive.subdivide();
-                        newLinesBatch.lines.push(parentPrimitive.subdivision);
-                        newLayer = newLayer.concat(parentPrimitive.children);
-                    }
-
-                    this.layers.push(newLayer);
-                    this.linesBatches.push(newLinesBatch);
-                }
+            for (const primitive of lastLayer) {
+                primitive.subdivide();
+                newLinesBatch.lines.push(primitive.subdivision);
+                newLayer = newLayer.concat(primitive.children);
             }
+
+            this.layers.push(newLayer);
+            this.linesBatches.push(newLinesBatch);
+        } else if (currentPrimitivesCountForLastLayer >= 2 * idealPrimitivesCountForLastLayer) {
+            // remove last subdivision
+            for (const primitive of lastLayer) {
+                primitive.removeChildren();
+            }
+            this.layers.pop();
+            this.linesBatches.pop();
         }
     }
 
