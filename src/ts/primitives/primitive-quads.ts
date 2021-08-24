@@ -32,7 +32,7 @@ function squaredDistance(p1: IPoint, p2: IPoint): number {
     return dx * dx + dy * dy;
 }
 
-class PrimitiveLines extends Primitive {
+class PrimitiveQuads extends Primitive {
     private readonly subdivisionOrientation: EOrientation;
 
     public constructor(
@@ -71,8 +71,8 @@ class PrimitiveLines extends Primitive {
             ];
 
             this.children = [
-                new PrimitiveLines(this.topLeft, this.subdivision[0], this.bottomLeft, this.subdivision[1], this.color.computeCloseColor()),
-                new PrimitiveLines(this.subdivision[0], this.topRight, this.subdivision[1], this.bottomRight, this.color.computeCloseColor()),
+                new PrimitiveQuads(this.topLeft, this.subdivision[0], this.bottomLeft, this.subdivision[1], this.color.computeCloseColor()),
+                new PrimitiveQuads(this.subdivision[0], this.topRight, this.subdivision[1], this.bottomRight, this.color.computeCloseColor()),
             ];
         } else {
             this.subdivision = [
@@ -81,8 +81,8 @@ class PrimitiveLines extends Primitive {
             ];
 
             this.children = [
-                new PrimitiveLines(this.topLeft, this.topRight, this.subdivision[0], this.subdivision[1], this.color.computeCloseColor()),
-                new PrimitiveLines(this.subdivision[0], this.subdivision[1], this.bottomLeft, this.bottomRight, this.color.computeCloseColor()),
+                new PrimitiveQuads(this.topLeft, this.topRight, this.subdivision[0], this.subdivision[1], this.color.computeCloseColor()),
+                new PrimitiveQuads(this.subdivision[0], this.subdivision[1], this.bottomLeft, this.bottomRight, this.color.computeCloseColor()),
             ];
         }
     }
@@ -166,5 +166,5 @@ class PrimitiveLines extends Primitive {
 }
 
 export {
-    PrimitiveLines,
+    PrimitiveQuads,
 };

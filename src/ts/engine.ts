@@ -2,7 +2,7 @@ import { Color } from "./color/color";
 import { Parameters } from "./parameters";
 import { ILinesBatch, PlotterCanvas2D } from "./plotter/plotter-canvas-2d";
 import { EVisibility, Primitive } from "./primitives/primitive";
-import { PrimitiveLines } from "./primitives/primitive-lines";
+import { PrimitiveQuads } from "./primitives/primitive-quads";
 import { Rectangle } from "./rectangle";
 import { Zooming } from "./zooming";
 
@@ -49,7 +49,7 @@ class Engine {
     }
 
     public reset(viewport: Rectangle): void {
-        this.rootPrimitive = new PrimitiveLines(
+        this.rootPrimitive = new PrimitiveQuads(
             { x: viewport.left, y: viewport.top },
             { x: viewport.right, y: viewport.top },
             { x: viewport.left, y: viewport.bottom },

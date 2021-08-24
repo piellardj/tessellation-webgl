@@ -2,7 +2,7 @@ import { Color } from "./color/color";
 import { Parameters } from "./parameters";
 import { ILinesBatch, IPolygon, Line, PlotterCanvas2D } from "./plotter/plotter-canvas-2d";
 import { EVisibility, Primitive } from "./primitives/primitive";
-import { PrimitiveLines } from "./primitives/primitive-lines";
+import { PrimitiveQuads } from "./primitives/primitive-quads";
 import { Rectangle } from "./rectangle";
 
 import "./page-interface-generated";
@@ -34,7 +34,7 @@ class EngineVisibilityTest {
             ],
             color: new Color(255, 0, 0),
         };
-        this.primitive = new PrimitiveLines(
+        this.primitive = new PrimitiveQuads(
             this.primitivePolygon.points[0], // top left
             this.primitivePolygon.points[1],// top right
             this.primitivePolygon.points[3],// bottom left
