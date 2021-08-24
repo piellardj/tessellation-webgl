@@ -37,8 +37,7 @@ class PrimitiveQuads extends Primitive {
     public subdivide(): void {
         this.children = [];
 
-        const balance = Parameters.balance;
-        const minRand = 0.5 * balance;
+        const minRand = 0.5 * Parameters.balance;
         const maxRand = 1 - minRand;
         const rand1 = Utils.random(minRand, maxRand);
         const rand2 = Utils.random(minRand, maxRand);
@@ -114,10 +113,6 @@ class PrimitiveQuads extends Primitive {
         } else {
             return EVisibility.OUT_OF_VIEW;
         }
-    }
-
-    private getSide(p1: IPoint, p2: IPoint, p3: IPoint): number {
-        return (p3.x - p1.x) * -(p2.y - p1.y) + (p3.y - p1.y) * (p2.x - p1.x);
     }
 
     private isInside(point: IPoint): boolean {
