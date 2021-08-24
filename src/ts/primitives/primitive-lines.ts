@@ -43,8 +43,8 @@ class PrimitiveLines extends Primitive {
         color: Color) {
         super(color);
 
-        const leftToRightDistance = 0.5 * (squaredDistance(topLeft, topRight) + squaredDistance(bottomLeft, bottomRight));
-        const topToBottomDistance = 0.5 * (squaredDistance(topLeft, bottomLeft) + squaredDistance(topRight, bottomRight));
+        const leftToRightDistance = Math.max(squaredDistance(topLeft, topRight), squaredDistance(bottomLeft, bottomRight));
+        const topToBottomDistance = Math.max(squaredDistance(topLeft, bottomLeft), squaredDistance(topRight, bottomRight));
 
         if (leftToRightDistance > topToBottomDistance) {
             this.subdivisionOrientation = EOrientation.VERTICAL;
