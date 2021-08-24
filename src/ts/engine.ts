@@ -1,8 +1,9 @@
 import { Color } from "./color/color";
-import { Parameters } from "./parameters";
+import { EPrimitive, Parameters } from "./parameters";
 import { ILinesBatch, PlotterCanvas2D } from "./plotter/plotter-canvas-2d";
 import { EVisibility, Primitive } from "./primitives/primitive";
 import { PrimitiveQuads } from "./primitives/primitive-quads";
+import { PrimitiveTriangles } from "./primitives/primitives-triangles";
 import { Rectangle } from "./rectangle";
 import { Zooming } from "./zooming";
 
@@ -49,13 +50,23 @@ class Engine {
     }
 
     public reset(viewport: Rectangle): void {
-        this.rootPrimitive = new PrimitiveQuads(
-            { x: viewport.left, y: viewport.top },
-            { x: viewport.right, y: viewport.top },
-            { x: viewport.left, y: viewport.bottom },
-            { x: viewport.right, y: viewport.bottom },
-            Color.random(),
-        );
+        const primitiveType = Parameters.primitive;
+        if (primitiveType === EPrimitive.QUADS) {
+            this.rootPrimitive = new PrimitiveQuads(
+                { x: viewport.left, y: viewport.top },
+                { x: viewport.right, y: viewport.top },
+                { x: viewport.left, y: viewport.bottom },
+                { x: viewport.right, y: viewport.bottom },
+                Color.random(),
+            );
+        } else {
+            this.rootPrimitive = new PrimitiveTriangles(
+                { x: viewport.left, y: viewport.bottom },
+                { x: viewport.right, y: viewport.bottom },
+                { x: 0, y: viewport.top },
+                Color.random(),
+            );
+        }
 
         const rootLayer = [this.rootPrimitive];
         this.layers = [rootLayer];

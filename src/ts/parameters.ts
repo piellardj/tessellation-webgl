@@ -6,6 +6,7 @@ import "./page-interface-generated";
 
 /* === IDs ============================================================ */
 const controlId = {
+    PRIMITIVE_TABS_ID: "primitive-tabs-id",
     DEPTH_RANGE_ID: "depth-range-id",
     BALANCE_RANGE_ID: "balance-range-id",
     THICKNESS_RANGE_ID: "thickness-range-id",
@@ -14,6 +15,11 @@ const controlId = {
     LINES_COLOR_PICKER_ID: "lines-color-picker-id",
     RESET_BUTTON_ID: "reset-button-id",
 };
+
+enum EPrimitive {
+    QUADS = "quads",
+    TRIANGLES = "triangles",
+}
 
 type Observer = () => unknown;
 
@@ -29,6 +35,10 @@ abstract class Parameters {
     public static readonly resetObservers: Observer[] = [];
     public static readonly recomputeColorsObservers: Observer[] = [];
     public static readonly debugMode: boolean = hasUrlParameter("debug");
+
+    public static get primitive(): EPrimitive {
+        return Page.Tabs.getValues(controlId.PRIMITIVE_TABS_ID)[0] as EPrimitive;
+    }
 
     public static get depth(): number {
         return Page.Range.getValue(controlId.DEPTH_RANGE_ID);
@@ -75,9 +85,11 @@ const callReset = () => { callObservers(Parameters.resetObservers); };
 Page.Range.addObserver(controlId.BALANCE_RANGE_ID, callReset);
 Page.Button.addObserver(controlId.RESET_BUTTON_ID, callReset);
 Page.Canvas.Observers.canvasResize.push(callReset);
+Page.Tabs.addObserver(controlId.PRIMITIVE_TABS_ID, callReset);
 
 Page.Range.addObserver(controlId.COLOR_VARIATION_RANGE_ID, () => { callObservers(Parameters.recomputeColorsObservers); });
 
 export {
+    EPrimitive,
     Parameters,
 };

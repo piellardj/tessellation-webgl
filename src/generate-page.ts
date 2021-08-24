@@ -26,6 +26,23 @@ const data = {
             title: "General",
             controls: [
                 {
+                    type: Demopage.supportedControls.Tabs,
+                    title: "Primitive",
+                    id: "primitive-tabs-id",
+                    unique: true,
+                    options: [
+                        {
+                            value: "quads",
+                            label: "Quads",
+                            checked: true
+                        },
+                        {
+                            value: "triangles",
+                            label: "Triangles"
+                        }
+                    ]
+                },
+                {
                     type: Demopage.supportedControls.Range,
                     title: "Depth",
                     id: "depth-range-id",

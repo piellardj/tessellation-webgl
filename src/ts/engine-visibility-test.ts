@@ -1,11 +1,12 @@
 import { Color } from "./color/color";
-import { Parameters } from "./parameters";
+import { EPrimitive, Parameters } from "./parameters";
 import { ILinesBatch, IPolygon, Line, PlotterCanvas2D } from "./plotter/plotter-canvas-2d";
 import { EVisibility, Primitive } from "./primitives/primitive";
 import { PrimitiveQuads } from "./primitives/primitive-quads";
 import { Rectangle } from "./rectangle";
 
 import "./page-interface-generated";
+import { PrimitiveTriangles } from "./primitives/primitives-triangles";
 
 
 class EngineVisibilityTest {
@@ -25,22 +26,7 @@ class EngineVisibilityTest {
     public constructor() {
         this.testWindow = new Rectangle(0, 0, 0, 0);
 
-        this.primitivePolygon = {
-            points: [
-                { x: -150 * Math.random(), y: -150 * Math.random() }, // top left
-                { x: +150 * Math.random(), y: -150 * Math.random() }, // top right
-                { x: +150 * Math.random(), y: +150 * Math.random() }, // bottom right
-                { x: -150 * Math.random(), y: +150 * Math.random() }, // bottom left
-            ],
-            color: new Color(255, 0, 0),
-        };
-        this.primitive = new PrimitiveQuads(
-            this.primitivePolygon.points[0], // top left
-            this.primitivePolygon.points[1],// top right
-            this.primitivePolygon.points[3],// bottom left
-            this.primitivePolygon.points[2],// bottom right
-            new Color(255, 0, 0)
-        );
+        this.reset();
 
         Page.Canvas.Observers.mouseWheel.push((delta: number) => {
             this.zoom += 0.1 * delta;
@@ -52,6 +38,48 @@ class EngineVisibilityTest {
         });
 
         this.line = [{ x: -50, y: -50 }, { x: 70, y: 50 }];
+    }
+
+    public reset(): void {
+        const color = new Color(255, 0, 0);
+
+        const primitiveType = Parameters.primitive;
+        if (primitiveType === EPrimitive.QUADS) {
+            this.primitivePolygon = {
+                points: [
+                    { x: -150 * Math.random(), y: -150 * Math.random() }, // top left
+                    { x: +150 * Math.random(), y: -150 * Math.random() }, // top right
+                    { x: +150 * Math.random(), y: +150 * Math.random() }, // bottom right
+                    { x: -150 * Math.random(), y: +150 * Math.random() }, // bottom left
+                ],
+                color: new Color(255, 0, 0),
+            };
+            this.primitive = new PrimitiveQuads(
+                this.primitivePolygon.points[0], // top left
+                this.primitivePolygon.points[1], // top right
+                this.primitivePolygon.points[3], // bottom left
+                this.primitivePolygon.points[2], // bottom right
+                color,
+            );
+        } else {
+            this.primitivePolygon = {
+                points: [
+                    { x: -100 - 50 * Math.random(), y: -100 - 50 * Math.random() },
+                    { x: +100 + 50 * Math.random(), y: -100 - 50 * Math.random() },
+                    { x: +100 + 50 * (Math.random() - 0.5), y: +100 + 50 * Math.random() },
+                ],
+                color: new Color(255, 0, 0),
+            };
+            this.primitive = new PrimitiveTriangles(
+                this.primitivePolygon.points[0],
+                this.primitivePolygon.points[1],
+                this.primitivePolygon.points[2],
+                color,
+            );
+        }
+
+        this.lastPrimitiveVisibilityStatus = null;
+        this.lastLineIntersectingStatus = null;
     }
 
     public update(): void {

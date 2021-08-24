@@ -9,10 +9,6 @@ import "./page-interface-generated";
 
 function createEngine(plotter: PlotterCanvas2D): Engine {
     const engine = new Engine();
-    Parameters.resetObservers.push(() => {
-        plotter.resizeCanvas();
-        engine.reset(plotter.viewport);
-    });
     Parameters.recomputeColorsObservers.push(() => { engine.recomputeColors(); });
     engine.reset(plotter.viewport);
     return engine;
@@ -22,6 +18,11 @@ function main(): void {
     const plotter = new PlotterCanvas2D();
     const engine = Parameters.debugMode ? new EngineVisibilityTest() : createEngine(plotter);
     const zooming = new Zooming({ x: 0, y: 0 }, 0.2);
+
+    Parameters.resetObservers.push(() => {
+        plotter.resizeCanvas();
+        engine.reset(plotter.viewport);
+    });
 
     let lastUpdateTimestamp = performance.now();
     function mainLoop(): void {
