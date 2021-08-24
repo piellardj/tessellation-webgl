@@ -4,32 +4,11 @@ import { IPoint } from "../point";
 import { Rectangle } from "../rectangle";
 import { Zooming } from "../zooming";
 import { EVisibility, Primitive } from "./primitive";
-
+import * as Utils from "../utils";
 
 enum EOrientation {
     VERTICAL,
     HORIZONTAL,
-}
-
-function random(from: number, to: number): number {
-    return from + (to - from) * Math.random();
-}
-
-function interpolate(a: number, b: number, x: number): number {
-    return (1 - x) * a + x * b;
-}
-
-function interpolatePoint(p1: IPoint, p2: IPoint, x: number): IPoint {
-    return {
-        x: interpolate(p1.x, p2.x, x),
-        y: interpolate(p1.y, p2.y, x),
-    };
-}
-
-function squaredDistance(p1: IPoint, p2: IPoint): number {
-    const dx = p1.x - p2.x;
-    const dy = p1.y - p2.y;
-    return dx * dx + dy * dy;
 }
 
 class PrimitiveQuads extends Primitive {
@@ -43,8 +22,8 @@ class PrimitiveQuads extends Primitive {
         color: Color) {
         super(color);
 
-        const leftToRightDistance = Math.max(squaredDistance(topLeft, topRight), squaredDistance(bottomLeft, bottomRight));
-        const topToBottomDistance = Math.max(squaredDistance(topLeft, bottomLeft), squaredDistance(topRight, bottomRight));
+        const leftToRightDistance = Math.max(Utils.squaredDistance(topLeft, topRight), Utils.squaredDistance(bottomLeft, bottomRight));
+        const topToBottomDistance = Math.max(Utils.squaredDistance(topLeft, bottomLeft), Utils.squaredDistance(topRight, bottomRight));
 
         if (leftToRightDistance > topToBottomDistance) {
             this.subdivisionOrientation = EOrientation.VERTICAL;
@@ -61,13 +40,13 @@ class PrimitiveQuads extends Primitive {
         const balance = Parameters.balance;
         const minRand = 0.5 * balance;
         const maxRand = 1 - minRand;
-        const rand1 = random(minRand, maxRand);
-        const rand2 = random(minRand, maxRand);
+        const rand1 = Utils.random(minRand, maxRand);
+        const rand2 = Utils.random(minRand, maxRand);
 
         if (this.subdivisionOrientation === EOrientation.VERTICAL) {
             this.subdivision = [
-                interpolatePoint(this.topLeft, this.topRight, rand1),
-                interpolatePoint(this.bottomLeft, this.bottomRight, rand2),
+                Utils.interpolatePoint(this.topLeft, this.topRight, rand1),
+                Utils.interpolatePoint(this.bottomLeft, this.bottomRight, rand2),
             ];
 
             this.children = [
@@ -76,8 +55,8 @@ class PrimitiveQuads extends Primitive {
             ];
         } else {
             this.subdivision = [
-                interpolatePoint(this.topLeft, this.bottomLeft, rand1),
-                interpolatePoint(this.topRight, this.bottomRight, rand2),
+                Utils.interpolatePoint(this.topLeft, this.bottomLeft, rand1),
+                Utils.interpolatePoint(this.topRight, this.bottomRight, rand2),
             ];
 
             this.children = [
@@ -142,26 +121,22 @@ class PrimitiveQuads extends Primitive {
     }
 
     private isInside(point: IPoint): boolean {
-        const SIDE_TL_TR = this.getSide(this.topLeft, this.topRight, point);
-        const SIDE_TR_BL = this.getSide(this.topRight, this.bottomLeft, point);
-        const SIDE_BL_TL = this.getSide(this.bottomLeft, this.topLeft, point);
+        const SIDE_TL_TR = Utils.getSide(this.topLeft, this.topRight, point);
+        const SIDE_TR_BL = Utils.getSide(this.topRight, this.bottomLeft, point);
+        const SIDE_BL_TL = Utils.getSide(this.bottomLeft, this.topLeft, point);
 
-        if (this.areSameSign(SIDE_TL_TR, SIDE_TR_BL, SIDE_BL_TL)) {
+        if (Utils.areSameSign(SIDE_TL_TR, SIDE_TR_BL, SIDE_BL_TL)) {
             return true;
         }
 
-        const SIDE_BL_BR = this.getSide(this.bottomLeft, this.bottomRight, point);
-        const SIDE_BR_TR = this.getSide(this.bottomRight, this.topRight, point);
+        const SIDE_BL_BR = Utils.getSide(this.bottomLeft, this.bottomRight, point);
+        const SIDE_BR_TR = Utils.getSide(this.bottomRight, this.topRight, point);
 
-        if (this.areSameSign(SIDE_TR_BL, SIDE_BL_BR, SIDE_BR_TR)) {
+        if (Utils.areSameSign(SIDE_TR_BL, SIDE_BL_BR, SIDE_BR_TR)) {
             return true;
         }
 
         return false;
-    }
-
-    private areSameSign(a: number, b: number, c: number): boolean {
-        return a * b >= 0 && a * c >= 0;
     }
 }
 
