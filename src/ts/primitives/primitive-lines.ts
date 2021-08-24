@@ -26,15 +26,33 @@ function interpolatePoint(p1: IPoint, p2: IPoint, x: number): IPoint {
     };
 }
 
+function squaredDistance(p1: IPoint, p2: IPoint): number {
+    const dx = p1.x - p2.x;
+    const dy = p1.y - p2.y;
+    return dx * dx + dy * dy;
+}
+
 class PrimitiveLines extends Primitive {
+    private readonly subdivisionOrientation: EOrientation;
+
     public constructor(
         private readonly topLeft: IPoint,
         private readonly topRight: IPoint,
         private readonly bottomLeft: IPoint,
         private readonly bottomRight: IPoint,
-        private readonly subdivisionOrientation: EOrientation,
         color: Color) {
         super(color);
+
+        const leftToRightDistance = 0.5 * (squaredDistance(topLeft, topRight) + squaredDistance(bottomLeft, bottomRight));
+        const topToBottomDistance = 0.5 * (squaredDistance(topLeft, bottomLeft) + squaredDistance(topRight, bottomRight));
+
+        if (leftToRightDistance > topToBottomDistance) {
+            this.subdivisionOrientation = EOrientation.VERTICAL;
+        } else {
+            this.subdivisionOrientation = EOrientation.HORIZONTAL;
+        }
+
+
     }
 
     public subdivide(): void {
@@ -53,8 +71,8 @@ class PrimitiveLines extends Primitive {
             ];
 
             this.children = [
-                new PrimitiveLines(this.topLeft, this.subdivision[0], this.bottomLeft, this.subdivision[1], EOrientation.HORIZONTAL, this.color.computeCloseColor()),
-                new PrimitiveLines(this.subdivision[0], this.topRight, this.subdivision[1], this.bottomRight, EOrientation.HORIZONTAL, this.color.computeCloseColor()),
+                new PrimitiveLines(this.topLeft, this.subdivision[0], this.bottomLeft, this.subdivision[1], this.color.computeCloseColor()),
+                new PrimitiveLines(this.subdivision[0], this.topRight, this.subdivision[1], this.bottomRight, this.color.computeCloseColor()),
             ];
         } else {
             this.subdivision = [
@@ -63,8 +81,8 @@ class PrimitiveLines extends Primitive {
             ];
 
             this.children = [
-                new PrimitiveLines(this.topLeft, this.topRight, this.subdivision[0], this.subdivision[1], EOrientation.VERTICAL, this.color.computeCloseColor()),
-                new PrimitiveLines(this.subdivision[0], this.subdivision[1], this.bottomLeft, this.bottomRight, EOrientation.VERTICAL, this.color.computeCloseColor()),
+                new PrimitiveLines(this.topLeft, this.topRight, this.subdivision[0], this.subdivision[1], this.color.computeCloseColor()),
+                new PrimitiveLines(this.subdivision[0], this.subdivision[1], this.bottomLeft, this.bottomRight, this.color.computeCloseColor()),
             ];
         }
     }
@@ -148,6 +166,5 @@ class PrimitiveLines extends Primitive {
 }
 
 export {
-    EOrientation,
     PrimitiveLines,
 };

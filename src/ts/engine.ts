@@ -2,7 +2,7 @@ import { Color } from "./color/color";
 import { Parameters } from "./parameters";
 import { ILinesBatch, PlotterCanvas2D } from "./plotter/plotter-canvas-2d";
 import { EVisibility, Primitive } from "./primitives/primitive";
-import { EOrientation, PrimitiveLines } from "./primitives/primitive-lines";
+import { PrimitiveLines } from "./primitives/primitive-lines";
 import { Rectangle } from "./rectangle";
 import { Zooming } from "./zooming";
 
@@ -54,7 +54,6 @@ class Engine {
             { x: viewport.right, y: viewport.top },
             { x: viewport.left, y: viewport.bottom },
             { x: viewport.right, y: viewport.bottom },
-            (viewport.width >= viewport.height) ? EOrientation.VERTICAL : EOrientation.HORIZONTAL,
             Color.random(),
         );
 
