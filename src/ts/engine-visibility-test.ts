@@ -1,9 +1,9 @@
-import { Color } from "./color/color";
+import { Color } from "./misc/color";
 import { EPrimitive, Parameters } from "./parameters";
 import { ILinesBatch, IPolygon, Line, PlotterCanvas2D } from "./plotter/plotter-canvas-2d";
 import { EVisibility, Primitive } from "./primitives/primitive";
 import { PrimitiveQuads } from "./primitives/primitive-quads";
-import { Rectangle } from "./rectangle";
+import { Rectangle } from "./misc/rectangle";
 
 import "./page-interface-generated";
 import { PrimitiveTriangles } from "./primitives/primitives-triangles";

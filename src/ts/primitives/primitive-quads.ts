@@ -1,10 +1,10 @@
-import { Color } from "../color/color";
+import { Color } from "../misc/color";
 import { Parameters } from "../parameters";
-import { IPoint } from "../point";
-import { Rectangle } from "../rectangle";
-import { Zooming } from "../zooming";
+import { IPoint } from "../misc/point";
+import { Rectangle } from "../misc/rectangle";
+import { Zooming } from "../misc/zooming";
 import { EVisibility, Primitive } from "./primitive";
-import * as Utils from "../utils";
+import * as Utils from "../misc/utils";
 
 enum EOrientation {
     VERTICAL,

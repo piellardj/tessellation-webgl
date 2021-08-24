@@ -1,6 +1,6 @@
-import { Color } from "../color/color";
-import { IPoint } from "../point";
-import { Rectangle } from "../rectangle";
+import { Color } from "../misc/color";
+import { IPoint } from "../misc/point";
+import { Rectangle } from "../misc/rectangle";
 
 import "../page-interface-generated";
 

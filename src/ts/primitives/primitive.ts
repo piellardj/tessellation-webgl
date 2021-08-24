@@ -1,8 +1,8 @@
-import { Color } from "../color/color";
+import { Color } from "../misc/color";
 import { IPolygon } from "../plotter/plotter-canvas-2d";
-import { IPoint } from "../point";
-import { Rectangle } from "../rectangle";
-import { Zooming } from "../zooming";
+import { IPoint } from "../misc/point";
+import { Rectangle } from "../misc/rectangle";
+import { Zooming } from "../misc/zooming";
 
 
 type Line = IPoint[];

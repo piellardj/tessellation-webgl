@@ -1,9 +1,9 @@
-import { Color } from "../color/color";
-import { IPoint } from "../point";
-import { Rectangle } from "../rectangle";
-import { Zooming } from "../zooming";
+import { Color } from "../misc/color";
+import { IPoint } from "../misc/point";
+import { Rectangle } from "../misc/rectangle";
+import { Zooming } from "../misc/zooming";
 import { EVisibility, Primitive } from "./primitive";
-import * as Utils from "../utils";
+import * as Utils from "../misc/utils";
 import { Parameters } from "../parameters";
 
 

@@ -1,11 +1,11 @@
-import { Color } from "./color/color";
+import { Color } from "./misc/color";
 import { EPrimitive, Parameters } from "./parameters";
 import { ILinesBatch, PlotterCanvas2D } from "./plotter/plotter-canvas-2d";
 import { EVisibility, Primitive } from "./primitives/primitive";
 import { PrimitiveQuads } from "./primitives/primitive-quads";
 import { PrimitiveTriangles } from "./primitives/primitives-triangles";
-import { Rectangle } from "./rectangle";
-import { Zooming } from "./zooming";
+import { Rectangle } from "./misc/rectangle";
+import { Zooming } from "./misc/zooming";
 
 
 type Layer = Primitive[];
