@@ -1,8 +1,17 @@
 import { Color } from "../color/color";
 import { IPolygon } from "../plotter/plotter-canvas-2d";
 import { IPoint } from "../point";
+import { Rectangle } from "../rectangle";
+import { Zooming } from "../zooming";
+
 
 type Line = IPoint[];
+
+enum EVisibility {
+    OUT_OF_VIEW,
+    VISIBLE,
+    COVERS_VIEW,
+}
 
 abstract class Primitive implements IPolygon {
     public subdivision: Line | null = null;
@@ -32,6 +41,12 @@ abstract class Primitive implements IPolygon {
 
     public abstract subdivide(): void;
     public abstract get points(): IPoint[];
+
+    public abstract zoom(zooming: Zooming, isRoot: boolean): void;
+    public abstract computeVisibility(viewport: Rectangle): EVisibility;
 }
 
-export { Primitive };
+export {
+    EVisibility,
+    Primitive,
+};

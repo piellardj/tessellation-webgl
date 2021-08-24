@@ -1,5 +1,6 @@
 import { Color } from "../color/color";
 import { IPoint } from "../point";
+import { Rectangle } from "../rectangle";
 
 import "../page-interface-generated";
 
@@ -82,6 +83,10 @@ class PlotterCanvas2D {
         }
     }
 
+    public get viewport(): Rectangle {
+        return new Rectangle(-0.5 * this._width, 0.5 * this._width, -0.5 * this._height, 0.5 * this._height);
+    }
+
     public get width(): number {
         return this._width;
     }
@@ -89,7 +94,7 @@ class PlotterCanvas2D {
         return this._height;
     }
 
-    private resizeCanvas(): void {
+    public resizeCanvas(): void {
         const actualWidth = Math.floor(this.cssPixel * this.canvas.clientWidth);
         const actualHeight = Math.floor(this.cssPixel * this.canvas.clientHeight);
 

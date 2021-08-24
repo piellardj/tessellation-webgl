@@ -62,6 +62,15 @@ const data = {
                     step: 0.05
                 },
                 {
+                    type: Demopage.supportedControls.Range,
+                    title: "Zooming speed",
+                    id: "zooming-speed-range-id",
+                    min: 0,
+                    max: 10,
+                    value: 0.3,
+                    step: 0.1
+                },
+                {
                     type: Demopage.supportedControls.ColorPicker,
                     title: "Lines color",
                     id: "lines-color-picker-id",

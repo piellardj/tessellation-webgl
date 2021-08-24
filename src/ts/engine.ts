@@ -1,8 +1,10 @@
 import { Color } from "./color/color";
 import { Parameters } from "./parameters";
 import { ILinesBatch, PlotterCanvas2D } from "./plotter/plotter-canvas-2d";
-import { Primitive } from "./primitives/primitive";
+import { EVisibility, Primitive } from "./primitives/primitive";
 import { EOrientation, PrimitiveLines } from "./primitives/primitive-lines";
+import { Rectangle } from "./rectangle";
+import { Zooming } from "./zooming";
 
 
 type Layer = Primitive[];
@@ -15,11 +17,13 @@ class Engine {
     private startTime: number;
 
     public constructor() {
-        this.reset(512, 512);
+        this.reset(new Rectangle(0, 512, 0, 512));
     }
 
-    public update(): void {
+    public update(viewport: Rectangle, zooming: Zooming): void {
         this.adjustLayersCount(Parameters.depth);
+        this.handleZoom(zooming);
+        this.handleRecycling(viewport);
     }
 
     public draw(plotter: PlotterCanvas2D): void {
@@ -27,7 +31,7 @@ class Engine {
 
         plotter.initialize(Color.BLACK);
 
-        const maxDepth = 0.001 * (performance.now() - this.startTime);
+        const maxDepth = 10000 + 0.001 * (performance.now() - this.startTime);
         const lastSolidLayer = Math.min(Math.floor(maxDepth), this.layers.length - 1);
 
         const emergingLayer = lastSolidLayer + 1;
@@ -44,13 +48,13 @@ class Engine {
         }
     }
 
-    public reset(canvasWidth: number, canvasHeight: number): void {
-        const halfWidth = 0.5 * canvasWidth;
-        const halfHeight = 0.5 * canvasHeight;
-
+    public reset(viewport: Rectangle): void {
         this.rootPrimitive = new PrimitiveLines(
-            { x: -halfWidth, y: -halfHeight }, { x: halfWidth, y: -halfHeight }, { x: -halfWidth, y: halfHeight }, { x: halfWidth, y: halfHeight },
-            (canvasWidth >= canvasHeight) ? EOrientation.VERTICAL : EOrientation.HORIZONTAL,
+            { x: viewport.left, y: viewport.top },
+            { x: viewport.right, y: viewport.top },
+            { x: viewport.left, y: viewport.bottom },
+            { x: viewport.right, y: viewport.bottom },
+            (viewport.width >= viewport.height) ? EOrientation.VERTICAL : EOrientation.HORIZONTAL,
             Color.random(),
         );
 
@@ -62,6 +66,22 @@ class Engine {
 
     public recomputeColors(): void {
         this.rootPrimitive.color = Color.random();
+    }
+
+    private handleZoom(zooming: Zooming): void {
+        this.rootPrimitive.zoom(zooming, true);
+    }
+
+    private handleRecycling(viewport: Rectangle): void {
+        const nbPrimitivesLastLayer = this.layers[this.layers.length - 1].length;
+
+        const prunedPrimitives = this.prunePrimitivesOutOfView(this.rootPrimitive, viewport);
+        const changedRootPrimitive = this.changeRootPrimitiveInNeeded();
+
+        if (changedRootPrimitive || prunedPrimitives) {
+            this.rebuildLayersCollections();
+            console.log(`went from ${nbPrimitivesLastLayer} to ${this.layers[this.layers.length - 1].length}`);
+        }
     }
 
     private adjustLayersCount(wantedLayersCount: number): void {
@@ -103,6 +123,73 @@ class Engine {
 
         for (let iB = 0; iB < this.linesBatches.length; iB++) {
             this.linesBatches[iB].thickness = 1 + MAX_THICKNESS * (this.linesBatches.length - 1 - iB) / (this.linesBatches.length - 1);
+        }
+    }
+
+    private changeRootPrimitiveInNeeded(): boolean {
+        if (this.rootPrimitive.children.length === 1) {
+            this.rootPrimitive = this.rootPrimitive.children[0];
+            console.log("root changed");
+            return true;
+        }
+        return false;
+    }
+
+    private prunePrimitivesOutOfView(primitive: Primitive, viewport: Rectangle): boolean {
+        let changedSomething = false;
+
+        for (let iC = primitive.children.length - 1; iC >= 0; iC--) {
+            const child = primitive.children[iC];
+
+            const visibility = child.computeVisibility(viewport);
+            if (visibility === EVisibility.OUT_OF_VIEW) {
+                primitive.children.splice(iC, 1);
+                changedSomething = true;
+            } else if (visibility === EVisibility.VISIBLE) {
+                if (this.prunePrimitivesOutOfView(child, viewport)) {
+                    changedSomething = true;
+                }
+            }
+        }
+
+        return changedSomething;
+    }
+
+    private rebuildLayersCollections(): void {
+        this.layers = [[this.rootPrimitive]];
+        this.linesBatches = [];
+        if (this.rootPrimitive.subdivision) {
+            this.linesBatches.push({
+                lines: [this.rootPrimitive.subdivision],
+                thickness: 1,
+            });
+        }
+
+        let newChildren = this.rootPrimitive.children.length > 0;
+        while (newChildren) {
+            let newLayer: Layer = [];
+            const newLinesBatch: ILinesBatch = {
+                lines: [],
+                thickness: 1,
+            };
+
+            const lastLayer = this.layers[this.layers.length - 1];
+            for (const primitive of lastLayer) {
+                newLayer = newLayer.concat(primitive.children);
+                if (primitive.subdivision) {
+                    newLinesBatch.lines.push(primitive.subdivision);
+                }
+            }
+
+            if (newLayer.length > 0) {
+                this.layers.push(newLayer);
+
+                if (newLinesBatch.lines.length > 0) {
+                    this.linesBatches.push(newLinesBatch);
+                }
+            } else {
+                newChildren = false;
+            }
         }
     }
 }
