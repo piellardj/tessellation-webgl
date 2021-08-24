@@ -30,17 +30,16 @@ class Engine {
         const maxDepth = 0.001 * (performance.now() - this.startTime);
         const lastSolidLayer = Math.min(Math.floor(maxDepth), this.layers.length - 1);
 
-        const hasEmergingLayer = (lastSolidLayer < this.layers.length - 1);
         const emergingLayer = lastSolidLayer + 1;
         const emergingLayerAlpha = maxDepth - Math.floor(maxDepth);
 
         plotter.drawPolygons(this.layers[lastSolidLayer]);
-        if (hasEmergingLayer && emergingLayer < this.layers.length) {
+        if (emergingLayer < this.layers.length) {
             plotter.drawPolygons(this.layers[emergingLayer], emergingLayerAlpha);
         }
 
         plotter.drawLines(this.linesBatches.slice(0, emergingLayer), Parameters.linesColor);
-        if (hasEmergingLayer && emergingLayer < this.linesBatches.length) {
+        if (emergingLayer < this.linesBatches.length) {
             plotter.drawLines([this.linesBatches[emergingLayer]], Parameters.linesColor, emergingLayerAlpha);
         }
     }
