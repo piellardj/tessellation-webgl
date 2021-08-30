@@ -15,7 +15,7 @@ class Engine {
     private layers: Layer[];
     private linesBatches: ILinesBatch[];
 
-    private startTime: number;
+    private lastLayerBirthTimestamp: number;
 
     public constructor() {
         this.reset(new Rectangle(0, 512, 0, 512));
@@ -32,11 +32,19 @@ class Engine {
 
         plotter.initialize(Color.BLACK);
 
-        const maxDepth = 10000 + 0.001 * (performance.now() - this.startTime);
-        const lastSolidLayer = Math.min(Math.floor(maxDepth), this.layers.length - 1);
+        let lastSolidLayer = this.layers.length - 1;
+        let emergingLayer = lastSolidLayer + 1;
+        let emergingLayerAlpha = 0;
+        if (Parameters.zoomingSpeed > 0) {
+            const emergingTimeOfLastLayer = 1000 / Math.pow((1 + Parameters.zoomingSpeed), 2);
+            const ageOfLastLayer = performance.now() - this.lastLayerBirthTimestamp;
+            emergingLayerAlpha = Math.min(1, ageOfLastLayer / emergingTimeOfLastLayer);
 
-        const emergingLayer = lastSolidLayer + 1;
-        const emergingLayerAlpha = maxDepth - Math.floor(maxDepth);
+            if (emergingLayerAlpha < 1) {
+                lastSolidLayer--;
+                emergingLayer--;
+            }
+        }
 
         plotter.drawPolygons(this.layers[lastSolidLayer]);
         if (emergingLayer < this.layers.length) {
@@ -71,7 +79,6 @@ class Engine {
         const rootLayer = [this.rootPrimitive];
         this.layers = [rootLayer];
         this.linesBatches = [];
-        this.startTime = performance.now();
     }
 
     public recomputeColors(): void {
@@ -115,6 +122,7 @@ class Engine {
 
             this.layers.push(newLayer);
             this.linesBatches.push(newLinesBatch);
+            this.lastLayerBirthTimestamp = performance.now();
         } else if (currentPrimitivesCountForLastLayer >= 2 * idealPrimitivesCountForLastLayer) {
             // remove last subdivision
             for (const primitive of lastLayer) {
