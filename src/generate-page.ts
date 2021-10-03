@@ -110,6 +110,17 @@ const data = {
                     defaultValueHex: "#000000",
                 },
             ]
+        },
+        {
+            title: "Output",
+            controls: [
+                {
+                    type: Demopage.supportedControls.FileDownload,
+                    id: "result-download-id",
+                    label: "Download as SVG",
+                    flat: true
+                }
+            ]
         }
     ]
 };

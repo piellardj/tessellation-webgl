@@ -11,9 +11,12 @@ const controlId = {
     COLOR_VARIATION_RANGE_ID: "color-variation-range-id",
     ZOOMING_SPEED_RANGE_ID: "zooming-speed-range-id",
     RESET_BUTTON_ID: "reset-button-id",
+
     DISPLAY_LINES_CHECKBOX_ID: "display-lines-checkbox-id",
     THICKNESS_RANGE_ID: "thickness-range-id",
     LINES_COLOR_PICKER_ID: "lines-color-picker-id",
+
+    DOWNLOAD_BUTTON: "result-download-id",
 };
 
 enum EPrimitive {
@@ -35,6 +38,8 @@ abstract class Parameters {
     public static readonly resetObservers: Observer[] = [];
     public static readonly recomputeColorsObservers: Observer[] = [];
     public static readonly redrawObservers: Observer[] = [];
+    public static readonly downloadObservers: Observer[] = [];
+
     public static readonly debugMode: boolean = hasUrlParameter("debug");
 
     public static get primitive(): EPrimitive {
@@ -106,6 +111,8 @@ Page.Checkbox.addObserver(controlId.DISPLAY_LINES_CHECKBOX_ID, callRedraw);
 Page.Canvas.Observers.canvasResize.push(callRedraw);
 Page.Range.addObserver(controlId.THICKNESS_RANGE_ID, callRedraw);
 Page.ColorPicker.addObserver(controlId.LINES_COLOR_PICKER_ID, callRedraw);
+
+Page.FileControl.addDownloadObserver(controlId.DOWNLOAD_BUTTON, () => { callObservers(Parameters.downloadObservers); });
 
 export {
     EPrimitive,

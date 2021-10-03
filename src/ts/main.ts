@@ -1,10 +1,12 @@
 import { Engine } from "./engine/engine";
 import { EngineBase } from "./engine/engine-base";
 import { EngineVisibilityTest } from "./engine/engine-visibility-test";
+import { downloadTextFile } from "./misc/utils";
 import { Zooming } from "./misc/zooming";
 import { Parameters } from "./parameters";
 import { PlotterBase } from "./plotter/plotter-base";
 import { PlotterCanvas2D } from "./plotter/plotter-canvas-2d";
+import { PlotterSVG } from "./plotter/plotter-svg";
 import { PlotterWebGL } from "./plotter/plotter-webgl";
 
 import "./page-interface-generated";
@@ -31,6 +33,14 @@ function main(): void {
 
     let needToRedraw = true;
     Parameters.redrawObservers.push(() => { needToRedraw = true; });
+
+    Parameters.downloadObservers.push(() => {
+        const svgPlotter = new PlotterSVG();
+        engine.draw(svgPlotter);
+        const fileName = "subdivisions.svg";
+        const svgString = svgPlotter.finalize();
+        downloadTextFile(fileName, svgString);
+    });
 
     let lastUpdateTimestamp = performance.now();
     function mainLoop(): void {
