@@ -161,7 +161,10 @@ class Engine extends EngineBase {
     private changeRootPrimitiveInNeeded(): boolean {
         if (this.rootPrimitive.children.length === 1) {
             this.rootPrimitive = this.rootPrimitive.children[0];
-            console.log("root changed");
+
+            if (Parameters.debugMode) {
+                console.log("root changed");
+            }
             return true;
         }
         return false;
