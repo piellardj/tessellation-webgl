@@ -1,15 +1,16 @@
 import { Color } from "../misc/color";
+import { Rectangle } from "../misc/rectangle";
 import { EPrimitive, Parameters } from "../parameters";
+import { ILinesBatch, IPolygon, Line, PlotterBase } from "../plotter/plotter-base";
 import { EVisibility, PrimitiveBase } from "../primitives/primitive-base";
 import { PrimitiveQuads } from "../primitives/primitive-quads";
-import { Rectangle } from "../misc/rectangle";
 import { PrimitiveTriangles } from "../primitives/primitives-triangles";
-import { ILinesBatch, IPolygon, Line, PlotterBase } from "../plotter/plotter-base";
+import { EngineBase } from "./engine-base";
 
 import "../page-interface-generated";
 
 
-class EngineVisibilityTest {
+class EngineVisibilityTest extends EngineBase {
     private readonly testWindow: Rectangle;
     private readonly testWindowBaseWidth: number = 300;
     private readonly testWindowBaseHeight: number = 120;
@@ -24,6 +25,8 @@ class EngineVisibilityTest {
     private lastLineIntersectingStatus: boolean | null = null;
 
     public constructor() {
+        super();
+
         this.testWindow = new Rectangle(0, 0, 0, 0);
 
         this.reset();

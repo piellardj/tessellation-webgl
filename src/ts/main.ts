@@ -1,4 +1,5 @@
 import { Engine } from "./engine/engine";
+import { EngineBase } from "./engine/engine-base";
 import { EngineVisibilityTest } from "./engine/engine-visibility-test";
 import { Zooming } from "./misc/zooming";
 import { Parameters } from "./parameters";
@@ -16,7 +17,7 @@ function createEngine(plotter: PlotterCanvas2D): Engine {
 
 function main(): void {
     const plotter = new PlotterCanvas2D();
-    const engine = Parameters.debugMode ? new EngineVisibilityTest() : createEngine(plotter);
+    const engine: EngineBase = Parameters.debugMode ? new EngineVisibilityTest() : createEngine(plotter);
     const zooming = new Zooming({ x: 0, y: 0 }, 0.2);
 
     Parameters.resetObservers.push(() => {

@@ -6,11 +6,12 @@ import { ILinesBatch, PlotterBase } from "../plotter/plotter-base";
 import { EVisibility, PrimitiveBase } from "../primitives/primitive-base";
 import { PrimitiveQuads } from "../primitives/primitive-quads";
 import { PrimitiveTriangles } from "../primitives/primitives-triangles";
+import { EngineBase } from "./engine-base";
 
 
 type Layer = PrimitiveBase[];
 
-class Engine {
+class Engine extends EngineBase {
     private rootPrimitive: PrimitiveBase;
     private layers: Layer[];
     private linesBatches: ILinesBatch[];
@@ -18,6 +19,7 @@ class Engine {
     private lastLayerBirthTimestamp: number;
 
     public constructor() {
+        super();
         this.reset(new Rectangle(0, 512, 0, 512));
     }
 
