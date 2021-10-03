@@ -1,9 +1,9 @@
 import { Color } from "./misc/color";
 import { EPrimitive, Parameters } from "./parameters";
-import { ILinesBatch, IPolygon, Line, PlotterCanvas2D } from "./plotter/plotter-canvas-2d";
 import { EVisibility, Primitive } from "./primitives/primitive";
 import { PrimitiveQuads } from "./primitives/primitive-quads";
 import { Rectangle } from "./misc/rectangle";
+import { ILinesBatch, IPolygon, Line, Plotter } from "./plotter/plotter";
 
 import "./page-interface-generated";
 import { PrimitiveTriangles } from "./primitives/primitives-triangles";
@@ -112,21 +112,21 @@ class EngineVisibilityTest {
         }
     }
 
-    public draw(plotter: PlotterCanvas2D): void {
+    public draw(plotter: Plotter): void {
         plotter.initialize(Color.BLACK);
 
-        plotter.drawPolygons([this.primitivePolygon]);
+        plotter.drawPolygons([this.primitivePolygon], 1);
 
         plotter.drawLines([
             {
                 lines: [this.line],
                 thickness: 1,
             }
-        ], new Color(0, 255, 0));
+        ], new Color(0, 255, 0), 1);
         this.drawTestWindow(plotter);
     }
 
-    private drawTestWindow(plotter: PlotterCanvas2D): void {
+    private drawTestWindow(plotter: Plotter): void {
         const linesBatch: ILinesBatch = {
             lines: [[
                 this.testWindow.topLeft,
@@ -138,7 +138,7 @@ class EngineVisibilityTest {
             thickness: 1,
         };
 
-        plotter.drawLines([linesBatch], Color.WHITE);
+        plotter.drawLines([linesBatch], Color.WHITE, 1);
     }
 
 

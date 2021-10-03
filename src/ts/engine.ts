@@ -1,6 +1,6 @@
 import { Color } from "./misc/color";
 import { EPrimitive, Parameters } from "./parameters";
-import { ILinesBatch, PlotterCanvas2D } from "./plotter/plotter-canvas-2d";
+import { ILinesBatch, Plotter } from "./plotter/plotter";
 import { EVisibility, Primitive } from "./primitives/primitive";
 import { PrimitiveQuads } from "./primitives/primitive-quads";
 import { PrimitiveTriangles } from "./primitives/primitives-triangles";
@@ -27,7 +27,7 @@ class Engine {
         this.handleRecycling(viewport);
     }
 
-    public draw(plotter: PlotterCanvas2D): void {
+    public draw(plotter: Plotter): void {
         this.adjustLinesThickness();
 
         plotter.initialize(Color.BLACK);
@@ -46,12 +46,12 @@ class Engine {
             }
         }
 
-        plotter.drawPolygons(this.layers[lastSolidLayer]);
+        plotter.drawPolygons(this.layers[lastSolidLayer], 1);
         if (emergingLayer < this.layers.length) {
             plotter.drawPolygons(this.layers[emergingLayer], emergingLayerAlpha);
         }
 
-        plotter.drawLines(this.linesBatches.slice(0, emergingLayer), Parameters.linesColor);
+        plotter.drawLines(this.linesBatches.slice(0, emergingLayer), Parameters.linesColor, 1);
         if (emergingLayer < this.linesBatches.length) {
             plotter.drawLines([this.linesBatches[emergingLayer]], Parameters.linesColor, emergingLayerAlpha);
         }
