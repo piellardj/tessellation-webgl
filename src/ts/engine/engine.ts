@@ -55,7 +55,9 @@ class Engine extends EngineBase {
             plotter.drawPolygons(this.layers[emergingLayer], emergingLayerAlpha);
         }
 
-        if (Parameters.displayLines) {
+        if (Parameters.displayLines && this.linesBatches.length > 0) {
+            this.linesBatches[0].lines.push(this.rootPrimitive.getOutline());
+
             plotter.drawLines(this.linesBatches.slice(0, emergingLayer), Parameters.linesColor, 1);
             if (emergingLayer < this.linesBatches.length) {
                 plotter.drawLines([this.linesBatches[emergingLayer]], Parameters.linesColor, emergingLayerAlpha);

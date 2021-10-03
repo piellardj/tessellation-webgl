@@ -4,6 +4,7 @@ import { Rectangle } from "../misc/rectangle";
 import * as Utils from "../misc/utils";
 import { Zooming } from "../misc/zooming";
 import { Parameters } from "../parameters";
+import { Line } from "../plotter/plotter-base";
 import { EVisibility, PrimitiveBase } from "./primitive-base";
 
 
@@ -15,6 +16,10 @@ class PrimitiveQuads extends PrimitiveBase {
         private readonly bottomRight: IPoint,
         color: Color) {
         super(color);
+    }
+
+    public getOutline(): Line {
+        return [this.topLeft, this.topRight, this.bottomRight, this.bottomLeft, this.topLeft];
     }
 
     public subdivide(): void {
