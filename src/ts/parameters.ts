@@ -96,8 +96,8 @@ abstract class Parameters {
         const canvasSize = Page.Canvas.getSize();
         const mousePosition = Page.Canvas.getMousePosition();
         return {
-            x: canvasSize[0] * mousePosition[0],
-            y: canvasSize[1] * mousePosition[1],
+            x: window.devicePixelRatio * canvasSize[0] * mousePosition[0],
+            y: window.devicePixelRatio * canvasSize[1] * mousePosition[1],
         };
     }
 }
