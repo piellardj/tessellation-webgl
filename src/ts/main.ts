@@ -5,6 +5,7 @@ import { Zooming } from "./misc/zooming";
 import { Parameters } from "./parameters";
 import { PlotterBase } from "./plotter/plotter-base";
 import { PlotterCanvas2D } from "./plotter/plotter-canvas-2d";
+import { PlotterWebGL } from "./plotter/plotter-webgl";
 
 import "./page-interface-generated";
 
@@ -17,7 +18,7 @@ function createEngine(plotter: PlotterBase): Engine {
 }
 
 function main(): void {
-    const plotter = new PlotterCanvas2D();
+    const plotter: PlotterBase = new PlotterWebGL() || new PlotterCanvas2D();
     const engine: EngineBase = Parameters.debugMode ? new EngineVisibilityTest() : createEngine(plotter);
     const zooming = new Zooming({ x: 0, y: 0 }, 0.2);
 
