@@ -2,7 +2,7 @@ import { Color } from "./misc/color";
 import { Rectangle } from "./misc/rectangle";
 import { Zooming } from "./misc/zooming";
 import { EPrimitive, Parameters } from "./parameters";
-import { ILinesBatch, Plotter } from "./plotter/plotter";
+import { ILinesBatch, PlotterBase } from "./plotter/plotter-base";
 import { EVisibility, Primitive } from "./primitives/primitive";
 import { PrimitiveQuads } from "./primitives/primitive-quads";
 import { PrimitiveTriangles } from "./primitives/primitives-triangles";
@@ -29,7 +29,7 @@ class Engine {
         return somethingChanged;
     }
 
-    public draw(plotter: Plotter): void {
+    public draw(plotter: PlotterBase): void {
         this.adjustLinesThickness();
 
         plotter.initialize(Color.BLACK);

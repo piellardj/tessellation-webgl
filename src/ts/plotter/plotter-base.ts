@@ -15,7 +15,7 @@ interface IPolygon {
     color: Color;
 }
 
-abstract class Plotter {
+abstract class PlotterBase {
     protected readonly canvas: HTMLCanvasElement;
     private readonly cssPixel: number;
 
@@ -65,5 +65,5 @@ export {
     Line,
     ILinesBatch,
     IPolygon,
-    Plotter,
+    PlotterBase,
 };

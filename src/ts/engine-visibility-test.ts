@@ -4,7 +4,7 @@ import { EVisibility, Primitive } from "./primitives/primitive";
 import { PrimitiveQuads } from "./primitives/primitive-quads";
 import { Rectangle } from "./misc/rectangle";
 import { PrimitiveTriangles } from "./primitives/primitives-triangles";
-import { ILinesBatch, IPolygon, Line, Plotter } from "./plotter/plotter";
+import { ILinesBatch, IPolygon, Line, PlotterBase } from "./plotter/plotter-base";
 
 import "./page-interface-generated";
 
@@ -114,7 +114,7 @@ class EngineVisibilityTest {
         return true;
     }
 
-    public draw(plotter: Plotter): void {
+    public draw(plotter: PlotterBase): void {
         plotter.initialize(Color.BLACK);
 
         plotter.drawPolygons([this.primitivePolygon], 1);
@@ -128,7 +128,7 @@ class EngineVisibilityTest {
         this.drawTestWindow(plotter);
     }
 
-    private drawTestWindow(plotter: Plotter): void {
+    private drawTestWindow(plotter: PlotterBase): void {
         const linesBatch: ILinesBatch = {
             lines: [[
                 this.testWindow.topLeft,

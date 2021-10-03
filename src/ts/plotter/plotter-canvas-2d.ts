@@ -1,10 +1,10 @@
 import { Color } from "../misc/color";
-import { ILinesBatch, IPolygon, Plotter } from "./plotter";
+import { ILinesBatch, IPolygon, PlotterBase } from "./plotter-base";
 
 import "../page-interface-generated";
 
 
-class PlotterCanvas2D extends Plotter {
+class PlotterCanvas2D extends PlotterBase {
     private readonly context: CanvasRenderingContext2D;
 
     public constructor() {

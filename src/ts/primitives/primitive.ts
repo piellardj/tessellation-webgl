@@ -1,5 +1,5 @@
 import { Color } from "../misc/color";
-import { IPolygon } from "../plotter/plotter";
+import { IPolygon } from "../plotter/plotter-base";
 import { IPoint } from "../misc/point";
 import { Rectangle } from "../misc/rectangle";
 import { Zooming } from "../misc/zooming";
