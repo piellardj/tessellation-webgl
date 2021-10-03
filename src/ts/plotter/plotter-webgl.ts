@@ -49,6 +49,10 @@ class PlotterWebGL extends PlotterBase {
         });
     }
 
+    public get isReady(): boolean {
+        return !!this.shaderLines && !!this.shaderPolygons;
+    }
+
     protected clearCanvas(color: Color): void {
         Viewport.setFullCanvas(gl);
         gl.clearColor(color.r, color.g, color.b, 1);

@@ -49,7 +49,7 @@ function main(): void {
             needToRedraw = true;
         }
 
-        if (needToRedraw) {
+        if (needToRedraw && plotter.isReady) {
             engine.draw(plotter);
             needToRedraw = false;
         }

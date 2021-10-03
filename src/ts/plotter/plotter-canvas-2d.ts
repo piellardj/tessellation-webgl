@@ -14,8 +14,10 @@ class PlotterCanvas2D extends PlotterBase {
         this.resizeCanvas();
     }
 
-        this.context.fillStyle = "none";
-        this.context.strokeStyle = (alpha >= 1) ? color.toHexaString() : color.toRgbaString(alpha);
+    public get isReady(): boolean {
+        return true;
+    }
+
     public drawLines(linesBatches: ILinesBatch[], color: Color, alpha: number): void {
         if (alpha > 0 && linesBatches) {
             this.context.fillStyle = "none";

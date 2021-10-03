@@ -56,6 +56,7 @@ abstract class PlotterBase {
         this.clearCanvas(backgroundColor);
     }
 
+    public abstract get isReady(): boolean;
     protected abstract clearCanvas(color: Color): void;
     public abstract drawLines(linesBatches: ILinesBatch[], color: Color, alpha: number): void;
     public abstract drawPolygons(polygons: IPolygon[], alpha: number): void;
