@@ -25,6 +25,8 @@ function main(): void {
     Parameters.resetObservers.push(() => {
         plotter.resizeCanvas();
         engine.reset(plotter.viewport);
+        zooming.center.x = 0;
+        zooming.center.y = 0;
     });
 
     let needToRedraw = true;
