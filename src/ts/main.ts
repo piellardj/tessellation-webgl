@@ -3,12 +3,13 @@ import { EngineBase } from "./engine/engine-base";
 import { EngineVisibilityTest } from "./engine/engine-visibility-test";
 import { Zooming } from "./misc/zooming";
 import { Parameters } from "./parameters";
+import { PlotterBase } from "./plotter/plotter-base";
 import { PlotterCanvas2D } from "./plotter/plotter-canvas-2d";
 
 import "./page-interface-generated";
 
 
-function createEngine(plotter: PlotterCanvas2D): Engine {
+function createEngine(plotter: PlotterBase): Engine {
     const engine = new Engine();
     Parameters.recomputeColorsObservers.push(() => { engine.recomputeColors(); });
     engine.reset(plotter.viewport);
