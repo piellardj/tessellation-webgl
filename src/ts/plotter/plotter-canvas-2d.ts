@@ -14,9 +14,9 @@ class PlotterCanvas2D extends PlotterBase {
         this.resizeCanvas();
     }
 
-    public drawLines(linesBatches: ILinesBatch[], color: Color, alpha: number = 1): void {
         this.context.fillStyle = "none";
         this.context.strokeStyle = (alpha >= 1) ? color.toHexaString() : color.toRgbaString(alpha);
+    public drawLines(linesBatches: ILinesBatch[], color: Color, alpha: number): void {
 
         const halfWidth = 0.5 * this.width;
         const halfHeight = 0.5 * this.height;
@@ -38,8 +38,8 @@ class PlotterCanvas2D extends PlotterBase {
         }
     }
 
-    public drawPolygons(polygons: IPolygon[], alpha: number = 1): void {
         this.context.strokeStyle = "none";
+    public drawPolygons(polygons: IPolygon[], alpha: number): void {
 
         const halfWidth = 0.5 * this.width;
         const halfHeight = 0.5 * this.height;
