@@ -1,5 +1,7 @@
 import { Color } from "./misc/color";
 import { IPoint } from "./misc/point";
+import { getQueryStringValue, setQueryStringValue } from "./misc/utils";
+
 import "./page-interface-generated";
 
 
@@ -8,9 +10,11 @@ const controlId = {
     PRIMITIVE_TABS_ID: "primitive-tabs-id",
     DEPTH_RANGE_ID: "depth-range-id",
     BALANCE_RANGE_ID: "balance-range-id",
-    COLOR_VARIATION_RANGE_ID: "color-variation-range-id",
     ZOOMING_SPEED_RANGE_ID: "zooming-speed-range-id",
     RESET_BUTTON_ID: "reset-button-id",
+
+    PLOTTER_TABS_ID:"plotter-tabs-id",
+    COLOR_VARIATION_RANGE_ID: "color-variation-range-id",
 
     DISPLAY_LINES_CHECKBOX_ID: "display-lines-checkbox-id",
     THICKNESS_RANGE_ID: "thickness-range-id",
@@ -23,6 +27,12 @@ enum EPrimitive {
     QUADS = "quads",
     TRIANGLES = "triangles",
 }
+
+enum EPlotter {
+    WEBGL = "webgl",
+    CANVAS2D = "canvas2d",
+}
+const plotterQueryStringParamName = "plotter";
 
 type Observer = () => unknown;
 
@@ -41,6 +51,7 @@ abstract class Parameters {
     public static readonly downloadObservers: Observer[] = [];
 
     public static readonly debugMode: boolean = hasUrlParameter("debug");
+    public static readonly plotter: EPlotter = (getQueryStringValue(plotterQueryStringParamName) === EPlotter.CANVAS2D) ? EPlotter.CANVAS2D : EPlotter.WEBGL;
 
     public static get primitive(): EPrimitive {
         return Page.Tabs.getValues(controlId.PRIMITIVE_TABS_ID)[0] as EPrimitive;
@@ -54,20 +65,26 @@ abstract class Parameters {
         return Page.Range.getValue(controlId.BALANCE_RANGE_ID);
     }
 
+    public static get zoomingSpeed(): number {
+        return Page.Range.getValue(controlId.ZOOMING_SPEED_RANGE_ID);
+    }
+
+
     public static get colorVariation(): number {
         return 255 * Page.Range.getValue(controlId.COLOR_VARIATION_RANGE_ID);
     }
 
-    public static get zoomingSpeed(): number {
-        return Page.Range.getValue(controlId.ZOOMING_SPEED_RANGE_ID);
-    }
 
     public static get displayLines(): boolean {
         return Page.Checkbox.isChecked(controlId.DISPLAY_LINES_CHECKBOX_ID);
     }
 
     public static get thickness(): number {
-        return Page.Range.getValue(controlId.THICKNESS_RANGE_ID);
+        if (Parameters.plotter === EPlotter.CANVAS2D) {
+            return Page.Range.getValue(controlId.THICKNESS_RANGE_ID);
+        } else {
+            return 0;
+        }
     }
 
     public static get linesColor(): Color {
@@ -114,7 +131,17 @@ Page.ColorPicker.addObserver(controlId.LINES_COLOR_PICKER_ID, callRedraw);
 
 Page.FileControl.addDownloadObserver(controlId.DOWNLOAD_BUTTON, () => { callObservers(Parameters.downloadObservers); });
 
+Page.Controls.setVisibility(controlId.THICKNESS_RANGE_ID, Parameters.plotter === EPlotter.CANVAS2D);
+
+Page.Tabs.setValues(controlId.PLOTTER_TABS_ID, [Parameters.plotter]);
+Page.Tabs.addObserver(controlId.PLOTTER_TABS_ID, (values: string[]) => {
+    const wantedPlotter = (values[0] === EPlotter.CANVAS2D) ? EPlotter.CANVAS2D : EPlotter.WEBGL;
+    Page.Tabs.clearStoredState(controlId.PLOTTER_TABS_ID);
+    setQueryStringValue(plotterQueryStringParamName, wantedPlotter);
+});
+
 export {
+    EPlotter,
     EPrimitive,
     Parameters,
 };

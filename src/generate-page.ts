@@ -80,6 +80,23 @@ const data = {
             title: "Rendering",
             controls: [
                 {
+                    type: Demopage.supportedControls.Tabs,
+                    title: "Renderer",
+                    id: "plotter-tabs-id",
+                    unique: true,
+                    options: [
+                        {
+                            value: "webgl",
+                            label: "WebGL",
+                            checked: true
+                        },
+                        {
+                            value: "canvas2d",
+                            label: "Canvas2D"
+                        }
+                    ]
+                },
+                {
                     type: Demopage.supportedControls.Range,
                     title: "Color variation",
                     id: "color-variation-range-id",

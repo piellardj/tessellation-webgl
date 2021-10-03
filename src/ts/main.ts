@@ -3,7 +3,7 @@ import { EngineBase } from "./engine/engine-base";
 import { EngineVisibilityTest } from "./engine/engine-visibility-test";
 import { downloadTextFile } from "./misc/utils";
 import { Zooming } from "./misc/zooming";
-import { Parameters } from "./parameters";
+import { EPlotter, Parameters } from "./parameters";
 import { PlotterBase } from "./plotter/plotter-base";
 import { PlotterCanvas2D } from "./plotter/plotter-canvas-2d";
 import { PlotterSVG } from "./plotter/plotter-svg";
@@ -20,7 +20,7 @@ function createEngine(plotter: PlotterBase): Engine {
 }
 
 function main(): void {
-    const plotter: PlotterBase = new PlotterWebGL() || new PlotterCanvas2D();
+    const plotter: PlotterBase = (Parameters.plotter === EPlotter.CANVAS2D) ? new PlotterCanvas2D() : new PlotterWebGL();
     const engine: EngineBase = Parameters.debugMode ? new EngineVisibilityTest() : createEngine(plotter);
     const zooming = new Zooming({ x: 0, y: 0 }, 0.2);
 
@@ -54,6 +54,8 @@ function main(): void {
             zooming.center.x = mousePosition.x - 0.5 * plotter.width;
             zooming.center.y = mousePosition.y - 0.5 * plotter.height;
         }
+
+        plotter.resizeCanvas();
 
         if (engine.update(plotter.viewport, zooming)) {
             needToRedraw = true;

@@ -57,11 +57,46 @@ function downloadTextFile(fileName: string, content: string): void {
     }
 }
 
+function getQueryStringValue(name: string): string | null {
+    if (typeof URLSearchParams !== "undefined") {
+        const params = new URLSearchParams(window.location.search);
+        return params.get(name);
+    }
+
+    if (window.location.search.length > 0) {
+        const search = window.location.search.slice(1); // remove leading "?"
+        const words = search.split("&");
+        for (const word of words) {
+            const wantedPrefix = `${name}=`;
+            if (word.indexOf(wantedPrefix) === 0) {
+                const rawValue = word.substring(wantedPrefix.length);
+                return decodeURIComponent(rawValue);
+            }
+        }
+    }
+
+    return null;
+}
+
+function setQueryStringValue(name: string, value: string | null): void {
+    if (typeof URLSearchParams !== "undefined") {
+        const params = new URLSearchParams(window.location.search);
+        if (value === null) {
+            params.delete(name);
+        } else {
+            params.set(name, value);
+        }
+        window.location.search = params.toString();
+    }
+}
+
 export {
     areSameSign,
     downloadTextFile,
+    getQueryStringValue,
     getSide,
     interpolatePoint,
     random,
+    setQueryStringValue,
     squaredDistance,
 };
