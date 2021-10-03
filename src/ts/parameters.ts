@@ -1,6 +1,5 @@
 import { Color } from "./misc/color";
 import { IPoint } from "./misc/point";
-
 import "./page-interface-generated";
 
 

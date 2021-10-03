@@ -1,10 +1,11 @@
 import { Color } from "../misc/color";
-import { Parameters } from "../parameters";
 import { IPoint } from "../misc/point";
 import { Rectangle } from "../misc/rectangle";
-import { Zooming } from "../misc/zooming";
-import { EVisibility, Primitive } from "./primitive";
 import * as Utils from "../misc/utils";
+import { Zooming } from "../misc/zooming";
+import { Parameters } from "../parameters";
+import { EVisibility, Primitive } from "./primitive";
+
 
 class PrimitiveQuads extends Primitive {
     public constructor(

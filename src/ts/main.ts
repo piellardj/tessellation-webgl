@@ -1,8 +1,8 @@
 import { Engine } from "./engine";
 import { EngineVisibilityTest } from "./engine-visibility-test";
-import { PlotterCanvas2D } from "./plotter/plotter-canvas-2d";
-import { Parameters } from "./parameters";
 import { Zooming } from "./misc/zooming";
+import { Parameters } from "./parameters";
+import { PlotterCanvas2D } from "./plotter/plotter-canvas-2d";
 
 import "./page-interface-generated";
 

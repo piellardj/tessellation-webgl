@@ -2,6 +2,7 @@ import * as fs from "fs";
 import * as fse from "fs-extra";
 import * as path from "path";
 
+
 const SRC_DIR = path.resolve(__dirname, "shaders");
 const DST_DIR = path.resolve(__dirname, "..", "docs", "shaders");
 
@@ -35,9 +36,6 @@ function resolveIncludes(filepath: string): string {
 
     return processedStr;
 }
-
-
-
 
 function scanDirectory(directory: string): void {
     fse.ensureDirSync(path.join(DST_DIR, directory));

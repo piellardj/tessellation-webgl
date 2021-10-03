@@ -3,10 +3,10 @@ import { EPrimitive, Parameters } from "./parameters";
 import { EVisibility, Primitive } from "./primitives/primitive";
 import { PrimitiveQuads } from "./primitives/primitive-quads";
 import { Rectangle } from "./misc/rectangle";
+import { PrimitiveTriangles } from "./primitives/primitives-triangles";
 import { ILinesBatch, IPolygon, Line, Plotter } from "./plotter/plotter";
 
 import "./page-interface-generated";
-import { PrimitiveTriangles } from "./primitives/primitives-triangles";
 
 
 class EngineVisibilityTest {
@@ -140,8 +140,6 @@ class EngineVisibilityTest {
 
         plotter.drawLines([linesBatch], Color.WHITE, 1);
     }
-
-
 }
 
 export { EngineVisibilityTest };
