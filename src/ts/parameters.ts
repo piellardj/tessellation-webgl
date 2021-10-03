@@ -8,11 +8,12 @@ const controlId = {
     PRIMITIVE_TABS_ID: "primitive-tabs-id",
     DEPTH_RANGE_ID: "depth-range-id",
     BALANCE_RANGE_ID: "balance-range-id",
-    THICKNESS_RANGE_ID: "thickness-range-id",
     COLOR_VARIATION_RANGE_ID: "color-variation-range-id",
     ZOOMING_SPEED_RANGE_ID: "zooming-speed-range-id",
-    LINES_COLOR_PICKER_ID: "lines-color-picker-id",
     RESET_BUTTON_ID: "reset-button-id",
+    DISPLAY_LINES_CHECKBOX_ID: "display-lines-checkbox-id",
+    THICKNESS_RANGE_ID: "thickness-range-id",
+    LINES_COLOR_PICKER_ID: "lines-color-picker-id",
 };
 
 enum EPrimitive {
@@ -47,16 +48,20 @@ abstract class Parameters {
         return Page.Range.getValue(controlId.BALANCE_RANGE_ID);
     }
 
-    public static get thickness(): number {
-        return Page.Range.getValue(controlId.THICKNESS_RANGE_ID);
-    }
-
     public static get colorVariation(): number {
         return 255 * Page.Range.getValue(controlId.COLOR_VARIATION_RANGE_ID);
     }
 
     public static get zoomingSpeed(): number {
         return Page.Range.getValue(controlId.ZOOMING_SPEED_RANGE_ID);
+    }
+
+    public static get displayLines(): boolean {
+        return Page.Checkbox.isChecked(controlId.DISPLAY_LINES_CHECKBOX_ID);
+    }
+
+    public static get thickness(): number {
+        return Page.Range.getValue(controlId.THICKNESS_RANGE_ID);
     }
 
     public static get linesColor(): Color {

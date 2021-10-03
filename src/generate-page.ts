@@ -89,6 +89,12 @@ const data = {
             title: "Lines",
             controls: [
                 {
+                    type: Demopage.supportedControls.Checkbox,
+                    title: "Display lines",
+                    id: "display-lines-checkbox-id",
+                    checked: true
+                },
+                {
                     type: Demopage.supportedControls.Range,
                     title: "Thickness",
                     id: "thickness-range-id",
