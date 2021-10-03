@@ -34,6 +34,7 @@ function hasUrlParameter(parameter: string): boolean {
 abstract class Parameters {
     public static readonly resetObservers: Observer[] = [];
     public static readonly recomputeColorsObservers: Observer[] = [];
+    public static readonly redrawObservers: Observer[] = [];
     public static readonly debugMode: boolean = hasUrlParameter("debug");
 
     public static get primitive(): EPrimitive {
@@ -85,13 +86,26 @@ function callObservers(observers: Observer[]): void {
     }
 }
 
-const callReset = () => { callObservers(Parameters.resetObservers); };
+const callRedraw = () => { callObservers(Parameters.redrawObservers); };
+const callReset = () => {
+    callObservers(Parameters.resetObservers);
+    callRedraw();
+};
+
 Page.Range.addObserver(controlId.BALANCE_RANGE_ID, callReset);
 Page.Button.addObserver(controlId.RESET_BUTTON_ID, callReset);
 Page.Canvas.Observers.canvasResize.push(callReset);
 Page.Tabs.addObserver(controlId.PRIMITIVE_TABS_ID, callReset);
 
-Page.Range.addObserver(controlId.COLOR_VARIATION_RANGE_ID, () => { callObservers(Parameters.recomputeColorsObservers); });
+Page.Range.addObserver(controlId.COLOR_VARIATION_RANGE_ID, () => {
+    callObservers(Parameters.recomputeColorsObservers);
+    callRedraw();
+});
+
+Page.Checkbox.addObserver(controlId.DISPLAY_LINES_CHECKBOX_ID, callRedraw);
+Page.Canvas.Observers.canvasResize.push(callRedraw);
+Page.Range.addObserver(controlId.THICKNESS_RANGE_ID, callRedraw);
+Page.ColorPicker.addObserver(controlId.LINES_COLOR_PICKER_ID, callRedraw);
 
 export {
     EPrimitive,

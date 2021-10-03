@@ -28,8 +28,7 @@ function main(): void {
     });
 
     let needToRedraw = true;
-    Page.Canvas.Observers.canvasResize.push(() => { needToRedraw = true; });
-    Parameters.resetObservers.push(() => { needToRedraw = true; });
+    Parameters.redrawObservers.push(() => { needToRedraw = true; });
 
     let lastUpdateTimestamp = performance.now();
     function mainLoop(): void {
