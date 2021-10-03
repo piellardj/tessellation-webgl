@@ -105,7 +105,10 @@ class Engine extends EngineBase {
 
         if (changedRootPrimitive || prunedPrimitives) {
             this.rebuildLayersCollections();
-            console.log(`went from ${nbPrimitivesLastLayer} to ${this.layers[this.layers.length - 1].length}`);
+
+            if (Parameters.debugMode) {
+                console.log(`went from ${nbPrimitivesLastLayer} to ${this.layers[this.layers.length - 1].length}`);
+            }
             return true;
         }
         return false;
