@@ -4,10 +4,10 @@ import { Rectangle } from "../misc/rectangle";
 import * as Utils from "../misc/utils";
 import { Zooming } from "../misc/zooming";
 import { Parameters } from "../parameters";
-import { EVisibility, Primitive } from "./primitive";
+import { EVisibility, PrimitiveBase } from "./primitive-base";
 
 
-class PrimitiveTriangles extends Primitive {
+class PrimitiveTriangles extends PrimitiveBase {
     public constructor(
         private readonly p1: IPoint,
         private readonly p2: IPoint,

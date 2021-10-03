@@ -13,9 +13,9 @@ enum EVisibility {
     COVERS_VIEW,
 }
 
-abstract class Primitive implements IPolygon {
+abstract class PrimitiveBase implements IPolygon {
     public subdivision: Line | null = null;
-    public children: Primitive[] = [];
+    public children: PrimitiveBase[] = [];
     protected _color: Color;
 
     protected constructor(color: Color) {
@@ -48,5 +48,5 @@ abstract class Primitive implements IPolygon {
 
 export {
     EVisibility,
-    Primitive,
+    PrimitiveBase,
 };

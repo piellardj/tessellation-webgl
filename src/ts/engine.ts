@@ -3,15 +3,15 @@ import { Rectangle } from "./misc/rectangle";
 import { Zooming } from "./misc/zooming";
 import { EPrimitive, Parameters } from "./parameters";
 import { ILinesBatch, PlotterBase } from "./plotter/plotter-base";
-import { EVisibility, Primitive } from "./primitives/primitive";
+import { EVisibility, PrimitiveBase } from "./primitives/primitive-base";
 import { PrimitiveQuads } from "./primitives/primitive-quads";
 import { PrimitiveTriangles } from "./primitives/primitives-triangles";
 
 
-type Layer = Primitive[];
+type Layer = PrimitiveBase[];
 
 class Engine {
-    private rootPrimitive: Primitive;
+    private rootPrimitive: PrimitiveBase;
     private layers: Layer[];
     private linesBatches: ILinesBatch[];
 
@@ -162,7 +162,7 @@ class Engine {
         return false;
     }
 
-    private prunePrimitivesOutOfView(primitive: Primitive, viewport: Rectangle): boolean {
+    private prunePrimitivesOutOfView(primitive: PrimitiveBase, viewport: Rectangle): boolean {
         let changedSomething = false;
 
         for (let iC = primitive.children.length - 1; iC >= 0; iC--) {

@@ -1,6 +1,6 @@
 import { Color } from "./misc/color";
 import { EPrimitive, Parameters } from "./parameters";
-import { EVisibility, Primitive } from "./primitives/primitive";
+import { EVisibility, PrimitiveBase } from "./primitives/primitive-base";
 import { PrimitiveQuads } from "./primitives/primitive-quads";
 import { Rectangle } from "./misc/rectangle";
 import { PrimitiveTriangles } from "./primitives/primitives-triangles";
@@ -16,7 +16,7 @@ class EngineVisibilityTest {
     private zoom: number = 1;
 
     private primitivePolygon: IPolygon;
-    private primitive: Primitive;
+    private primitive: PrimitiveBase;
 
     private readonly line: Line;
 
