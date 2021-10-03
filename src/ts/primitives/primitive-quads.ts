@@ -6,14 +6,7 @@ import { Zooming } from "../misc/zooming";
 import { EVisibility, Primitive } from "./primitive";
 import * as Utils from "../misc/utils";
 
-enum EOrientation {
-    VERTICAL,
-    HORIZONTAL,
-}
-
 class PrimitiveQuads extends Primitive {
-    private readonly subdivisionOrientation: EOrientation;
-
     public constructor(
         private readonly topLeft: IPoint,
         private readonly topRight: IPoint,
@@ -21,17 +14,6 @@ class PrimitiveQuads extends Primitive {
         private readonly bottomRight: IPoint,
         color: Color) {
         super(color);
-
-        const leftToRightDistance = Math.max(Utils.squaredDistance(topLeft, topRight), Utils.squaredDistance(bottomLeft, bottomRight));
-        const topToBottomDistance = Math.max(Utils.squaredDistance(topLeft, bottomLeft), Utils.squaredDistance(topRight, bottomRight));
-
-        if (leftToRightDistance > topToBottomDistance) {
-            this.subdivisionOrientation = EOrientation.VERTICAL;
-        } else {
-            this.subdivisionOrientation = EOrientation.HORIZONTAL;
-        }
-
-
     }
 
     public subdivide(): void {
@@ -42,7 +24,10 @@ class PrimitiveQuads extends Primitive {
         const rand1 = Utils.random(minRand, maxRand);
         const rand2 = Utils.random(minRand, maxRand);
 
-        if (this.subdivisionOrientation === EOrientation.VERTICAL) {
+        const leftToRightDistance = Math.max(Utils.squaredDistance(this.topLeft, this.topRight), Utils.squaredDistance(this.bottomLeft, this.bottomRight));
+        const topToBottomDistance = Math.max(Utils.squaredDistance(this.topLeft, this.bottomLeft), Utils.squaredDistance(this.topRight, this.bottomRight));
+
+        if (leftToRightDistance > topToBottomDistance) { // current is more wide than tall => subdivide vertically
             this.subdivision = [
                 Utils.interpolatePoint(this.topLeft, this.topRight, rand1),
                 Utils.interpolatePoint(this.bottomLeft, this.bottomRight, rand2),
@@ -52,7 +37,7 @@ class PrimitiveQuads extends Primitive {
                 new PrimitiveQuads(this.topLeft, this.subdivision[0], this.bottomLeft, this.subdivision[1], this.color.computeCloseColor()),
                 new PrimitiveQuads(this.subdivision[0], this.topRight, this.subdivision[1], this.bottomRight, this.color.computeCloseColor()),
             ];
-        } else {
+        } else { // current is more tall than wide => subdivide horizontally
             this.subdivision = [
                 Utils.interpolatePoint(this.topLeft, this.bottomLeft, rand1),
                 Utils.interpolatePoint(this.topRight, this.bottomRight, rand2),
