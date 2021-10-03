@@ -25,6 +25,7 @@ abstract class PlotterBase {
     protected constructor() {
         this.canvas = Page.Canvas.getCanvas();
         this.cssPixel = window.devicePixelRatio ?? 1;
+        this.resizeCanvas();
     }
 
     public get viewport(): Rectangle {

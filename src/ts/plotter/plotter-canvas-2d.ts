@@ -10,8 +10,6 @@ class PlotterCanvas2D extends PlotterBase {
     public constructor() {
         super();
         this.context = this.canvas.getContext("2d", { alpha: false });
-
-        this.resizeCanvas();
     }
 
     public get isReady(): boolean {

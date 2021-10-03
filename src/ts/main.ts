@@ -55,8 +55,6 @@ function main(): void {
             zooming.center.y = mousePosition.y - 0.5 * plotter.height;
         }
 
-        plotter.resizeCanvas();
-
         if (engine.update(plotter.viewport, zooming)) {
             needToRedraw = true;
         }
