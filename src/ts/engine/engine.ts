@@ -73,14 +73,14 @@ class Engine extends EngineBase {
                 { x: viewport.right, y: viewport.top },
                 { x: viewport.left, y: viewport.bottom },
                 { x: viewport.right, y: viewport.bottom },
-                Color.random(),
+                this.computeRootPrimitiveColor(),
             );
         } else {
             this.rootPrimitive = new PrimitiveTriangles(
                 { x: viewport.left, y: viewport.bottom },
                 { x: viewport.right, y: viewport.bottom },
                 { x: 0, y: viewport.top },
-                Color.random(),
+                this.computeRootPrimitiveColor(),
             );
         }
 
@@ -90,7 +90,33 @@ class Engine extends EngineBase {
     }
 
     public recomputeColors(): void {
-        this.rootPrimitive.color = Color.random();
+        this.rootPrimitive.color = this.computeRootPrimitiveColor();
+    }
+
+    private computeRootPrimitiveColor(): Color {
+        const minLuminosity = 0.6;
+        const maxLuminosity = 0.9;
+        const maxNbTries = 10;
+
+        let bestColor = Color.random();
+
+        for (let iTry = 0; iTry < maxNbTries; iTry++) {
+            const luminosity = bestColor.luminosity;
+            if (luminosity < minLuminosity) {
+                const newCandidate = Color.random();
+                if (newCandidate.luminosity > luminosity) {
+                    bestColor = newCandidate;
+                }
+            } else if (luminosity > maxLuminosity) {
+                const newCandidate = Color.random();
+                if (newCandidate.luminosity < luminosity) {
+                    bestColor = newCandidate;
+                }
+            } else {
+                break;
+            }
+        }
+        return bestColor;
     }
 
     private handleZoom(zooming: Zooming): boolean {

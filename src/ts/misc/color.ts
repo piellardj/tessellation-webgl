@@ -60,6 +60,10 @@ class Color {
         );
     }
 
+    public get luminosity(): number {
+        return (0.299 * this.r + 0.587 * this.g + 0.114 * this.b) / 255;
+    }
+
     private static randomChannel(): number {
         return Math.floor(256 * Math.random());
     }
