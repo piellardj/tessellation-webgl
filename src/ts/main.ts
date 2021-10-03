@@ -24,6 +24,10 @@ function main(): void {
         engine.reset(plotter.viewport);
     });
 
+    let needToRedraw = true;
+    Page.Canvas.Observers.canvasResize.push(() => { needToRedraw = true; });
+    Parameters.resetObservers.push(() => { needToRedraw = true; });
+
     let lastUpdateTimestamp = performance.now();
     function mainLoop(): void {
         const now = performance.now();
@@ -37,8 +41,14 @@ function main(): void {
             zooming.center.y = mousePosition.y - 0.5 * plotter.height;
         }
 
-        engine.update(plotter.viewport, zooming);
-        engine.draw(plotter);
+        if (engine.update(plotter.viewport, zooming)) {
+            needToRedraw = true;
+        }
+
+        if (needToRedraw) {
+            engine.draw(plotter);
+            needToRedraw = false;
+        }
 
         requestAnimationFrame(mainLoop);
     }

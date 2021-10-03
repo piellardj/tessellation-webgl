@@ -82,7 +82,7 @@ class EngineVisibilityTest {
         this.lastLineIntersectingStatus = null;
     }
 
-    public update(): void {
+    public update(): boolean {
         const canvasSize = Page.Canvas.getSize();
         const mousePosition = Parameters.mousePositionInPixels;
         mousePosition.x -= 0.5 * canvasSize[0];
@@ -110,6 +110,8 @@ class EngineVisibilityTest {
             console.log("Line intersection: " + newLineIntersectionStatus);
             this.lastLineIntersectingStatus = newLineIntersectionStatus;
         }
+
+        return true;
     }
 
     public draw(plotter: Plotter): void {

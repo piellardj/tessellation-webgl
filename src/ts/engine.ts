@@ -21,10 +21,12 @@ class Engine {
         this.reset(new Rectangle(0, 512, 0, 512));
     }
 
-    public update(viewport: Rectangle, zooming: Zooming): void {
-        this.adjustLayersCount();
-        this.handleZoom(zooming);
-        this.handleRecycling(viewport);
+    public update(viewport: Rectangle, zooming: Zooming): boolean {
+        let somethingChanged = false;
+        somethingChanged = this.adjustLayersCount() || somethingChanged;
+        somethingChanged = this.handleZoom(zooming) || somethingChanged;
+        somethingChanged = this.handleRecycling(viewport) || somethingChanged;
+        return somethingChanged;
     }
 
     public draw(plotter: Plotter): void {
@@ -85,11 +87,15 @@ class Engine {
         this.rootPrimitive.color = Color.random();
     }
 
-    private handleZoom(zooming: Zooming): void {
-        this.rootPrimitive.zoom(zooming, true);
+    private handleZoom(zooming: Zooming): boolean {
+        if (zooming.speed !== 0) {
+            this.rootPrimitive.zoom(zooming, true);
+            return true;
+        }
+        return false;
     }
 
-    private handleRecycling(viewport: Rectangle): void {
+    private handleRecycling(viewport: Rectangle): boolean {
         const nbPrimitivesLastLayer = this.layers[this.layers.length - 1].length;
 
         const prunedPrimitives = this.prunePrimitivesOutOfView(this.rootPrimitive, viewport);
@@ -98,10 +104,12 @@ class Engine {
         if (changedRootPrimitive || prunedPrimitives) {
             this.rebuildLayersCollections();
             console.log(`went from ${nbPrimitivesLastLayer} to ${this.layers[this.layers.length - 1].length}`);
+            return true;
         }
+        return false;
     }
 
-    private adjustLayersCount(): void {
+    private adjustLayersCount(): boolean {
         const lastLayer = this.layers[this.layers.length - 1];
         const idealPrimitivesCountForLastLayer = Math.pow(2, Parameters.depth - 1);
         const currentPrimitivesCountForLastLayer = lastLayer.length;
@@ -130,7 +138,11 @@ class Engine {
             }
             this.layers.pop();
             this.linesBatches.pop();
+        } else { // nothing to do
+            return false;
         }
+
+        return true;
     }
 
     private adjustLinesThickness(): void {
