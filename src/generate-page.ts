@@ -62,15 +62,6 @@ const data = {
                 },
                 {
                     type: Demopage.supportedControls.Range,
-                    title: "Thickness",
-                    id: "thickness-range-id",
-                    min: 0,
-                    max: 10,
-                    value: 3,
-                    step: 0.1
-                },
-                {
-                    type: Demopage.supportedControls.Range,
                     title: "Color variation",
                     id: "color-variation-range-id",
                     min: 0,
@@ -88,15 +79,29 @@ const data = {
                     step: 0.1
                 },
                 {
+                    type: Demopage.supportedControls.Button,
+                    label: "Reset",
+                    id: "reset-button-id",
+                },
+            ]
+        },
+        {
+            title: "Lines",
+            controls: [
+                {
+                    type: Demopage.supportedControls.Range,
+                    title: "Thickness",
+                    id: "thickness-range-id",
+                    min: 0,
+                    max: 10,
+                    value: 3,
+                    step: 0.1
+                },
+                {
                     type: Demopage.supportedControls.ColorPicker,
                     title: "Lines color",
                     id: "lines-color-picker-id",
                     defaultValueHex: "#000000",
-                },
-                {
-                    type: Demopage.supportedControls.Button,
-                    label: "Reset",
-                    id: "reset-button-id",
                 },
             ]
         }
