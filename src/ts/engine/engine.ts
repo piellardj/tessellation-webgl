@@ -1,11 +1,11 @@
-import { Color } from "./misc/color";
-import { Rectangle } from "./misc/rectangle";
-import { Zooming } from "./misc/zooming";
-import { EPrimitive, Parameters } from "./parameters";
-import { ILinesBatch, PlotterBase } from "./plotter/plotter-base";
-import { EVisibility, PrimitiveBase } from "./primitives/primitive-base";
-import { PrimitiveQuads } from "./primitives/primitive-quads";
-import { PrimitiveTriangles } from "./primitives/primitives-triangles";
+import { Color } from "../misc/color";
+import { Rectangle } from "../misc/rectangle";
+import { Zooming } from "../misc/zooming";
+import { EPrimitive, Parameters } from "../parameters";
+import { ILinesBatch, PlotterBase } from "../plotter/plotter-base";
+import { EVisibility, PrimitiveBase } from "../primitives/primitive-base";
+import { PrimitiveQuads } from "../primitives/primitive-quads";
+import { PrimitiveTriangles } from "../primitives/primitives-triangles";
 
 
 type Layer = PrimitiveBase[];

@@ -1,12 +1,12 @@
-import { Color } from "./misc/color";
-import { EPrimitive, Parameters } from "./parameters";
-import { EVisibility, PrimitiveBase } from "./primitives/primitive-base";
-import { PrimitiveQuads } from "./primitives/primitive-quads";
-import { Rectangle } from "./misc/rectangle";
-import { PrimitiveTriangles } from "./primitives/primitives-triangles";
-import { ILinesBatch, IPolygon, Line, PlotterBase } from "./plotter/plotter-base";
+import { Color } from "../misc/color";
+import { EPrimitive, Parameters } from "../parameters";
+import { EVisibility, PrimitiveBase } from "../primitives/primitive-base";
+import { PrimitiveQuads } from "../primitives/primitive-quads";
+import { Rectangle } from "../misc/rectangle";
+import { PrimitiveTriangles } from "../primitives/primitives-triangles";
+import { ILinesBatch, IPolygon, Line, PlotterBase } from "../plotter/plotter-base";
 
-import "./page-interface-generated";
+import "../page-interface-generated";
 
 
 class EngineVisibilityTest {

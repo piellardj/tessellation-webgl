@@ -1,5 +1,5 @@
-import { Engine } from "./engine";
-import { EngineVisibilityTest } from "./engine-visibility-test";
+import { Engine } from "./engine/engine";
+import { EngineVisibilityTest } from "./engine/engine-visibility-test";
 import { Zooming } from "./misc/zooming";
 import { Parameters } from "./parameters";
 import { PlotterCanvas2D } from "./plotter/plotter-canvas-2d";
