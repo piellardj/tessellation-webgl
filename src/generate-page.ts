@@ -62,15 +62,6 @@ const data = {
                 },
                 {
                     type: Demopage.supportedControls.Range,
-                    title: "Color variation",
-                    id: "color-variation-range-id",
-                    min: 0,
-                    max: 1,
-                    value: 0.3,
-                    step: 0.05
-                },
-                {
-                    type: Demopage.supportedControls.Range,
                     title: "Zooming speed",
                     id: "zooming-speed-range-id",
                     min: 0,
@@ -82,6 +73,20 @@ const data = {
                     type: Demopage.supportedControls.Button,
                     label: "Reset",
                     id: "reset-button-id",
+                },
+            ]
+        },
+        {
+            title: "Rendering",
+            controls: [
+                {
+                    type: Demopage.supportedControls.Range,
+                    title: "Color variation",
+                    id: "color-variation-range-id",
+                    min: 0,
+                    max: 1,
+                    value: 0.3,
+                    step: 0.05
                 },
             ]
         },
