@@ -47,10 +47,19 @@ abstract class PrimitiveBase extends TreeNode implements IPolygon {
         return result;
     }
 
+    public zoom(zooming: Zooming, isRoot: boolean): void {
+        this.applyZoom(zooming, isRoot);
+
+        const children = this.getDirectChildren() as PrimitiveBase[];
+        for (const child of children) {
+            child.zoom(zooming, false);
+        }
+    }
+
     public abstract subdivide(): void;
     public abstract get vertices(): IPoint[];
 
-    public abstract zoom(zooming: Zooming, isRoot: boolean): void;
+    public abstract applyZoom(zooming: Zooming, isRoot: boolean): void;
     public abstract computeVisibility(viewport: Rectangle): EVisibility;
 }
 

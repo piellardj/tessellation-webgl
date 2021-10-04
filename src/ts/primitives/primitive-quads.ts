@@ -55,7 +55,7 @@ class PrimitiveQuads extends PrimitiveBase {
         return [this.topLeft, this.topRight, this.bottomRight, this.bottomLeft];
     }
 
-    public zoom(zooming: Zooming, isRoot: boolean): void {
+    public applyZoom(zooming: Zooming, isRoot: boolean): void {
         if (isRoot) {
             zooming.applyToPoint(this.topLeft);
             zooming.applyToPoint(this.topRight);
@@ -67,11 +67,6 @@ class PrimitiveQuads extends PrimitiveBase {
             for (const point of this.subdivision) {
                 zooming.applyToPoint(point);
             }
-        }
-
-        const children = this.getDirectChildren() as PrimitiveBase[];
-        for (const child of children) {
-            child.zoom(zooming, false);
         }
     }
 

@@ -51,7 +51,7 @@ class PrimitiveTriangles extends PrimitiveBase {
         return [this.p1, this.p2, this.p3];
     }
 
-    public zoom(zooming: Zooming, isRoot: boolean): void {
+    public applyZoom(zooming: Zooming, isRoot: boolean): void {
         if (isRoot) {
             zooming.applyToPoint(this.p1);
             zooming.applyToPoint(this.p2);
@@ -60,11 +60,6 @@ class PrimitiveTriangles extends PrimitiveBase {
 
         if (this.subdivision) {
             zooming.applyToPoint(this.subdivision[1]);
-        }
-
-        const children = this.getDirectChildren() as PrimitiveBase[];
-        for (const child of children) {
-            child.zoom(zooming, false);
         }
     }
 
