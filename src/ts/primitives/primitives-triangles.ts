@@ -4,7 +4,6 @@ import { Rectangle } from "../misc/rectangle";
 import * as Utils from "../misc/utils";
 import { Zooming } from "../misc/zooming";
 import { Parameters } from "../parameters";
-import { Line } from "../plotter/plotter-base";
 import { EVisibility, PrimitiveBase } from "./primitive-base";
 
 
@@ -15,10 +14,6 @@ class PrimitiveTriangles extends PrimitiveBase {
         private readonly p3: IPoint,
         color: Color) {
         super(color);
-    }
-
-    public getOutline(): Line {
-        return [this.p1, this.p2, this.p3, this.p1];
     }
 
     public subdivide(): void {

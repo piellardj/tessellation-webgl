@@ -39,7 +39,11 @@ abstract class PrimitiveBase implements IPolygon {
         this.subdivision = null;
     }
 
-    public abstract getOutline(): Line;
+    public getOutline(): Line {
+        const result = this.points;
+        result.push(result[0]);
+        return result;
+    }
 
     public abstract subdivide(): void;
     public abstract get points(): IPoint[];
