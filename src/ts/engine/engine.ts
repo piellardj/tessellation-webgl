@@ -1,5 +1,6 @@
 import { Color } from "../misc/color";
 import { Rectangle } from "../misc/rectangle";
+import { Throttle } from "../misc/throttle";
 import { Zooming } from "../misc/zooming";
 import { EPrimitive, Parameters } from "../parameters";
 import { ILinesBatch, Line, PlotterBase } from "../plotter/plotter-base";
@@ -18,16 +19,24 @@ class Engine extends EngineBase {
 
     private lastLayerBirthTimestamp: number;
 
+    private readonly maintainanceThrottle: Throttle;
+
     public constructor() {
         super();
         this.reset(new Rectangle(0, 512, 0, 512));
+        this.maintainanceThrottle = new Throttle(100);
     }
 
     public update(viewport: Rectangle, zooming: Zooming): boolean {
         let somethingChanged = false;
-        somethingChanged = this.adjustLayersCount() || somethingChanged;
         somethingChanged = this.handleZoom(zooming) || somethingChanged;
-        somethingChanged = this.handleRecycling(viewport) || somethingChanged;
+
+        // don't do maintainance too often because it is costly
+        this.maintainanceThrottle.runIfAvailable(() => {
+            somethingChanged = this.adjustLayersCount() || somethingChanged;
+            somethingChanged = this.handleRecycling(viewport) || somethingChanged;
+        });
+
         return somethingChanged;
     }
 
