@@ -98,28 +98,28 @@ class PlotterWebGL extends PlotterBase {
         if (this.shaderPolygons && alpha > 0 && polygons) {
             const vertexData: number[] = [];
             for (const polygon of polygons) {
-                if (polygon.points.length >= 3) {
+                if (polygon.vertices.length >= 3) {
                     const red = polygon.color.r / 255;
                     const green = polygon.color.g / 255;
                     const blue = polygon.color.b / 255;
 
-                    for (let iP = 1; iP < polygon.points.length - 1; iP++) {
-                        vertexData.push(polygon.points[0].x);
-                        vertexData.push(polygon.points[0].y);
+                    for (let iP = 1; iP < polygon.vertices.length - 1; iP++) {
+                        vertexData.push(polygon.vertices[0].x);
+                        vertexData.push(polygon.vertices[0].y);
                         vertexData.push(red);
                         vertexData.push(green);
                         vertexData.push(blue);
                         vertexData.push(alpha);
 
-                        vertexData.push(polygon.points[iP].x);
-                        vertexData.push(polygon.points[iP].y);
+                        vertexData.push(polygon.vertices[iP].x);
+                        vertexData.push(polygon.vertices[iP].y);
                         vertexData.push(red);
                         vertexData.push(green);
                         vertexData.push(blue);
                         vertexData.push(alpha);
 
-                        vertexData.push(polygon.points[iP + 1].x);
-                        vertexData.push(polygon.points[iP + 1].y);
+                        vertexData.push(polygon.vertices[iP + 1].x);
+                        vertexData.push(polygon.vertices[iP + 1].y);
                         vertexData.push(red);
                         vertexData.push(green);
                         vertexData.push(blue);

@@ -59,13 +59,13 @@ class PlotterSVG extends PlotterBase {
             const halfWidth = 0.5 * this.width;
             const halfHeight = 0.5 * this.height;
             for (const polygon of polygons) {
-                if (polygon.points.length >= 3) {
+                if (polygon.vertices.length >= 3) {
                     const path: string[] = [];
 
-                    if (polygon.points.length >= 3) {
-                        path.push(`M${polygon.points[0].x + halfWidth} ${polygon.points[0].y + halfHeight}`);
-                        for (let iP = 1; iP < polygon.points.length; iP++) {
-                            path.push(`L${polygon.points[iP].x + halfWidth} ${polygon.points[iP].y + halfHeight}`);
+                    if (polygon.vertices.length >= 3) {
+                        path.push(`M${polygon.vertices[0].x + halfWidth} ${polygon.vertices[0].y + halfHeight}`);
+                        for (let iP = 1; iP < polygon.vertices.length; iP++) {
+                            path.push(`L${polygon.vertices[iP].x + halfWidth} ${polygon.vertices[iP].y + halfHeight}`);
                         }
                     }
 

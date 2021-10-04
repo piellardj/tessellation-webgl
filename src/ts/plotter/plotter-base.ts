@@ -11,7 +11,7 @@ interface ILinesBatch {
 }
 
 interface IPolygon {
-    points: IPoint[];
+    vertices: IPoint[];
     color: Color;
 }
 

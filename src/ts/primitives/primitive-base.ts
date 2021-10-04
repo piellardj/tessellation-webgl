@@ -40,13 +40,13 @@ abstract class PrimitiveBase implements IPolygon {
     }
 
     public getOutline(): Line {
-        const result = this.points;
+        const result = this.vertices;
         result.push(result[0]);
         return result;
     }
 
     public abstract subdivide(): void;
-    public abstract get points(): IPoint[];
+    public abstract get vertices(): IPoint[];
 
     public abstract zoom(zooming: Zooming, isRoot: boolean): void;
     public abstract computeVisibility(viewport: Rectangle): EVisibility;

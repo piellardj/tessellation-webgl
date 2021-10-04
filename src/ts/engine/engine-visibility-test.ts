@@ -49,7 +49,7 @@ class EngineVisibilityTest extends EngineBase {
         const primitiveType = Parameters.primitive;
         if (primitiveType === EPrimitive.QUADS) {
             this.primitivePolygon = {
-                points: [
+                vertices: [
                     { x: -150 * Math.random(), y: -150 * Math.random() }, // top left
                     { x: +150 * Math.random(), y: -150 * Math.random() }, // top right
                     { x: +150 * Math.random(), y: +150 * Math.random() }, // bottom right
@@ -58,15 +58,15 @@ class EngineVisibilityTest extends EngineBase {
                 color: new Color(255, 0, 0),
             };
             this.primitive = new PrimitiveQuads(
-                this.primitivePolygon.points[0], // top left
-                this.primitivePolygon.points[1], // top right
-                this.primitivePolygon.points[3], // bottom left
-                this.primitivePolygon.points[2], // bottom right
+                this.primitivePolygon.vertices[0], // top left
+                this.primitivePolygon.vertices[1], // top right
+                this.primitivePolygon.vertices[3], // bottom left
+                this.primitivePolygon.vertices[2], // bottom right
                 color,
             );
         } else {
             this.primitivePolygon = {
-                points: [
+                vertices: [
                     { x: -100 - 50 * Math.random(), y: -100 - 50 * Math.random() },
                     { x: +100 + 50 * Math.random(), y: -100 - 50 * Math.random() },
                     { x: +100 + 50 * (Math.random() - 0.5), y: +100 + 50 * Math.random() },
@@ -74,9 +74,9 @@ class EngineVisibilityTest extends EngineBase {
                 color: new Color(255, 0, 0),
             };
             this.primitive = new PrimitiveTriangles(
-                this.primitivePolygon.points[0],
-                this.primitivePolygon.points[1],
-                this.primitivePolygon.points[2],
+                this.primitivePolygon.vertices[0],
+                this.primitivePolygon.vertices[1],
+                this.primitivePolygon.vertices[2],
                 color,
             );
         }

@@ -46,7 +46,7 @@ class PrimitiveTriangles extends PrimitiveBase {
         }
     }
 
-    public get points(): IPoint[] {
+    public get vertices(): IPoint[] {
         return [this.p1, this.p2, this.p3];
     }
 

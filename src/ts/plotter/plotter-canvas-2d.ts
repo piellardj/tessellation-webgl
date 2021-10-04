@@ -49,13 +49,13 @@ class PlotterCanvas2D extends PlotterBase {
             const halfWidth = 0.5 * this.width;
             const halfHeight = 0.5 * this.height;
             for (const polygon of polygons) {
-                if (polygon.points.length >= 3) {
+                if (polygon.vertices.length >= 3) {
                     this.context.fillStyle = (alpha >= 1) ? polygon.color.toHexaString() : polygon.color.toRgbaString(alpha);
 
                     this.context.beginPath();
-                    this.context.moveTo(polygon.points[0].x + halfWidth, polygon.points[0].y + halfHeight);
-                    for (let iP = 1; iP < polygon.points.length; iP++) {
-                        this.context.lineTo(polygon.points[iP].x + halfWidth, polygon.points[iP].y + halfHeight);
+                    this.context.moveTo(polygon.vertices[0].x + halfWidth, polygon.vertices[0].y + halfHeight);
+                    for (let iP = 1; iP < polygon.vertices.length; iP++) {
+                        this.context.lineTo(polygon.vertices[iP].x + halfWidth, polygon.vertices[iP].y + halfHeight);
                     }
                     this.context.closePath();
                     this.context.fill();

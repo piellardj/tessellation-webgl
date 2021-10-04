@@ -51,7 +51,7 @@ class PrimitiveQuads extends PrimitiveBase {
         }
     }
 
-    public get points(): IPoint[] {
+    public get vertices(): IPoint[] {
         return [this.topLeft, this.topRight, this.bottomRight, this.bottomLeft];
     }
 
