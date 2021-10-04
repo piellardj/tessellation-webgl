@@ -36,21 +36,14 @@ const plotterQueryStringParamName = "plotter";
 
 type Observer = () => unknown;
 
-function hasUrlParameter(parameter: string): boolean {
-    if (typeof URLSearchParams !== "undefined") {
-        const searchParams = new URLSearchParams(window.location.search);
-        return searchParams.has(parameter);
-    }
-    return false;
-}
-
 abstract class Parameters {
     public static readonly resetObservers: Observer[] = [];
     public static readonly recomputeColorsObservers: Observer[] = [];
     public static readonly redrawObservers: Observer[] = [];
     public static readonly downloadObservers: Observer[] = [];
 
-    public static readonly debugMode: boolean = hasUrlParameter("debug");
+    public static readonly debugMode: boolean = (getQueryStringValue("debug") === "1");
+    public static readonly verbose: boolean = (getQueryStringValue("verbose") === "1");
     public static readonly plotter: EPlotter = (getQueryStringValue(plotterQueryStringParamName) === EPlotter.CANVAS2D) ? EPlotter.CANVAS2D : EPlotter.WEBGL;
 
     public static get primitive(): EPrimitive {

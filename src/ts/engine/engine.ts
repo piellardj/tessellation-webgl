@@ -145,7 +145,7 @@ class Engine extends EngineBase {
         if (changedRootPrimitive || prunedPrimitives) {
             this.rebuildLayersCollections();
 
-            if (Parameters.debugMode) {
+            if (Parameters.verbose) {
                 console.log(`went from ${nbPrimitivesLastLayer} to ${this.layers[this.layers.length - 1].length}`);
             }
             return true;
@@ -202,7 +202,7 @@ class Engine extends EngineBase {
         if (directChildrenOfRoot.length === 1) {
             this.rootPrimitive = directChildrenOfRoot[0] as PrimitiveBase;
 
-            if (Parameters.debugMode) {
+            if (Parameters.verbose) {
                 console.log("root changed");
             }
             return true;
