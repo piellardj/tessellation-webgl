@@ -60,43 +60,70 @@ class PlotterWebGL extends PlotterBase {
     }
 
     public drawLines(linesBatches: ILinesBatch[], color: Color, alpha: number): void {
-        if (this.shaderLines && alpha > 0 && linesBatches) {
-            const vertexData: number[] = [];
+        const FLOATS_PER_VERTICE = 2;
+        function buildBufferData(): Float32Array {
+            // optim: first, count vertices to be able to pre-reserve space
+            let nbVertices = 0;
             for (const linesBatch of linesBatches) {
                 for (const line of linesBatch.lines) {
                     if (line.length >= 2) {
-                        vertexData.push(line[0].x);
-                        vertexData.push(line[0].y);
-
-                        for (let iP = 1; iP < line.length - 1; iP++) {
-                            vertexData.push(line[iP].x);
-                            vertexData.push(line[iP].y);
-                            vertexData.push(line[iP].x);
-                            vertexData.push(line[iP].y);
-                        }
-
-                        vertexData.push(line[line.length - 1].x);
-                        vertexData.push(line[line.length - 1].y);
+                        nbVertices += 2 + 2 * (line.length - 2);
                     }
                 }
             }
 
-            if (vertexData.length > 0) {
-                const data = new Float32Array(vertexData);
-                this.linesVBO.setData(data);
+            const bufferData = new Float32Array(nbVertices * FLOATS_PER_VERTICE);
+            let i = 0;
+            for (const linesBatch of linesBatches) {
+                for (const line of linesBatch.lines) {
+                    if (line.length >= 2) {
+                        bufferData[i++] = line[0].x;
+                        bufferData[i++] = line[0].y;
+
+                        for (let iP = 1; iP < line.length - 1; iP++) {
+                            bufferData[i++] = line[iP].x;
+                            bufferData[i++] = line[iP].y;
+                            bufferData[i++] = line[iP].x;
+                            bufferData[i++] = line[iP].y;
+                        }
+
+                        bufferData[i++] = line[line.length - 1].x;
+                        bufferData[i++] = line[line.length - 1].y;
+                    }
+                }
+            }
+            return bufferData;
+        }
+
+        if (this.shaderLines && alpha > 0 && linesBatches) {
+            const bufferData = buildBufferData();
+
+            if (bufferData.length > 0) {
+                this.linesVBO.setData(bufferData);
                 this.shaderLines.u["uColor"].value = [color.r / 255, color.g / 255, color.b / 255, alpha];
                 this.shaderLines.u["uScreenSize"].value = [0.5 * this.width, -0.5 * this.height];
 
                 this.shaderLines.use();
                 this.shaderLines.bindUniformsAndAttributes();
-                gl.drawArrays(gl.LINES, 0, data.length / 2);
+                gl.drawArrays(gl.LINES, 0, bufferData.length / FLOATS_PER_VERTICE);
             }
         }
     }
 
     public drawPolygons(polygons: IPolygon[], alpha: number): void {
-        if (this.shaderPolygons && alpha > 0 && polygons) {
-            const vertexData: number[] = [];
+        const FLOATS_PER_VERTICE = 6;
+
+        function buildBufferData(): Float32Array {
+            // optim: first, count vertices to be able to pre-reserve space
+            let nbVertices = 0;
+            for (const polygon of polygons) {
+                if (polygon.vertices.length >= 3) {
+                    nbVertices += polygon.vertices.length;
+                }
+            }
+
+            const bufferData = new Float32Array(nbVertices * FLOATS_PER_VERTICE);
+            let i = 0;
             for (const polygon of polygons) {
                 if (polygon.vertices.length >= 3) {
                     const red = polygon.color.r / 255;
@@ -104,48 +131,52 @@ class PlotterWebGL extends PlotterBase {
                     const blue = polygon.color.b / 255;
 
                     for (let iP = 1; iP < polygon.vertices.length - 1; iP++) {
-                        vertexData.push(polygon.vertices[0].x);
-                        vertexData.push(polygon.vertices[0].y);
-                        vertexData.push(red);
-                        vertexData.push(green);
-                        vertexData.push(blue);
-                        vertexData.push(alpha);
+                        bufferData[i++] = polygon.vertices[0].x;
+                        bufferData[i++] = polygon.vertices[0].y;
+                        bufferData[i++] = red;
+                        bufferData[i++] = green;
+                        bufferData[i++] = blue;
+                        bufferData[i++] = alpha;
 
-                        vertexData.push(polygon.vertices[iP].x);
-                        vertexData.push(polygon.vertices[iP].y);
-                        vertexData.push(red);
-                        vertexData.push(green);
-                        vertexData.push(blue);
-                        vertexData.push(alpha);
+                        bufferData[i++] = polygon.vertices[iP].x;
+                        bufferData[i++] = polygon.vertices[iP].y;
+                        bufferData[i++] = red;
+                        bufferData[i++] = green;
+                        bufferData[i++] = blue;
+                        bufferData[i++] = alpha;
 
-                        vertexData.push(polygon.vertices[iP + 1].x);
-                        vertexData.push(polygon.vertices[iP + 1].y);
-                        vertexData.push(red);
-                        vertexData.push(green);
-                        vertexData.push(blue);
-                        vertexData.push(alpha);
+                        bufferData[i++] = polygon.vertices[iP + 1].x;
+                        bufferData[i++] = polygon.vertices[iP + 1].y;
+                        bufferData[i++] = red;
+                        bufferData[i++] = green;
+                        bufferData[i++] = blue;
+                        bufferData[i++] = alpha;
                     }
                 }
             }
+            return bufferData;
+        }
 
-            if (vertexData.length > 0) {
+        if (this.shaderPolygons && alpha > 0 && polygons) {
+            const bufferData = buildBufferData();
+
+            if (bufferData.length > 0) {
                 this.shaderPolygons.u["uScreenSize"].value = [0.5 * this.width, -0.5 * this.height];
 
                 this.shaderPolygons.use();
                 this.shaderPolygons.bindUniforms();
 
-                const data = new Float32Array(vertexData);
                 const BYTES_PER_FLOAT = 4;
                 const aPositionLoc = this.shaderPolygons.a["aPosition"].loc;
                 const aColorLoc = this.shaderPolygons.a["aColor"].loc;
                 gl.bindBuffer(gl.ARRAY_BUFFER, this.polygonsVBOId);
-                gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW);
+                gl.bufferData(gl.ARRAY_BUFFER, bufferData, gl.DYNAMIC_DRAW);
                 gl.enableVertexAttribArray(aPositionLoc);
-                gl.vertexAttribPointer(aPositionLoc, 2, gl.FLOAT, false, BYTES_PER_FLOAT * 6, 0);
+                gl.vertexAttribPointer(aPositionLoc, 2, gl.FLOAT, false, BYTES_PER_FLOAT * FLOATS_PER_VERTICE, 0);
                 gl.enableVertexAttribArray(aColorLoc);
-                gl.vertexAttribPointer(aColorLoc, 4, gl.FLOAT, false, BYTES_PER_FLOAT * 6, BYTES_PER_FLOAT * 2);
+                gl.vertexAttribPointer(aColorLoc, 4, gl.FLOAT, false, BYTES_PER_FLOAT * FLOATS_PER_VERTICE, BYTES_PER_FLOAT * 2);
 
-                gl.drawArrays(gl.TRIANGLES, 0, data.length / 6);
+                gl.drawArrays(gl.TRIANGLES, 0, bufferData.length / FLOATS_PER_VERTICE);
             }
         }
     }
