@@ -26,7 +26,7 @@ abstract class PrimitiveBase extends TreeNode implements IPolygon {
     public set color(color: Color) {
         this._color = color;
 
-        const children = this.children as PrimitiveBase[];
+        const children = this.getDirectChildren() as PrimitiveBase[];
         for (const child of children) {
             child.color = this.color.computeCloseColor();
         }
@@ -37,7 +37,7 @@ abstract class PrimitiveBase extends TreeNode implements IPolygon {
     }
 
     public removeChildren(): void {
-        this.children.length = 0;
+        super.removeChildren();
         this.subdivision = null;
     }
 

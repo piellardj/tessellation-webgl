@@ -18,7 +18,7 @@ class PrimitiveQuads extends PrimitiveBase {
     }
 
     public subdivide(): void {
-        this.children.length = 0;
+        this.removeChildren();
 
         const minRand = 0.5 * Parameters.balance;
         const maxRand = 1 - minRand;
@@ -34,16 +34,20 @@ class PrimitiveQuads extends PrimitiveBase {
                 Utils.interpolatePoint(this.bottomLeft, this.bottomRight, rand2),
             ];
 
-            this.children.push(new PrimitiveQuads(this.topLeft, this.subdivision[0], this.bottomLeft, this.subdivision[1], this.color.computeCloseColor()));
-            this.children.push(new PrimitiveQuads(this.subdivision[0], this.topRight, this.subdivision[1], this.bottomRight, this.color.computeCloseColor()));
+            this.addChildren(
+                new PrimitiveQuads(this.topLeft, this.subdivision[0], this.bottomLeft, this.subdivision[1], this.color.computeCloseColor()),
+                new PrimitiveQuads(this.subdivision[0], this.topRight, this.subdivision[1], this.bottomRight, this.color.computeCloseColor())
+            );
         } else { // current is more tall than wide => subdivide horizontally
             this.subdivision = [
                 Utils.interpolatePoint(this.topLeft, this.bottomLeft, rand1),
                 Utils.interpolatePoint(this.topRight, this.bottomRight, rand2),
             ];
 
-            this.children.push(new PrimitiveQuads(this.topLeft, this.topRight, this.subdivision[0], this.subdivision[1], this.color.computeCloseColor()));
-            this.children.push(new PrimitiveQuads(this.subdivision[0], this.subdivision[1], this.bottomLeft, this.bottomRight, this.color.computeCloseColor()));
+            this.addChildren(
+                new PrimitiveQuads(this.topLeft, this.topRight, this.subdivision[0], this.subdivision[1], this.color.computeCloseColor()),
+                new PrimitiveQuads(this.subdivision[0], this.subdivision[1], this.bottomLeft, this.bottomRight, this.color.computeCloseColor())
+            );
         }
     }
 
@@ -65,7 +69,7 @@ class PrimitiveQuads extends PrimitiveBase {
             }
         }
 
-        const children = this.children as PrimitiveBase[];
+        const children = this.getDirectChildren() as PrimitiveBase[];
         for (const child of children) {
             child.zoom(zooming, false);
         }

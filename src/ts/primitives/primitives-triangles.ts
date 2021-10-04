@@ -27,9 +27,11 @@ class PrimitiveTriangles extends PrimitiveBase {
                 Utils.interpolatePoint(otherPoint1, otherPoint2, rand),
             ];
 
-            this.children.length = 0;
-            this.children.push(new PrimitiveTriangles(sourcePoint, otherPoint1, this.subdivision[1], this.color.computeCloseColor()));
-            this.children.push(new PrimitiveTriangles(sourcePoint, this.subdivision[1], otherPoint2, this.color.computeCloseColor()));
+            this.removeChildren();
+            this.addChildren(
+                new PrimitiveTriangles(sourcePoint, otherPoint1, this.subdivision[1], this.color.computeCloseColor()),
+                new PrimitiveTriangles(sourcePoint, this.subdivision[1], otherPoint2, this.color.computeCloseColor())
+            );
         };
 
         const distance12 = Utils.squaredDistance(this.p1, this.p2);
@@ -60,7 +62,7 @@ class PrimitiveTriangles extends PrimitiveBase {
             zooming.applyToPoint(this.subdivision[1]);
         }
 
-        const children = this.children as PrimitiveBase[];
+        const children = this.getDirectChildren() as PrimitiveBase[];
         for (const child of children) {
             child.zoom(zooming, false);
         }

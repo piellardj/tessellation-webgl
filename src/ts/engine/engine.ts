@@ -2,7 +2,7 @@ import { Color } from "../misc/color";
 import { Rectangle } from "../misc/rectangle";
 import { Zooming } from "../misc/zooming";
 import { EPrimitive, Parameters } from "../parameters";
-import { ILinesBatch, PlotterBase } from "../plotter/plotter-base";
+import { ILinesBatch, Line, PlotterBase } from "../plotter/plotter-base";
 import { EVisibility, PrimitiveBase } from "../primitives/primitive-base";
 import { PrimitiveQuads } from "../primitives/primitive-quads";
 import { PrimitiveTriangles } from "../primitives/primitives-triangles";
@@ -160,7 +160,7 @@ class Engine extends EngineBase {
             for (const primitive of lastLayer) {
                 primitive.subdivide();
                 newLinesBatch.lines.push(primitive.subdivision);
-                newLayer = newLayer.concat(primitive.children as PrimitiveBase[]);
+                newLayer = newLayer.concat(primitive.getDirectChildren() as PrimitiveBase[]);
             }
 
             this.layers.push(newLayer);
@@ -189,8 +189,9 @@ class Engine extends EngineBase {
     }
 
     private changeRootPrimitiveInNeeded(): boolean {
-        if (this.rootPrimitive.children.length === 1) {
-            this.rootPrimitive = this.rootPrimitive.children[0] as PrimitiveBase;
+        const directChildrenOfRoot = this.rootPrimitive.getDirectChildren();
+        if (directChildrenOfRoot.length === 1) {
+            this.rootPrimitive = directChildrenOfRoot[0] as PrimitiveBase;
 
             if (Parameters.debugMode) {
                 console.log("root changed");
@@ -221,40 +222,25 @@ class Engine extends EngineBase {
     }
 
     private rebuildLayersCollections(): void {
-        this.layers = [[this.rootPrimitive]];
-        this.linesBatches = [];
-        if (this.rootPrimitive.subdivision) {
-            this.linesBatches.push({
-                lines: [this.rootPrimitive.subdivision],
-                thickness: 1,
-            });
+        const treeDepth = this.rootPrimitive.treeDepth();
+
+        this.layers = [];
+        for (let iDepth = 0; iDepth < treeDepth; iDepth++) {
+            const layerOfCurrentDepth = this.rootPrimitive.getChildrenOfDepth(iDepth);
+            this.layers.push(layerOfCurrentDepth as Layer);
         }
 
-        let newChildren = this.rootPrimitive.children.length > 0;
-        while (newChildren) {
-            let newLayer: Layer = [];
-            const newLinesBatch: ILinesBatch = {
-                lines: [],
+        this.linesBatches = [];
+        for (let iLayer = 0; iLayer < this.layers.length - 1; iLayer++) {
+            const lines: Line[] = [];
+            for (const primitive of this.layers[iLayer]) {
+                lines.push(primitive.subdivision);
+            }
+
+            this.linesBatches.push({
+                lines,
                 thickness: 1,
-            };
-
-            const lastLayer = this.layers[this.layers.length - 1];
-            for (const primitive of lastLayer) {
-                newLayer = newLayer.concat(primitive.children as PrimitiveBase[]);
-                if (primitive.subdivision) {
-                    newLinesBatch.lines.push(primitive.subdivision);
-                }
-            }
-
-            if (newLayer.length > 0) {
-                this.layers.push(newLayer);
-
-                if (newLinesBatch.lines.length > 0) {
-                    this.linesBatches.push(newLinesBatch);
-                }
-            } else {
-                newChildren = false;
-            }
+            });
         }
     }
 }
