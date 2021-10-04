@@ -1,6 +1,9 @@
 class TreeNode {
     private readonly children: TreeNode[] = [];
 
+    private subDepthsCache: TreeNode[][] = [];
+    private parent: TreeNode = null;
+
     public treeDepth(): number {
         if (this.children.length > 0) {
             return this.children[0].treeDepth() + 1;
@@ -15,38 +18,74 @@ class TreeNode {
     public getChildrenOfDepth(depth: number): TreeNode[] {
         if (depth < 0) {
             return [];
-        } else if (depth === 0) {
-            return [this];
         }
 
-        const result: TreeNode[] = [];
-        for (const child of this.children) {
-            const subchildren = child.getChildrenOfDepth(depth - 1);
-            if (subchildren.length > 0) {
-                Array.prototype.push.apply(result, subchildren);
+        if (typeof this.subDepthsCache[depth] !== "undefined") {
+            return this.subDepthsCache[depth];
+        }
+
+        // no cache => build it
+        let result: TreeNode[];
+        if (depth === 0) {
+            result = [this];
+        } else {
+            result = [];
+            for (const child of this.children) {
+                const subchildren = child.getChildrenOfDepth(depth - 1);
+                if (subchildren.length > 0) {
+                    Array.prototype.push.apply(result, subchildren);
+                }
             }
         }
 
+        this.subDepthsCache[depth] = result;
         return result;
-    }
-
-    protected addChildren(...newChildren: TreeNode[]): void {
-        Array.prototype.push.apply(this.children, newChildren);
-    }
-
-    protected removeChildren(): void {
-        this.children.length = 0;
     }
 
     public removeChild(child: TreeNode): void {
         for (let iC = this.children.length - 1; iC >= 0; iC--) {
             if (this.children[iC] === child) {
+                this.children[iC].parent = null;
                 this.children.splice(iC, 1);
+                this.onSubtreeChange(1);
                 return;
             }
         }
 
         throw new Error("Cannot remove an unknown child.");
+    }
+
+    protected addChildren(...newChildren: TreeNode[]): void {
+        if (newChildren.length > 0) {
+            for (const newChild of newChildren) {
+                if (newChild.parent) {
+                    throw new Error("Cannot attach a tree node that already has a parent.");
+                }
+                newChild.parent = this;
+            }
+            Array.prototype.push.apply(this.children, newChildren);
+            this.onSubtreeChange(1);
+        }
+    }
+
+    protected removeChildren(): void {
+        for (const child of this.children) {
+            child.parent = null;
+        }
+
+        this.children.length = 0;
+        this.onSubtreeChange(1);
+    }
+
+    public onSubtreeChange(invalidatedLevel: number): void {
+        // remove all caches for levels lower or equal than the one that changed
+        if (this.subDepthsCache.length >= invalidatedLevel + 1) {
+            this.subDepthsCache.length = invalidatedLevel;
+        }
+
+        if (this.parent) {
+            this.parent.onSubtreeChange(invalidatedLevel + 1);
+        }
     }
 }
 
