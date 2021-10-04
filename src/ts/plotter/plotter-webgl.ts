@@ -118,7 +118,7 @@ class PlotterWebGL extends PlotterBase {
             let nbVertices = 0;
             for (const polygon of polygons) {
                 if (polygon.vertices.length >= 3) {
-                    nbVertices += polygon.vertices.length;
+                    nbVertices += 3 * (polygon.vertices.length - 2);
                 }
             }
 
