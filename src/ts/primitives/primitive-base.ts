@@ -59,7 +59,7 @@ abstract class PrimitiveBase extends TreeNode implements IPolygon {
     public abstract subdivide(): void;
     public abstract get vertices(): IPoint[];
 
-    public abstract applyZoom(zooming: Zooming, isRoot: boolean): void;
+    protected abstract applyZoom(zooming: Zooming, isRoot: boolean): void;
     public abstract computeVisibility(viewport: Rectangle): EVisibility;
 }
 

@@ -51,7 +51,7 @@ class PrimitiveTriangles extends PrimitiveBase {
         return [this.p1, this.p2, this.p3];
     }
 
-    public applyZoom(zooming: Zooming, isRoot: boolean): void {
+    protected applyZoom(zooming: Zooming, isRoot: boolean): void {
         if (isRoot) {
             zooming.applyToPoint(this.p1);
             zooming.applyToPoint(this.p2);

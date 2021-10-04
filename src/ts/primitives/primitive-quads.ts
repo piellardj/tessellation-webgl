@@ -55,7 +55,7 @@ class PrimitiveQuads extends PrimitiveBase {
         return [this.topLeft, this.topRight, this.bottomRight, this.bottomLeft];
     }
 
-    public applyZoom(zooming: Zooming, isRoot: boolean): void {
+    protected applyZoom(zooming: Zooming, isRoot: boolean): void {
         if (isRoot) {
             zooming.applyToPoint(this.topLeft);
             zooming.applyToPoint(this.topRight);
