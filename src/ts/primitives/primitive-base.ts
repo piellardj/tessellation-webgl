@@ -3,6 +3,7 @@ import { IPolygon } from "../plotter/plotter-base";
 import { IPoint } from "../misc/point";
 import { Rectangle } from "../misc/rectangle";
 import { Zooming } from "../misc/zooming";
+import { TreeNode } from "../engine/tree-node";
 
 
 type Line = IPoint[];
@@ -13,19 +14,20 @@ enum EVisibility {
     COVERS_VIEW,
 }
 
-abstract class PrimitiveBase implements IPolygon {
+abstract class PrimitiveBase extends TreeNode implements IPolygon {
     public subdivision: Line | null = null;
-    public children: PrimitiveBase[] = [];
     protected _color: Color;
 
     protected constructor(color: Color) {
+        super();
         this.color = color;
     }
 
     public set color(color: Color) {
         this._color = color;
 
-        for (const child of this.children) {
+        const children = this.children as PrimitiveBase[];
+        for (const child of children) {
             child.color = this.color.computeCloseColor();
         }
     }
@@ -35,7 +37,7 @@ abstract class PrimitiveBase implements IPolygon {
     }
 
     public removeChildren(): void {
-        this.children = [];
+        this.children.length = 0;
         this.subdivision = null;
     }
 

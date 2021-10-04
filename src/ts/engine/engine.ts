@@ -160,7 +160,7 @@ class Engine extends EngineBase {
             for (const primitive of lastLayer) {
                 primitive.subdivide();
                 newLinesBatch.lines.push(primitive.subdivision);
-                newLayer = newLayer.concat(primitive.children);
+                newLayer = newLayer.concat(primitive.children as PrimitiveBase[]);
             }
 
             this.layers.push(newLayer);
@@ -190,7 +190,7 @@ class Engine extends EngineBase {
 
     private changeRootPrimitiveInNeeded(): boolean {
         if (this.rootPrimitive.children.length === 1) {
-            this.rootPrimitive = this.rootPrimitive.children[0];
+            this.rootPrimitive = this.rootPrimitive.children[0] as PrimitiveBase;
 
             if (Parameters.debugMode) {
                 console.log("root changed");
@@ -204,7 +204,7 @@ class Engine extends EngineBase {
         let changedSomething = false;
 
         for (let iC = primitive.children.length - 1; iC >= 0; iC--) {
-            const child = primitive.children[iC];
+            const child = primitive.children[iC] as PrimitiveBase;
 
             const visibility = child.computeVisibility(viewport);
             if (visibility === EVisibility.OUT_OF_VIEW) {
@@ -240,7 +240,7 @@ class Engine extends EngineBase {
 
             const lastLayer = this.layers[this.layers.length - 1];
             for (const primitive of lastLayer) {
-                newLayer = newLayer.concat(primitive.children);
+                newLayer = newLayer.concat(primitive.children as PrimitiveBase[]);
                 if (primitive.subdivision) {
                     newLinesBatch.lines.push(primitive.subdivision);
                 }
