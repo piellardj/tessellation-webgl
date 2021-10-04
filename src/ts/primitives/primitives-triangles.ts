@@ -17,6 +17,8 @@ class PrimitiveTriangles extends PrimitiveBase {
     }
 
     public subdivide(): void {
+        this.removeChildren();
+
         const subdivideInternal = (sourcePoint: IPoint, otherPoint1: IPoint, otherPoint2: IPoint) => {
             const minRand = 0.5 * Parameters.balance;
             const maxRand = 1 - minRand;
@@ -27,7 +29,6 @@ class PrimitiveTriangles extends PrimitiveBase {
                 Utils.interpolatePoint(otherPoint1, otherPoint2, rand),
             ];
 
-            this.removeChildren();
             this.addChildren(
                 new PrimitiveTriangles(sourcePoint, otherPoint1, this.subdivision[1], this.color.computeCloseColor()),
                 new PrimitiveTriangles(sourcePoint, this.subdivision[1], otherPoint2, this.color.computeCloseColor())
