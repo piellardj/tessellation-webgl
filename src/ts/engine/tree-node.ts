@@ -1,5 +1,5 @@
 class TreeNode {
-    public readonly children: TreeNode[] = [];
+    private readonly children: TreeNode[] = [];
 
     public treeDepth(): number {
         if (this.children.length > 0) {
@@ -36,6 +36,17 @@ class TreeNode {
 
     protected removeChildren(): void {
         this.children.length = 0;
+    }
+
+    public removeChild(child: TreeNode): void {
+        for (let iC = this.children.length - 1; iC >= 0; iC--) {
+            if (this.children[iC] === child) {
+                this.children.splice(iC, 1);
+                return;
+            }
+        }
+
+        throw new Error("Cannot remove an unknown child.");
     }
 }
 

@@ -204,14 +204,14 @@ class Engine extends EngineBase {
     private prunePrimitivesOutOfView(primitive: PrimitiveBase, viewport: Rectangle): boolean {
         let changedSomething = false;
 
-        for (let iC = primitive.children.length - 1; iC >= 0; iC--) {
-            const child = primitive.children[iC] as PrimitiveBase;
-
+        const directChildren = primitive.getDirectChildren() as PrimitiveBase[];
+        for (const child of directChildren) {
             const visibility = child.computeVisibility(viewport);
             if (visibility === EVisibility.OUT_OF_VIEW) {
-                primitive.children.splice(iC, 1);
+                primitive.removeChild(child);
                 changedSomething = true;
             } else if (visibility === EVisibility.VISIBLE) {
+                // if it is partially visible, some of its children may be completely out of view
                 if (this.prunePrimitivesOutOfView(child, viewport)) {
                     changedSomething = true;
                 }
