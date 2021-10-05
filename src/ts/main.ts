@@ -1,6 +1,7 @@
 import { Engine } from "./engine/engine";
 import { EngineBase } from "./engine/engine-base";
 import { EngineVisibilityTest } from "./engine/engine-visibility-test";
+import { Color } from "./misc/color";
 import { downloadTextFile } from "./misc/utils";
 import { Zooming } from "./misc/zooming";
 import { EPlotter, Parameters } from "./parameters";
@@ -23,6 +24,7 @@ function main(): void {
     const plotter: PlotterBase = (Parameters.plotter === EPlotter.CANVAS2D) ? new PlotterCanvas2D() : new PlotterWebGL();
     const engine: EngineBase = Parameters.debugMode ? new EngineVisibilityTest() : createEngine(plotter);
     const zooming = new Zooming({ x: 0, y: 0 }, 0.2);
+    const backgroundColor = Color.BLACK;
 
     Parameters.resetObservers.push(() => {
         plotter.resizeCanvas();
@@ -36,6 +38,7 @@ function main(): void {
 
     Parameters.downloadObservers.push(() => {
         const svgPlotter = new PlotterSVG();
+        svgPlotter.initialize(backgroundColor);
         engine.draw(svgPlotter);
         const fileName = "subdivisions.svg";
         const svgString = svgPlotter.finalize();
@@ -60,6 +63,7 @@ function main(): void {
         }
 
         if (needToRedraw && plotter.isReady) {
+            plotter.initialize(backgroundColor);
             engine.draw(plotter);
             needToRedraw = false;
         }

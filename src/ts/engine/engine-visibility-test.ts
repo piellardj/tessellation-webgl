@@ -119,7 +119,6 @@ class EngineVisibilityTest extends EngineBase {
     }
 
     public draw(plotter: PlotterBase): void {
-        plotter.initialize(Color.BLACK);
 
         plotter.drawPolygons([this.primitivePolygon], 1, Zooming.NO_ZOOMING);
 

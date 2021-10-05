@@ -68,8 +68,6 @@ class Engine extends EngineBase {
     public draw(plotter: PlotterBase): void {
         this.adjustLinesThickness();
 
-        plotter.initialize(Color.BLACK);
-
         let lastSolidLayer = this.layers.length - 1;
         let emergingLayer = lastSolidLayer + 1;
         let emergingLayerAlpha = 0;
