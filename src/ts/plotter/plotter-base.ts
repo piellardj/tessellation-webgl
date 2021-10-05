@@ -1,6 +1,7 @@
 import { Color } from "../misc/color";
 import { IPoint } from "../misc/point";
 import { Rectangle } from "../misc/rectangle";
+import { Zooming } from "../misc/zooming";
 
 
 type Line = IPoint[];
@@ -59,8 +60,8 @@ abstract class PlotterBase {
 
     public abstract get isReady(): boolean;
     protected abstract clearCanvas(color: Color): void;
-    public abstract drawLines(linesBatches: ILinesBatch[], color: Color, alpha: number): void;
-    public abstract drawPolygons(polygons: IPolygon[], alpha: number): void;
+    public abstract drawLines(linesBatches: ILinesBatch[], color: Color, alpha: number, zooming: Zooming): void;
+    public abstract drawPolygons(polygons: IPolygon[], alpha: number, zooming: Zooming): void;
 }
 
 export {

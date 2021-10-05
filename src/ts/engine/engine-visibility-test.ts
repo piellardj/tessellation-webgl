@@ -1,5 +1,6 @@
 import { Color } from "../misc/color";
 import { Rectangle } from "../misc/rectangle";
+import { Zooming } from "../misc/zooming";
 import { EPrimitive, Parameters } from "../parameters";
 import { ILinesBatch, IPolygon, Line, PlotterBase } from "../plotter/plotter-base";
 import { EVisibility, PrimitiveBase } from "../primitives/primitive-base";
@@ -120,14 +121,14 @@ class EngineVisibilityTest extends EngineBase {
     public draw(plotter: PlotterBase): void {
         plotter.initialize(Color.BLACK);
 
-        plotter.drawPolygons([this.primitivePolygon], 1);
+        plotter.drawPolygons([this.primitivePolygon], 1, Zooming.NO_ZOOMING);
 
         plotter.drawLines([
             {
                 lines: [this.line],
                 thickness: 1,
             }
-        ], new Color(0, 255, 0), 1);
+        ], new Color(0, 255, 0), 1, Zooming.NO_ZOOMING);
         this.drawTestWindow(plotter);
     }
 
@@ -143,8 +144,9 @@ class EngineVisibilityTest extends EngineBase {
             thickness: 1,
         };
 
-        plotter.drawLines([linesBatch], Color.WHITE, 1);
+        plotter.drawLines([linesBatch], Color.WHITE, 1, Zooming.NO_ZOOMING);
     }
 }
 
 export { EngineVisibilityTest };
+

@@ -2,6 +2,8 @@ import { IPoint } from "./point";
 
 
 class Zooming {
+    public static NO_ZOOMING: Zooming = new Zooming({ x: 0, y: 0 }, 0);
+
     public dt: number = 0;
 
     public constructor(public readonly center: IPoint, public speed: number) {

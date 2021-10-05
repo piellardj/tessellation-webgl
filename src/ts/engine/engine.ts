@@ -19,23 +19,48 @@ class Engine extends EngineBase {
 
     private lastLayerBirthTimestamp: number;
 
+    public readonly currentCumulatedZooming: Zooming;
     private readonly maintainanceThrottle: Throttle;
 
     public constructor() {
         super();
         this.reset(new Rectangle(0, 512, 0, 512));
+        this.currentCumulatedZooming = new Zooming({ x: 0, y: 0 }, 0);
         this.maintainanceThrottle = new Throttle(100);
     }
 
     public update(viewport: Rectangle, zooming: Zooming): boolean {
         let somethingChanged = false;
-        somethingChanged = this.handleZoom(zooming) || somethingChanged;
 
-        // don't do maintainance too often because it is costly
-        this.maintainanceThrottle.runIfAvailable(() => {
+        this.currentCumulatedZooming.dt += zooming.dt;
+
+        const maintainance = () => {
+            // apply the cumulated zooming
+            somethingChanged = this.handleZoom(this.currentCumulatedZooming) || somethingChanged;
             somethingChanged = this.adjustLayersCount() || somethingChanged;
             somethingChanged = this.handleRecycling(viewport) || somethingChanged;
-        });
+
+            // reset the cumulated zooming
+            this.currentCumulatedZooming.center.x = zooming.center.x;
+            this.currentCumulatedZooming.center.y = zooming.center.y;
+            this.currentCumulatedZooming.speed = zooming.speed;
+            this.currentCumulatedZooming.dt = 0;
+        };
+
+        const zoomingHasChanged =
+            (this.currentCumulatedZooming.center.x !== zooming.center.x) ||
+            (this.currentCumulatedZooming.center.y !== zooming.center.y) ||
+            (this.currentCumulatedZooming.speed !== zooming.speed);
+
+        if (zoomingHasChanged) {
+            // zooming has changed, so we cannot easily reconstruct the cumulated zooming
+            // force-apply the cumulated zooming now,
+            // and reset it to the current zooming.
+            this.maintainanceThrottle.forceRun(maintainance);
+        } else {
+            // don't do maintainance too often because it is costly
+            this.maintainanceThrottle.runIfAvailable(maintainance);
+        }
 
         return somethingChanged;
     }
@@ -59,17 +84,17 @@ class Engine extends EngineBase {
             }
         }
 
-        plotter.drawPolygons(this.layers[lastSolidLayer], 1);
+        plotter.drawPolygons(this.layers[lastSolidLayer], 1, this.currentCumulatedZooming);
         if (emergingLayer < this.layers.length) {
-            plotter.drawPolygons(this.layers[emergingLayer], emergingLayerAlpha);
+            plotter.drawPolygons(this.layers[emergingLayer], emergingLayerAlpha, this.currentCumulatedZooming);
         }
 
         if (Parameters.displayLines && this.linesBatches.length > 0) {
             this.linesBatches[0].lines.push(this.rootPrimitive.getOutline());
 
-            plotter.drawLines(this.linesBatches.slice(0, emergingLayer), Parameters.linesColor, 1);
+            plotter.drawLines(this.linesBatches.slice(0, emergingLayer), Parameters.linesColor, 1, this.currentCumulatedZooming);
             if (emergingLayer < this.linesBatches.length) {
-                plotter.drawLines([this.linesBatches[emergingLayer]], Parameters.linesColor, emergingLayerAlpha);
+                plotter.drawLines([this.linesBatches[emergingLayer]], Parameters.linesColor, emergingLayerAlpha, this.currentCumulatedZooming);
             }
         }
     }

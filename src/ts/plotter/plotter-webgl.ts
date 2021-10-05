@@ -8,6 +8,7 @@ import { Shader } from "../gl-utils/shader";
 import * as ShaderManager from "../gl-utils/shader-manager";
 import { VBO } from "../gl-utils/vbo";
 import { Viewport } from "../gl-utils/viewport";
+import { Zooming } from "../misc/zooming";
 
 
 class PlotterWebGL extends PlotterBase {
@@ -59,7 +60,7 @@ class PlotterWebGL extends PlotterBase {
         gl.clear(gl.COLOR_BUFFER_BIT);
     }
 
-    public drawLines(linesBatches: ILinesBatch[], color: Color, alpha: number): void {
+    public drawLines(linesBatches: ILinesBatch[], color: Color, alpha: number, zooming: Zooming): void {
         const FLOATS_PER_VERTICE = 2;
         function buildBufferData(): Float32Array {
             // optim: first, count vertices to be able to pre-reserve space
@@ -102,7 +103,7 @@ class PlotterWebGL extends PlotterBase {
                 this.linesVBO.setData(bufferData);
                 this.shaderLines.u["uColor"].value = [color.r / 255, color.g / 255, color.b / 255, alpha];
                 this.shaderLines.u["uScreenSize"].value = [0.5 * this.width, -0.5 * this.height];
-
+                this.shaderLines.u["uZoom"].value = [zooming.center.x, zooming.center.y, zooming.currentZoomFactor, 0];
                 this.shaderLines.use();
                 this.shaderLines.bindUniformsAndAttributes();
                 gl.drawArrays(gl.LINES, 0, bufferData.length / FLOATS_PER_VERTICE);
@@ -110,7 +111,7 @@ class PlotterWebGL extends PlotterBase {
         }
     }
 
-    public drawPolygons(polygons: IPolygon[], alpha: number): void {
+    public drawPolygons(polygons: IPolygon[], alpha: number, zooming: Zooming): void {
         const FLOATS_PER_VERTICE = 6;
 
         function buildBufferData(): Float32Array {
@@ -162,7 +163,7 @@ class PlotterWebGL extends PlotterBase {
 
             if (bufferData.length > 0) {
                 this.shaderPolygons.u["uScreenSize"].value = [0.5 * this.width, -0.5 * this.height];
-
+                this.shaderPolygons.u["uZoom"].value = [zooming.center.x, zooming.center.y, zooming.currentZoomFactor, 0];
                 this.shaderPolygons.use();
                 this.shaderPolygons.bindUniforms();
 
