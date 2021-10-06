@@ -27,31 +27,28 @@ interface IVboPart {
     readonly verticesCount: number;
 }
 
+interface IPartionedVbo<T extends IVboPart> {
+    readonly id: WebGLBuffer;
+    vboParts: T[];
+}
+
+
 interface ILinesVboPart extends IVboPart {
     readonly color: Color;
     readonly alpha: number;
-}
-
-interface ILinesVBO {
-    readonly id: WebGLBuffer;
-    vboParts: ILinesVboPart[];
 }
 
 interface IPolygonsVboPart extends IVboPart {
     readonly alpha: number;
 }
 
-interface IPolygonsVBO {
-    readonly id: WebGLBuffer;
-    vboParts: IPolygonsVboPart[];
-}
 
 class PlotterWebGL extends PlotterBase {
     private shaderLines: Shader;
     private shaderPolygons: Shader;
 
-    private readonly linesVbo: ILinesVBO;
-    private readonly polygonsVbo: IPolygonsVBO;
+    private readonly linesVbo: IPartionedVbo<ILinesVboPart>;
+    private readonly polygonsVbo: IPartionedVbo<IPolygonsVboPart>;
 
     private pendingLines: IPendingLines[] = [];
     private pendingPolygons: IPendingPolygons[] = [];
