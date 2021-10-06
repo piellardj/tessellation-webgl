@@ -22,9 +22,12 @@ interface IPendingPolygons {
 }
 
 
-interface ILinesVboPart {
+interface IVboPart {
     readonly indexOfFirstVertice: number;
     readonly verticesCount: number;
+}
+
+interface ILinesVboPart extends IVboPart {
     readonly color: Color;
     readonly alpha: number;
 }
@@ -34,9 +37,7 @@ interface ILinesVBO {
     vboParts: ILinesVboPart[];
 }
 
-interface IPolygonsVboPart {
-    readonly indexOfFirstVertice: number;
-    readonly verticesCount: number;
+interface IPolygonsVboPart extends IVboPart {
     readonly alpha: number;
 }
 
