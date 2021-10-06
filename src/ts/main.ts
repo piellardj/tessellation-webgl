@@ -45,11 +45,17 @@ function main(): void {
         downloadTextFile(fileName, svgString);
     });
 
+    const MAX_DT = 1 / 30;
     let lastUpdateTimestamp = performance.now();
     function mainLoop(): void {
         const now = performance.now();
         zooming.speed = Parameters.zoomingSpeed;
         zooming.dt = 0.001 * (now - lastUpdateTimestamp);
+        if (zooming.dt > MAX_DT) {
+            // A high dt means a low FPS because of too many computations,
+            // however the higher the dt, the more computation will be needed... Clamp it.
+            // zooming.dt = MAX_DT;
+        }
         lastUpdateTimestamp = now;
 
         if (Page.Canvas.isMouseDown()) {
