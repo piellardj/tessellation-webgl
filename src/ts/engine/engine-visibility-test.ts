@@ -2,7 +2,7 @@ import { Color } from "../misc/color";
 import { Rectangle } from "../misc/rectangle";
 import { Zooming } from "../misc/zooming";
 import { EPrimitive, Parameters } from "../parameters";
-import { ILines, IPolygon, Line, PlotterBase } from "../plotter/plotter-base";
+import { ILines, Line, PlotterBase } from "../plotter/plotter-base";
 import { EVisibility, PrimitiveBase } from "../primitives/primitive-base";
 import { PrimitiveQuads } from "../primitives/primitive-quads";
 import { PrimitiveTriangles } from "../primitives/primitives-triangles";
@@ -17,7 +17,6 @@ class EngineVisibilityTest extends EngineBase {
     private readonly testWindowBaseHeight: number = 120;
     private zoom: number = 1;
 
-    private primitivePolygon: IPolygon;
     private primitive: PrimitiveBase;
 
     private readonly line: Line;
@@ -49,35 +48,18 @@ class EngineVisibilityTest extends EngineBase {
 
         const primitiveType = Parameters.primitive;
         if (primitiveType === EPrimitive.QUADS) {
-            this.primitivePolygon = {
-                vertices: [
-                    { x: -150 * Math.random(), y: -150 * Math.random() }, // top left
-                    { x: +150 * Math.random(), y: -150 * Math.random() }, // top right
-                    { x: +150 * Math.random(), y: +150 * Math.random() }, // bottom right
-                    { x: -150 * Math.random(), y: +150 * Math.random() }, // bottom left
-                ],
-                color: new Color(255, 0, 0),
-            };
             this.primitive = new PrimitiveQuads(
-                this.primitivePolygon.vertices[0], // top left
-                this.primitivePolygon.vertices[1], // top right
-                this.primitivePolygon.vertices[3], // bottom left
-                this.primitivePolygon.vertices[2], // bottom right
+                { x: -150 * Math.random(), y: -150 * Math.random() }, // top left
+                { x: +150 * Math.random(), y: -150 * Math.random() }, // top right
+                { x: -150 * Math.random(), y: +150 * Math.random() }, // bottom left
+                { x: +150 * Math.random(), y: +150 * Math.random() }, // bottom right
                 color,
             );
         } else {
-            this.primitivePolygon = {
-                vertices: [
-                    { x: -100 - 50 * Math.random(), y: -100 - 50 * Math.random() },
-                    { x: +100 + 50 * Math.random(), y: -100 - 50 * Math.random() },
-                    { x: +100 + 50 * (Math.random() - 0.5), y: +100 + 50 * Math.random() },
-                ],
-                color: new Color(255, 0, 0),
-            };
             this.primitive = new PrimitiveTriangles(
-                this.primitivePolygon.vertices[0],
-                this.primitivePolygon.vertices[1],
-                this.primitivePolygon.vertices[2],
+                { x: -100 - 50 * Math.random(), y: -100 - 50 * Math.random() },
+                { x: +100 + 50 * Math.random(), y: -100 - 50 * Math.random() },
+                { x: +100 + 50 * (Math.random() - 0.5), y: +100 + 50 * Math.random() },
                 color,
             );
         }
@@ -121,7 +103,7 @@ class EngineVisibilityTest extends EngineBase {
     public draw(plotter: PlotterBase): void {
         plotter.prepare();
 
-        plotter.drawPolygons([this.primitivePolygon], 1);
+        plotter.drawPolygons([this.primitive], 1);
 
         plotter.drawLines([
             {
