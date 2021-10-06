@@ -66,35 +66,44 @@ class Engine extends EngineBase {
     }
 
     public draw(plotter: PlotterBase): void {
+        if (this.layers.length < 1) {
+            return;
+        }
+
         this.adjustLinesThickness();
 
         let lastSolidLayer = this.layers.length - 1;
-        let emergingLayer = lastSolidLayer + 1;
         let emergingLayerAlpha = 0;
-        if (Parameters.zoomingSpeed > 0) {
-            const emergingTimeOfLastLayer = 1000 / Math.pow((1 + Parameters.zoomingSpeed), 2);
-            const ageOfLastLayer = performance.now() - this.lastLayerBirthTimestamp;
-            emergingLayerAlpha = Math.min(1, ageOfLastLayer / emergingTimeOfLastLayer);
-
-            if (emergingLayerAlpha < 1) {
-                lastSolidLayer--;
-                emergingLayer--;
+        if (this.layers.length > 1) {
+            if (Parameters.zoomingSpeed > 0) {
+                const emergingTimeOfLastLayer = 1000 / Math.pow((1 + Parameters.zoomingSpeed), 2);
+                const ageOfLastLayer = performance.now() - this.lastLayerBirthTimestamp;
+                if (ageOfLastLayer < emergingTimeOfLastLayer) {
+                    // last layer is still blending in
+                    lastSolidLayer--;
+                    emergingLayerAlpha = ageOfLastLayer / emergingTimeOfLastLayer;
+                }
             }
         }
+        const emergingLayer = lastSolidLayer + 1;
 
-        plotter.drawPolygons(this.layers[lastSolidLayer], 1, this.currentCumulatedZooming);
+        plotter.prepare();
+
+        plotter.drawPolygons(this.layers[lastSolidLayer], 1);
         if (emergingLayer < this.layers.length) {
-            plotter.drawPolygons(this.layers[emergingLayer], emergingLayerAlpha, this.currentCumulatedZooming);
+            plotter.drawPolygons(this.layers[emergingLayer], emergingLayerAlpha);
         }
 
         if (Parameters.displayLines && this.linesBatches.length > 0) {
             this.linesBatches[0].lines.push(this.rootPrimitive.getOutline());
 
-            plotter.drawLines(this.linesBatches.slice(0, emergingLayer), Parameters.linesColor, 1, this.currentCumulatedZooming);
+            plotter.drawLines(this.linesBatches.slice(0, emergingLayer), Parameters.linesColor, 1);
             if (emergingLayer < this.linesBatches.length) {
-                plotter.drawLines([this.linesBatches[emergingLayer]], Parameters.linesColor, emergingLayerAlpha, this.currentCumulatedZooming);
+                plotter.drawLines([this.linesBatches[emergingLayer]], Parameters.linesColor, emergingLayerAlpha);
             }
         }
+
+        plotter.finalize(this.currentCumulatedZooming);
     }
 
     public reset(viewport: Rectangle): void {

@@ -119,16 +119,19 @@ class EngineVisibilityTest extends EngineBase {
     }
 
     public draw(plotter: PlotterBase): void {
+        plotter.prepare();
 
-        plotter.drawPolygons([this.primitivePolygon], 1, Zooming.NO_ZOOMING);
+        plotter.drawPolygons([this.primitivePolygon], 1);
 
         plotter.drawLines([
             {
                 lines: [this.line],
                 thickness: 1,
             }
-        ], new Color(0, 255, 0), 1, Zooming.NO_ZOOMING);
+        ], new Color(0, 255, 0), 1);
         this.drawTestWindow(plotter);
+
+        plotter.finalize(Zooming.NO_ZOOMING);
     }
 
     private drawTestWindow(plotter: PlotterBase): void {
@@ -143,7 +146,7 @@ class EngineVisibilityTest extends EngineBase {
             thickness: 1,
         };
 
-        plotter.drawLines([linesBatch], Color.WHITE, 1, Zooming.NO_ZOOMING);
+        plotter.drawLines([linesBatch], Color.WHITE, 1);
     }
 }
 

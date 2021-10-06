@@ -12,6 +12,11 @@ class PlotterCanvas2D extends PlotterBase {
         this.context = this.canvas.getContext("2d", { alpha: false });
     }
 
+    // tslint:disable-next-line:no-empty
+    public prepare(): void { }
+    // tslint:disable-next-line:no-empty
+    public finalize(): void { }
+
     public get isReady(): boolean {
         return true;
     }

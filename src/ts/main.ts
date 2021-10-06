@@ -41,7 +41,7 @@ function main(): void {
         svgPlotter.initialize(backgroundColor);
         engine.draw(svgPlotter);
         const fileName = "subdivisions.svg";
-        const svgString = svgPlotter.finalize();
+        const svgString = svgPlotter.output();
         downloadTextFile(fileName, svgString);
     });
 

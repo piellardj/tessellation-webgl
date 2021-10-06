@@ -23,6 +23,8 @@ class PlotterSVG extends PlotterBase {
     }
 
     // tslint:disable-next-line:no-empty
+    public prepare(): void {}
+    // tslint:disable-next-line:no-empty
     protected clearCanvas(): void { }
 
     public drawLines(linesBatches: ILinesBatch[], color: Color, alpha: number): void {
@@ -78,8 +80,11 @@ class PlotterSVG extends PlotterBase {
         }
     }
 
-    public finalize(): string {
+    public finalize(): void {
         this.lines.push(`</svg>`);
+    }
+
+    public output(): string {
         return this.lines.join("\n");
     }
 }

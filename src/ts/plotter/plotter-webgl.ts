@@ -6,17 +6,48 @@ import * as GLCanvas from "../gl-utils/gl-canvas";
 import { gl } from "../gl-utils/gl-canvas";
 import { Shader } from "../gl-utils/shader";
 import * as ShaderManager from "../gl-utils/shader-manager";
-import { VBO } from "../gl-utils/vbo";
 import { Viewport } from "../gl-utils/viewport";
 import { Zooming } from "../misc/zooming";
 
+
+interface IPendingLines {
+    readonly linesBatches: ILinesBatch[];
+    readonly color: Color;
+    readonly alpha: number;
+}
+
+interface IPendingPolygons {
+    readonly polygons: IPolygon[];
+    readonly alpha: number;
+}
+
+
+interface LinesVboPart {
+    readonly indexOfFirstVertice: number;
+    readonly verticesCount: number;
+    readonly color: Color;
+    readonly alpha: number;
+}
+
+interface ILinesVBO {
+    readonly id: WebGLBuffer;
+    vboParts: LinesVboPart[];
+}
+
+interface IPolygonsVBO {
+    readonly id: WebGLBuffer;
+    verticesCount: number;
+}
 
 class PlotterWebGL extends PlotterBase {
     private shaderLines: Shader;
     private shaderPolygons: Shader;
 
-    private readonly linesVBO: VBO;
-    private readonly polygonsVBOId: WebGLBuffer;
+    private readonly linesVbo: ILinesVBO;
+    private readonly polygonsVbo: IPolygonsVBO;
+
+    private pendingLines: IPendingLines[] = [];
+    private pendingPolygons: IPendingPolygons[] = [];
 
     public constructor() {
         super();
@@ -37,17 +68,43 @@ class PlotterWebGL extends PlotterBase {
         gl.disable(gl.DEPTH_TEST);
         gl.disable(gl.STENCIL_TEST);
 
-        this.linesVBO = new VBO(gl, new Float32Array(), 2, gl.FLOAT, false);
-        this.polygonsVBOId = gl.createBuffer();
+        this.linesVbo = {
+            id: gl.createBuffer(),
+            vboParts: [],
+        };
+
+        this.polygonsVbo = {
+            id: gl.createBuffer(),
+            verticesCount: 0,
+        };
 
         this.asyncLoadShader("shaderLines.vert", "shaderLines.frag", (shader: Shader) => {
             this.shaderLines = shader;
-            this.shaderLines.a["aVertex"].VBO = this.linesVBO;
         });
 
         this.asyncLoadShader("shaderPolygons.vert", "shaderPolygons.frag", (shader: Shader) => {
             this.shaderPolygons = shader;
         });
+    }
+
+    public prepare(): void {
+        this.linesVbo.vboParts = [];
+        this.polygonsVbo.verticesCount = 0;
+    }
+
+    public finalize(zooming: Zooming): void {
+        if (this.pendingPolygons.length > 0) {
+            this.buildAndUploadPolygonsVBO();
+            this.pendingPolygons = [];
+        }
+
+        if (this.pendingLines.length > 0) {
+            this.buildAndUploadLinesVBO();
+            this.pendingLines = [];
+        }
+
+        this.drawPolygonsVBO(zooming);
+        this.drawLinesVBO(zooming);
     }
 
     public get isReady(): boolean {
@@ -60,22 +117,43 @@ class PlotterWebGL extends PlotterBase {
         gl.clear(gl.COLOR_BUFFER_BIT);
     }
 
-    public drawLines(linesBatches: ILinesBatch[], color: Color, alpha: number, zooming: Zooming): void {
-        const FLOATS_PER_VERTICE = 2;
-        function buildBufferData(): Float32Array {
-            // optim: first, count vertices to be able to pre-reserve space
-            let nbVertices = 0;
-            for (const linesBatch of linesBatches) {
+    public drawLines(linesBatches: ILinesBatch[], color: Color, alpha: number): void {
+        this.pendingLines.push({ linesBatches, color, alpha });
+    }
+
+    public drawPolygons(polygons: IPolygon[], alpha: number): void {
+        this.pendingPolygons.push({ polygons, alpha });
+    }
+
+    private buildAndUploadLinesVBO(): void {
+        // optim: first, count vertices to be able to pre-reserve space
+        let nbVertices = 0;
+        for (const pendingLinesSuperbatch of this.pendingLines) {
+            const indexOfFirstVertice = nbVertices;
+
+            let verticesCount = 0;
+            for (const linesBatch of pendingLinesSuperbatch.linesBatches) {
                 for (const line of linesBatch.lines) {
                     if (line.length >= 2) {
-                        nbVertices += 2 + 2 * (line.length - 2);
+                        verticesCount += 2 + 2 * (line.length - 2);
                     }
                 }
             }
+            nbVertices += verticesCount;
 
-            const bufferData = new Float32Array(nbVertices * FLOATS_PER_VERTICE);
-            let i = 0;
-            for (const linesBatch of linesBatches) {
+            this.linesVbo.vboParts.push({
+                indexOfFirstVertice,
+                verticesCount,
+                color: pendingLinesSuperbatch.color,
+                alpha: pendingLinesSuperbatch.alpha,
+            });
+        }
+
+        const FLOATS_PER_VERTICE = 2;
+        const bufferData = new Float32Array(nbVertices * FLOATS_PER_VERTICE);
+        let i = 0;
+        for (const pendingLinesSuperbatch of this.pendingLines) {
+            for (const linesBatch of pendingLinesSuperbatch.linesBatches) {
                 for (const line of linesBatch.lines) {
                     if (line.length >= 2) {
                         bufferData[i++] = line[0].x;
@@ -93,39 +171,51 @@ class PlotterWebGL extends PlotterBase {
                     }
                 }
             }
-            return bufferData;
+        }
+        if (i !== bufferData.length) {
+            console.log("ALERT LINES");
         }
 
-        if (this.shaderLines && alpha > 0 && linesBatches) {
-            const bufferData = buildBufferData();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.linesVbo.id);
+        gl.bufferData(gl.ARRAY_BUFFER, bufferData, gl.DYNAMIC_DRAW);
+    }
 
-            if (bufferData.length > 0) {
-                this.linesVBO.setData(bufferData);
-                this.shaderLines.u["uColor"].value = [color.r / 255, color.g / 255, color.b / 255, alpha];
-                this.shaderLines.u["uScreenSize"].value = [0.5 * this.width, -0.5 * this.height];
-                this.shaderLines.u["uZoom"].value = [zooming.center.x, zooming.center.y, zooming.currentZoomFactor, 0];
-                this.shaderLines.use();
-                this.shaderLines.bindUniformsAndAttributes();
-                gl.drawArrays(gl.LINES, 0, bufferData.length / FLOATS_PER_VERTICE);
+    private drawLinesVBO(zooming: Zooming): void {
+        if (this.shaderLines && this.linesVbo.vboParts.length > 0) {
+            this.shaderLines.use();
+
+            const aVertexLocation = this.shaderLines.a["aVertex"].loc;
+            gl.enableVertexAttribArray(aVertexLocation);
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.linesVbo.id);
+            gl.vertexAttribPointer(aVertexLocation, 2, gl.FLOAT, false, 0, 0);
+
+            this.shaderLines.u["uZoom"].value = [zooming.center.x, zooming.center.y, zooming.currentZoomFactor, 0];
+            this.shaderLines.u["uScreenSize"].value = [0.5 * this.width, -0.5 * this.height];
+
+            for (const vboPart of this.linesVbo.vboParts) {
+                this.shaderLines.u["uColor"].value = [vboPart.color.r / 255, vboPart.color.g / 255, vboPart.color.b / 255, vboPart.alpha];
+                this.shaderLines.bindUniforms();
+                gl.drawArrays(gl.LINES, vboPart.indexOfFirstVertice, vboPart.verticesCount);
             }
         }
     }
 
-    public drawPolygons(polygons: IPolygon[], alpha: number, zooming: Zooming): void {
-        const FLOATS_PER_VERTICE = 6;
-
-        function buildBufferData(): Float32Array {
-            // optim: first, count vertices to be able to pre-reserve space
-            let nbVertices = 0;
-            for (const polygon of polygons) {
+    private buildAndUploadPolygonsVBO(): void {
+        // optim: first, count vertices to be able to pre-reserve space
+        let nbVertices = 0;
+        for (const polygonsBatch of this.pendingPolygons) {
+            for (const polygon of polygonsBatch.polygons) {
                 if (polygon.vertices.length >= 3) {
                     nbVertices += 3 * (polygon.vertices.length - 2);
                 }
             }
+        }
 
-            const bufferData = new Float32Array(nbVertices * FLOATS_PER_VERTICE);
-            let i = 0;
-            for (const polygon of polygons) {
+        const FLOATS_PER_VERTICE = 6;
+        const bufferData = new Float32Array(nbVertices * FLOATS_PER_VERTICE);
+        let i = 0;
+        for (const polygonsBatch of this.pendingPolygons) {
+            for (const polygon of polygonsBatch.polygons) {
                 if (polygon.vertices.length >= 3) {
                     const red = polygon.color.r / 255;
                     const green = polygon.color.g / 255;
@@ -137,48 +227,52 @@ class PlotterWebGL extends PlotterBase {
                         bufferData[i++] = red;
                         bufferData[i++] = green;
                         bufferData[i++] = blue;
-                        bufferData[i++] = alpha;
+                        bufferData[i++] = polygonsBatch.alpha;
 
                         bufferData[i++] = polygon.vertices[iP].x;
                         bufferData[i++] = polygon.vertices[iP].y;
                         bufferData[i++] = red;
                         bufferData[i++] = green;
                         bufferData[i++] = blue;
-                        bufferData[i++] = alpha;
+                        bufferData[i++] = polygonsBatch.alpha;
 
                         bufferData[i++] = polygon.vertices[iP + 1].x;
                         bufferData[i++] = polygon.vertices[iP + 1].y;
                         bufferData[i++] = red;
                         bufferData[i++] = green;
                         bufferData[i++] = blue;
-                        bufferData[i++] = alpha;
+                        bufferData[i++] = polygonsBatch.alpha;
                     }
                 }
             }
-            return bufferData;
+        }
+        if (i !== bufferData.length) {
+            console.log("ALERT POLYGONS");
         }
 
-        if (this.shaderPolygons && alpha > 0 && polygons) {
-            const bufferData = buildBufferData();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.polygonsVbo.id);
+        gl.bufferData(gl.ARRAY_BUFFER, bufferData, gl.DYNAMIC_DRAW);
+        this.polygonsVbo.verticesCount = bufferData.length / FLOATS_PER_VERTICE;
+    }
 
-            if (bufferData.length > 0) {
-                this.shaderPolygons.u["uScreenSize"].value = [0.5 * this.width, -0.5 * this.height];
-                this.shaderPolygons.u["uZoom"].value = [zooming.center.x, zooming.center.y, zooming.currentZoomFactor, 0];
-                this.shaderPolygons.use();
-                this.shaderPolygons.bindUniforms();
+    private drawPolygonsVBO(zooming: Zooming): void {
+        if (this.shaderPolygons && this.polygonsVbo.verticesCount > 0) {
+            this.shaderPolygons.use();
 
-                const BYTES_PER_FLOAT = 4;
-                const aPositionLoc = this.shaderPolygons.a["aPosition"].loc;
-                const aColorLoc = this.shaderPolygons.a["aColor"].loc;
-                gl.bindBuffer(gl.ARRAY_BUFFER, this.polygonsVBOId);
-                gl.bufferData(gl.ARRAY_BUFFER, bufferData, gl.DYNAMIC_DRAW);
-                gl.enableVertexAttribArray(aPositionLoc);
-                gl.vertexAttribPointer(aPositionLoc, 2, gl.FLOAT, false, BYTES_PER_FLOAT * FLOATS_PER_VERTICE, 0);
-                gl.enableVertexAttribArray(aColorLoc);
-                gl.vertexAttribPointer(aColorLoc, 4, gl.FLOAT, false, BYTES_PER_FLOAT * FLOATS_PER_VERTICE, BYTES_PER_FLOAT * 2);
+            const BYTES_PER_FLOAT = 4;
+            const aPositionLoc = this.shaderPolygons.a["aPosition"].loc;
+            const aColorLoc = this.shaderPolygons.a["aColor"].loc;
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.polygonsVbo.id);
+            gl.enableVertexAttribArray(aPositionLoc);
+            gl.vertexAttribPointer(aPositionLoc, 2, gl.FLOAT, false, BYTES_PER_FLOAT * 6, 0);
+            gl.enableVertexAttribArray(aColorLoc);
+            gl.vertexAttribPointer(aColorLoc, 4, gl.FLOAT, false, BYTES_PER_FLOAT * 6, BYTES_PER_FLOAT * 2);
 
-                gl.drawArrays(gl.TRIANGLES, 0, bufferData.length / FLOATS_PER_VERTICE);
-            }
+            this.shaderPolygons.u["uZoom"].value = [zooming.center.x, zooming.center.y, zooming.currentZoomFactor, 0];
+            this.shaderPolygons.u["uScreenSize"].value = [0.5 * this.width, -0.5 * this.height];
+            this.shaderPolygons.bindUniforms();
+
+            gl.drawArrays(gl.TRIANGLES, 0, this.polygonsVbo.verticesCount);
         }
     }
 
