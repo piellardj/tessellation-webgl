@@ -22,7 +22,7 @@ interface IPendingPolygons {
 }
 
 
-interface LinesVboPart {
+interface ILinesVboPart {
     readonly indexOfFirstVertice: number;
     readonly verticesCount: number;
     readonly color: Color;
@@ -31,7 +31,7 @@ interface LinesVboPart {
 
 interface ILinesVBO {
     readonly id: WebGLBuffer;
-    vboParts: LinesVboPart[];
+    vboParts: ILinesVboPart[];
 }
 
 interface IPolygonsVBO {
