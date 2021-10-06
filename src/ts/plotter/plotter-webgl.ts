@@ -1,13 +1,13 @@
 import { Color } from "../misc/color";
-import { ILinesBatch, IPolygon, PlotterBase } from "./plotter-base";
 import * as Loader from "../misc/loader";
+import { Zooming } from "../misc/zooming";
+import { ILinesBatch, IPolygon, PlotterBase } from "./plotter-base";
 
 import * as GLCanvas from "../gl-utils/gl-canvas";
 import { gl } from "../gl-utils/gl-canvas";
 import { Shader } from "../gl-utils/shader";
 import * as ShaderManager from "../gl-utils/shader-manager";
 import { Viewport } from "../gl-utils/viewport";
-import { Zooming } from "../misc/zooming";
 
 
 interface IPendingLines {

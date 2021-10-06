@@ -1,7 +1,7 @@
+import * as Arithmetics from "../misc/arithmetics";
 import { Color } from "../misc/color";
 import { IPoint } from "../misc/point";
 import { Rectangle } from "../misc/rectangle";
-import * as Utils from "../misc/utils";
 import { Zooming } from "../misc/zooming";
 import { Parameters } from "../parameters";
 import { EVisibility, PrimitiveBase } from "./primitive-base";
@@ -22,11 +22,11 @@ class PrimitiveTriangles extends PrimitiveBase {
         const subdivideInternal = (sourcePoint: IPoint, otherPoint1: IPoint, otherPoint2: IPoint) => {
             const minRand = 0.5 * Parameters.balance;
             const maxRand = 1 - minRand;
-            const rand = Utils.random(minRand, maxRand);
+            const rand = Arithmetics.random(minRand, maxRand);
 
             this.subdivision = [
                 sourcePoint,
-                Utils.interpolatePoint(otherPoint1, otherPoint2, rand),
+                Arithmetics.interpolatePoint(otherPoint1, otherPoint2, rand),
             ];
 
             this.addChildren(
@@ -35,9 +35,9 @@ class PrimitiveTriangles extends PrimitiveBase {
             );
         };
 
-        const distance12 = Utils.squaredDistance(this.p1, this.p2);
-        const distance23 = Utils.squaredDistance(this.p2, this.p3);
-        const distance31 = Utils.squaredDistance(this.p3, this.p1);
+        const distance12 = Arithmetics.squaredDistance(this.p1, this.p2);
+        const distance23 = Arithmetics.squaredDistance(this.p2, this.p3);
+        const distance31 = Arithmetics.squaredDistance(this.p3, this.p1);
 
         if (distance12 > distance23 && distance12 > distance31) {
             subdivideInternal(this.p3, this.p1, this.p2);
@@ -90,11 +90,11 @@ class PrimitiveTriangles extends PrimitiveBase {
     }
 
     private isInside(point: IPoint): boolean {
-        const SIDE_1_2 = Utils.getSide(this.p1, this.p2, point);
-        const SIDE_2_3 = Utils.getSide(this.p2, this.p3, point);
-        const SIDE_3_1 = Utils.getSide(this.p3, this.p1, point);
+        const SIDE_1_2 = Arithmetics.getSide(this.p1, this.p2, point);
+        const SIDE_2_3 = Arithmetics.getSide(this.p2, this.p3, point);
+        const SIDE_3_1 = Arithmetics.getSide(this.p3, this.p1, point);
 
-        return Utils.areSameSign(SIDE_1_2, SIDE_2_3, SIDE_3_1);
+        return Arithmetics.areSameSign(SIDE_1_2, SIDE_2_3, SIDE_3_1);
     }
 }
 

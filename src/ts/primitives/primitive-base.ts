@@ -1,9 +1,9 @@
+import { TreeNode } from "../engine/tree-node";
 import { Color } from "../misc/color";
-import { IPolygon } from "../plotter/plotter-base";
 import { IPoint } from "../misc/point";
 import { Rectangle } from "../misc/rectangle";
 import { Zooming } from "../misc/zooming";
-import { TreeNode } from "../engine/tree-node";
+import { IPolygon } from "../plotter/plotter-base";
 
 
 type Line = IPoint[];

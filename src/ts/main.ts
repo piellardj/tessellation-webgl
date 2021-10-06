@@ -2,7 +2,7 @@ import { Engine } from "./engine/engine";
 import { EngineBase } from "./engine/engine-base";
 import { EngineVisibilityTest } from "./engine/engine-visibility-test";
 import { Color } from "./misc/color";
-import { downloadTextFile } from "./misc/utils";
+import { downloadTextFile } from "./misc/web";
 import { Zooming } from "./misc/zooming";
 import { EPlotter, Parameters } from "./parameters";
 import { PlotterBase } from "./plotter/plotter-base";

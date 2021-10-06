@@ -1,6 +1,6 @@
 import { Color } from "./misc/color";
 import { IPoint } from "./misc/point";
-import { getQueryStringValue, setQueryStringValue } from "./misc/utils";
+import { getQueryStringValue, setQueryStringValue } from "./misc/web";
 
 import "./page-interface-generated";
 
