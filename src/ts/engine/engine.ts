@@ -94,9 +94,7 @@ class Engine extends EngineBase {
             plotter.drawPolygons(this.layers[emergingLayer], emergingLayerAlpha);
         }
 
-        if (Parameters.displayLines && this.linesBatches.length > 0) {
-            this.linesBatches[0].lines.push(this.rootPrimitive.getOutline());
-
+        if (Parameters.displayLines) {
             plotter.drawLines(this.linesBatches.slice(0, emergingLayer), Parameters.linesColor, 1);
             if (emergingLayer < this.linesBatches.length) {
                 plotter.drawLines([this.linesBatches[emergingLayer]], Parameters.linesColor, emergingLayerAlpha);
@@ -127,7 +125,10 @@ class Engine extends EngineBase {
 
         const rootLayer = [this.rootPrimitive];
         this.layers = [rootLayer];
-        this.linesBatches = [];
+        this.linesBatches = [{
+            lines: [this.rootPrimitive.getOutline()],
+            thickness: 1,
+        }];
     }
 
     public recomputeColors(): void {
@@ -224,7 +225,9 @@ class Engine extends EngineBase {
     private adjustLinesThickness(): void {
         const MAX_THICKNESS = Parameters.thickness;
 
-        for (let iB = 0; iB < this.linesBatches.length; iB++) {
+        this.linesBatches[0].thickness = 1 + MAX_THICKNESS;
+
+        for (let iB = 1; iB < this.linesBatches.length; iB++) {
             this.linesBatches[iB].thickness = 1 + MAX_THICKNESS * (this.linesBatches.length - 1 - iB) / (this.linesBatches.length - 1);
         }
     }
@@ -272,10 +275,18 @@ class Engine extends EngineBase {
         }
 
         this.linesBatches = [];
-        for (let iLayer = 0; iLayer < this.layers.length - 1; iLayer++) {
+        for (let iLayer = 0; iLayer < this.layers.length; iLayer++) {
             const lines: Line[] = [];
-            for (const primitive of this.layers[iLayer]) {
-                lines.push(primitive.subdivision);
+
+            if (iLayer === 0) {
+                Array.prototype.push.apply(lines, this.rootPrimitive.getOutline());
+            }
+
+            const isLastLayer = (iLayer === this.layers.length - 1);
+            if (!isLastLayer) {
+                for (const primitive of this.layers[iLayer]) {
+                    lines.push(primitive.subdivision);
+                }
             }
 
             this.linesBatches.push({
