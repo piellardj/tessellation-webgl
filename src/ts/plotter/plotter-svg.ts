@@ -10,7 +10,7 @@ class PlotterSVG extends PlotterBase {
     }
 
     public get supportsThickLines(): boolean { return true; }
-    
+
     public get isReady(): boolean {
         return true;
     }
@@ -25,7 +25,7 @@ class PlotterSVG extends PlotterBase {
     }
 
     // tslint:disable-next-line:no-empty
-    public prepare(): void {}
+    public prepare(): void { }
     // tslint:disable-next-line:no-empty
     protected clearCanvas(): void { }
 
