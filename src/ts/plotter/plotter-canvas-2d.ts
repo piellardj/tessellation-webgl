@@ -12,6 +12,8 @@ class PlotterCanvas2D extends PlotterBase {
         this.context = this.canvas.getContext("2d", { alpha: false });
     }
 
+    public get supportsThickLines(): boolean { return true; }
+
     // tslint:disable-next-line:no-empty
     public prepare(): void { }
     // tslint:disable-next-line:no-empty

@@ -87,6 +87,8 @@ class PlotterWebGL extends PlotterBase {
         });
     }
 
+    public get supportsThickLines(): boolean { return false; }
+
     public prepare(): void {
         this.linesVbo.vboParts = [];
         this.polygonsVbo.verticesCount = 0;

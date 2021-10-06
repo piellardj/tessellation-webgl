@@ -9,6 +9,8 @@ class PlotterSVG extends PlotterBase {
         super();
     }
 
+    public get supportsThickLines(): boolean { return true; }
+    
     public get isReady(): boolean {
         return true;
     }

@@ -70,8 +70,6 @@ class Engine extends EngineBase {
             return;
         }
 
-        this.adjustLinesThickness();
-
         let lastSolidLayer = this.layers.length - 1;
         let emergingLayerAlpha = 0;
         if (this.layers.length > 1) {
@@ -95,6 +93,10 @@ class Engine extends EngineBase {
         }
 
         if (Parameters.displayLines) {
+            if (plotter.supportsThickLines) {
+                this.adjustLinesThickness();
+            }
+
             const allOpaqueLines = this.linesBatches.slice(0, emergingLayer);
             plotter.drawLines(allOpaqueLines, Parameters.linesColor, 1);
             if (emergingLayer < this.linesBatches.length) {
