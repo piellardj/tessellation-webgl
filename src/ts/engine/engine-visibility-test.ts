@@ -2,7 +2,7 @@ import { Color } from "../misc/color";
 import { Rectangle } from "../misc/rectangle";
 import { Zooming } from "../misc/zooming";
 import { EPrimitive, Parameters } from "../parameters";
-import { ILines, Line, PlotterBase } from "../plotter/plotter-base";
+import { BatchOfLines, Line, PlotterBase } from "../plotter/plotter-base";
 import { EVisibility, PrimitiveBase } from "../primitives/primitive-base";
 import { PrimitiveQuads } from "../primitives/primitive-quads";
 import { PrimitiveTriangles } from "../primitives/primitives-triangles";
@@ -20,6 +20,8 @@ class EngineVisibilityTest extends EngineBase {
     private primitive: PrimitiveBase;
 
     private readonly line: Line;
+    private readonly batchForLine: BatchOfLines;
+    private readonly batchForWindow: BatchOfLines;
 
     private lastPrimitiveVisibilityStatus: EVisibility | null = null;
     private lastLineIntersectingStatus: boolean | null = null;
@@ -41,6 +43,19 @@ class EngineVisibilityTest extends EngineBase {
         });
 
         this.line = [{ x: -50, y: -50 }, { x: 70, y: 50 }];
+        this.batchForLine = {
+            items: [{
+                lines: [this.line],
+                thickness: 1,
+            }]
+        };
+
+        this.batchForWindow = {
+            items: [{
+                lines: [],
+                thickness: 1,
+            }],
+        };
     }
 
     public reset(): void {
@@ -94,30 +109,14 @@ class EngineVisibilityTest extends EngineBase {
 
         plotter.drawPolygons([this.primitive], 1);
 
-        plotter.drawLines([
-            {
-                lines: [this.line],
-                thickness: 1,
-            }
-        ], new Color(0, 255, 0), 1);
+        plotter.drawLines(this.batchForLine, new Color(0, 255, 0), 1);
         this.drawTestWindow(plotter);
 
         plotter.finalize(Zooming.NO_ZOOMING);
     }
 
     private drawTestWindow(plotter: PlotterBase): void {
-        const linesBatch: ILines = {
-            lines: [[
-                this.testWindow.topLeft,
-                { x: this.testWindow.right, y: this.testWindow.top },
-                this.testWindow.bottomRight,
-                { x: this.testWindow.left, y: this.testWindow.bottom },
-                this.testWindow.topLeft,
-            ]],
-            thickness: 1,
-        };
-
-        plotter.drawLines([linesBatch], Color.WHITE, 1);
+        plotter.drawLines(this.batchForWindow, Color.WHITE, 1);
     }
 
     private updateTestWindow(): void {
@@ -133,6 +132,14 @@ class EngineVisibilityTest extends EngineBase {
         this.testWindow.topLeft.y = mousePosition.y - 0.5 * testWindowHeight;
         this.testWindow.bottomRight.x = mousePosition.x + 0.5 * testWindowWidth;
         this.testWindow.bottomRight.y = mousePosition.y + 0.5 * testWindowHeight;
+
+        this.batchForWindow.items[0].lines[0] = [
+            this.testWindow.topLeft,
+            { x: this.testWindow.right, y: this.testWindow.top },
+            this.testWindow.bottomRight,
+            { x: this.testWindow.left, y: this.testWindow.bottom },
+            this.testWindow.topLeft,
+        ];
     }
 }
 

@@ -15,6 +15,11 @@ interface IPolygon {
     vertices: IPoint[];
     color: Color;
 }
+interface IBatch<T> {
+    readonly items: T[];
+}
+
+type BatchOfLines = IBatch<ILines>;
 
 abstract class PlotterBase {
     protected readonly canvas: HTMLCanvasElement;
@@ -65,11 +70,12 @@ abstract class PlotterBase {
 
     public abstract get isReady(): boolean;
     protected abstract clearCanvas(color: Color): void;
-    public abstract drawLines(linesBatches: ILines[], color: Color, alpha: number): void;
+    public abstract drawLines(batchOfLines: BatchOfLines, color: Color, alpha: number): void;
     public abstract drawPolygons(polygons: IPolygon[], alpha: number): void;
 }
 
 export {
+    BatchOfLines,
     Line,
     ILines,
     IPolygon,

@@ -3,7 +3,7 @@ import { Rectangle } from "../misc/rectangle";
 import { Throttle } from "../misc/throttle";
 import { Zooming } from "../misc/zooming";
 import { EPrimitive, Parameters } from "../parameters";
-import { ILines, Line, PlotterBase } from "../plotter/plotter-base";
+import { BatchOfLines, ILines, Line, PlotterBase } from "../plotter/plotter-base";
 import { EVisibility, PrimitiveBase } from "../primitives/primitive-base";
 import { PrimitiveQuads } from "../primitives/primitive-quads";
 import { PrimitiveTriangles } from "../primitives/primitives-triangles";
@@ -97,10 +97,15 @@ class Engine extends EngineBase {
                 this.adjustLinesThickness();
             }
 
-            const allOpaqueLines = this.linesBatches.slice(0, emergingLayer);
-            plotter.drawLines(allOpaqueLines, Parameters.linesColor, 1);
+            const batchOfOpaqueLines: BatchOfLines = {
+                items: this.linesBatches.slice(0, emergingLayer),
+            };
+            plotter.drawLines(batchOfOpaqueLines, Parameters.linesColor, 1);
             if (emergingLayer < this.linesBatches.length) {
-                plotter.drawLines([this.linesBatches[emergingLayer]], Parameters.linesColor, emergingLayerAlpha);
+                const batchOfEmerginLines = {
+                    items: [this.linesBatches[emergingLayer]],
+                };
+                plotter.drawLines(batchOfEmerginLines, Parameters.linesColor, emergingLayerAlpha);
             }
         }
 

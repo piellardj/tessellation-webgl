@@ -1,7 +1,7 @@
 import { Color } from "../misc/color";
 import * as Loader from "../misc/loader";
 import { Zooming } from "../misc/zooming";
-import { ILines, IPolygon, PlotterBase } from "./plotter-base";
+import { BatchOfLines, IPolygon, PlotterBase } from "./plotter-base";
 
 import * as GLCanvas from "../gl-utils/gl-canvas";
 import { gl } from "../gl-utils/gl-canvas";
@@ -11,7 +11,7 @@ import { Viewport } from "../gl-utils/viewport";
 
 
 interface IPendingLines {
-    readonly linesBatches: ILines[];
+    readonly batchOfLines: BatchOfLines;
     readonly color: Color;
     readonly alpha: number;
 }
@@ -124,8 +124,8 @@ class PlotterWebGL extends PlotterBase {
         gl.clear(gl.COLOR_BUFFER_BIT);
     }
 
-    public drawLines(linesBatches: ILines[], color: Color, alpha: number): void {
-        this.pendingLines.push({ linesBatches, color, alpha });
+    public drawLines(batchOfLines: BatchOfLines, color: Color, alpha: number): void {
+        this.pendingLines.push({ batchOfLines, color, alpha });
     }
 
     public drawPolygons(polygons: IPolygon[], alpha: number): void {
@@ -139,8 +139,8 @@ class PlotterWebGL extends PlotterBase {
             const indexOfFirstVertice = nbVertices;
 
             let verticesCount = 0;
-            for (const linesBatch of pendingLinesSuperbatch.linesBatches) {
-                for (const line of linesBatch.lines) {
+            for (const lines of pendingLinesSuperbatch.batchOfLines.items) {
+                for (const line of lines.lines) {
                     if (line.length >= 2) {
                         verticesCount += 2 + 2 * (line.length - 2);
                     }
@@ -161,8 +161,8 @@ class PlotterWebGL extends PlotterBase {
         const bufferData = new Float32Array(nbVertices * FLOATS_PER_VERTICE);
         let i = 0;
         for (const pendingLinesSuperbatch of this.pendingLines) {
-            for (const linesBatch of pendingLinesSuperbatch.linesBatches) {
-                for (const line of linesBatch.lines) {
+            for (const lines of pendingLinesSuperbatch.batchOfLines.items) {
+                for (const line of lines.lines) {
                     if (line.length >= 2) {
                         bufferData[i++] = line[0].x;
                         bufferData[i++] = line[0].y;

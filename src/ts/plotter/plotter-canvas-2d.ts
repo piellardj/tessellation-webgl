@@ -1,5 +1,5 @@
 import { Color } from "../misc/color";
-import { ILines, IPolygon, PlotterBase } from "./plotter-base";
+import { BatchOfLines, IPolygon, PlotterBase } from "./plotter-base";
 
 import "../page-interface-generated";
 
@@ -23,18 +23,18 @@ class PlotterCanvas2D extends PlotterBase {
         return true;
     }
 
-    public drawLines(linesBatches: ILines[], color: Color, alpha: number): void {
-        if (alpha > 0 && linesBatches) {
+    public drawLines(batchOfLines: BatchOfLines, color: Color, alpha: number): void {
+        if (alpha > 0 && batchOfLines) {
             this.context.fillStyle = "none";
             this.context.strokeStyle = (alpha >= 1) ? color.toHexaString() : color.toRgbaString(alpha);
 
             const halfWidth = 0.5 * this.width;
             const halfHeight = 0.5 * this.height;
-            for (const linesBatch of linesBatches) {
-                this.context.lineWidth = linesBatch.thickness;
+            for (const lines of batchOfLines.items) {
+                this.context.lineWidth = lines.thickness;
 
                 this.context.beginPath();
-                for (const line of linesBatch.lines) {
+                for (const line of lines.lines) {
                     if (line.length >= 2) {
                         this.context.moveTo(line[0].x + halfWidth, line[0].y + halfHeight);
 

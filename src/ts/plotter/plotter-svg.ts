@@ -1,5 +1,5 @@
 import { Color } from "../misc/color";
-import { ILines, IPolygon, PlotterBase } from "./plotter-base";
+import { BatchOfLines, IPolygon, PlotterBase } from "./plotter-base";
 
 
 class PlotterSVG extends PlotterBase {
@@ -29,16 +29,16 @@ class PlotterSVG extends PlotterBase {
     // tslint:disable-next-line:no-empty
     protected clearCanvas(): void { }
 
-    public drawLines(linesBatches: ILines[], color: Color, alpha: number): void {
-        if (alpha > 0 && linesBatches) {
+    public drawLines(batchOfLines: BatchOfLines, color: Color, alpha: number): void {
+        if (alpha > 0 && batchOfLines) {
             this.lines.push(`\t<g stroke="${color.toHexaString()}" fill="none" opacity="${alpha}">`);
 
             const halfWidth = 0.5 * this.width;
             const halfHeight = 0.5 * this.height;
-            for (const linesBatch of linesBatches) {
+            for (const lines of batchOfLines.items) {
                 const path: string[] = [];
 
-                for (const line of linesBatch.lines) {
+                for (const line of lines.lines) {
                     if (line.length >= 2) {
                         path.push(`M${line[0].x + halfWidth} ${line[0].y + halfHeight}`);
 
@@ -49,7 +49,7 @@ class PlotterSVG extends PlotterBase {
                 }
 
                 if (path.length > 0) {
-                    this.lines.push(`\t\t<path stroke-width="${linesBatch.thickness}" d="${path.join()}"/>`);
+                    this.lines.push(`\t\t<path stroke-width="${lines.thickness}" d="${path.join()}"/>`);
                 }
             }
             this.lines.push(`\t</g>`);
