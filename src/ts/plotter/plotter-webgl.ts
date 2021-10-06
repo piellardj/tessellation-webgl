@@ -34,9 +34,15 @@ interface ILinesVBO {
     vboParts: ILinesVboPart[];
 }
 
+interface IPolygonsVboPart {
+    readonly indexOfFirstVertice: number;
+    readonly verticesCount: number;
+    readonly alpha: number;
+}
+
 interface IPolygonsVBO {
     readonly id: WebGLBuffer;
-    verticesCount: number;
+    vboParts: IPolygonsVboPart[];
 }
 
 class PlotterWebGL extends PlotterBase {
@@ -75,7 +81,7 @@ class PlotterWebGL extends PlotterBase {
 
         this.polygonsVbo = {
             id: gl.createBuffer(),
-            verticesCount: 0,
+            vboParts: [],
         };
 
         this.asyncLoadShader("shaderLines.vert", "shaderLines.frag", (shader: Shader) => {
@@ -91,7 +97,7 @@ class PlotterWebGL extends PlotterBase {
 
     public prepare(): void {
         this.linesVbo.vboParts = [];
-        this.polygonsVbo.verticesCount = 0;
+        this.polygonsVbo.vboParts = [];
     }
 
     public finalize(zooming: Zooming): void {
@@ -206,11 +212,21 @@ class PlotterWebGL extends PlotterBase {
         // optim: first, count vertices to be able to pre-reserve space
         let nbVertices = 0;
         for (const polygonsBatch of this.pendingPolygons) {
+            const indexOfFirstVertice = nbVertices;
+
+            let verticesCount = 0;
             for (const polygon of polygonsBatch.polygons) {
                 if (polygon.vertices.length >= 3) {
-                    nbVertices += 3 * (polygon.vertices.length - 2);
+                    verticesCount += 3 * (polygon.vertices.length - 2);
                 }
             }
+            nbVertices += verticesCount;
+
+            this.polygonsVbo.vboParts.push({
+                indexOfFirstVertice,
+                verticesCount,
+                alpha: polygonsBatch.alpha,
+            });
         }
 
         const FLOATS_PER_VERTICE = 6;
@@ -229,21 +245,21 @@ class PlotterWebGL extends PlotterBase {
                         bufferData[i++] = red;
                         bufferData[i++] = green;
                         bufferData[i++] = blue;
-                        bufferData[i++] = polygonsBatch.alpha;
+                        i++; // padding
 
                         bufferData[i++] = polygon.vertices[iP].x;
                         bufferData[i++] = polygon.vertices[iP].y;
                         bufferData[i++] = red;
                         bufferData[i++] = green;
                         bufferData[i++] = blue;
-                        bufferData[i++] = polygonsBatch.alpha;
+                        i++; // padding
 
                         bufferData[i++] = polygon.vertices[iP + 1].x;
                         bufferData[i++] = polygon.vertices[iP + 1].y;
                         bufferData[i++] = red;
                         bufferData[i++] = green;
                         bufferData[i++] = blue;
-                        bufferData[i++] = polygonsBatch.alpha;
+                        i++; // padding
                     }
                 }
             }
@@ -254,11 +270,10 @@ class PlotterWebGL extends PlotterBase {
 
         gl.bindBuffer(gl.ARRAY_BUFFER, this.polygonsVbo.id);
         gl.bufferData(gl.ARRAY_BUFFER, bufferData, gl.DYNAMIC_DRAW);
-        this.polygonsVbo.verticesCount = bufferData.length / FLOATS_PER_VERTICE;
     }
 
     private drawPolygonsVBO(zooming: Zooming): void {
-        if (this.shaderPolygons && this.polygonsVbo.verticesCount > 0) {
+        if (this.shaderPolygons && this.polygonsVbo.vboParts.length > 0) {
             this.shaderPolygons.use();
 
             const BYTES_PER_FLOAT = Float32Array.BYTES_PER_ELEMENT;
@@ -272,9 +287,12 @@ class PlotterWebGL extends PlotterBase {
 
             this.shaderPolygons.u["uZoom"].value = [zooming.center.x, zooming.center.y, zooming.currentZoomFactor, 0];
             this.shaderPolygons.u["uScreenSize"].value = [0.5 * this.width, -0.5 * this.height];
-            this.shaderPolygons.bindUniforms();
 
-            gl.drawArrays(gl.TRIANGLES, 0, this.polygonsVbo.verticesCount);
+            for (const vboPart of this.polygonsVbo.vboParts) {
+                this.shaderPolygons.u["uAlpha"].value = vboPart.alpha;
+                this.shaderPolygons.bindUniforms();
+                gl.drawArrays(gl.TRIANGLES, vboPart.indexOfFirstVertice, vboPart.verticesCount);
+            }
         }
     }
 
