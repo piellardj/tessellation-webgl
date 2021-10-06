@@ -259,7 +259,7 @@ class PlotterWebGL extends PlotterBase {
         if (this.shaderPolygons && this.polygonsVbo.verticesCount > 0) {
             this.shaderPolygons.use();
 
-            const BYTES_PER_FLOAT = 4;
+            const BYTES_PER_FLOAT = Float32Array.BYTES_PER_ELEMENT;
             const aPositionLoc = this.shaderPolygons.a["aPosition"].loc;
             const aColorLoc = this.shaderPolygons.a["aColor"].loc;
             gl.bindBuffer(gl.ARRAY_BUFFER, this.polygonsVbo.id);
