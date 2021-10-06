@@ -95,7 +95,8 @@ class Engine extends EngineBase {
         }
 
         if (Parameters.displayLines) {
-            plotter.drawLines(this.linesBatches.slice(0, emergingLayer), Parameters.linesColor, 1);
+            const allOpaqueLines = this.linesBatches.slice(0, emergingLayer);
+            plotter.drawLines(allOpaqueLines, Parameters.linesColor, 1);
             if (emergingLayer < this.linesBatches.length) {
                 plotter.drawLines([this.linesBatches[emergingLayer]], Parameters.linesColor, emergingLayerAlpha);
             }
