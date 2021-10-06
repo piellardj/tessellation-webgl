@@ -1,7 +1,7 @@
 import { Color } from "../misc/color";
 import * as Loader from "../misc/loader";
 import { Zooming } from "../misc/zooming";
-import { ILinesBatch, IPolygon, PlotterBase } from "./plotter-base";
+import { ILines, IPolygon, PlotterBase } from "./plotter-base";
 
 import * as GLCanvas from "../gl-utils/gl-canvas";
 import { gl } from "../gl-utils/gl-canvas";
@@ -11,7 +11,7 @@ import { Viewport } from "../gl-utils/viewport";
 
 
 interface IPendingLines {
-    readonly linesBatches: ILinesBatch[];
+    readonly linesBatches: ILines[];
     readonly color: Color;
     readonly alpha: number;
 }
@@ -123,7 +123,7 @@ class PlotterWebGL extends PlotterBase {
         gl.clear(gl.COLOR_BUFFER_BIT);
     }
 
-    public drawLines(linesBatches: ILinesBatch[], color: Color, alpha: number): void {
+    public drawLines(linesBatches: ILines[], color: Color, alpha: number): void {
         this.pendingLines.push({ linesBatches, color, alpha });
     }
 

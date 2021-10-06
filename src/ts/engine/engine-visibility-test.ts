@@ -2,7 +2,7 @@ import { Color } from "../misc/color";
 import { Rectangle } from "../misc/rectangle";
 import { Zooming } from "../misc/zooming";
 import { EPrimitive, Parameters } from "../parameters";
-import { ILinesBatch, IPolygon, Line, PlotterBase } from "../plotter/plotter-base";
+import { ILines, IPolygon, Line, PlotterBase } from "../plotter/plotter-base";
 import { EVisibility, PrimitiveBase } from "../primitives/primitive-base";
 import { PrimitiveQuads } from "../primitives/primitive-quads";
 import { PrimitiveTriangles } from "../primitives/primitives-triangles";
@@ -135,7 +135,7 @@ class EngineVisibilityTest extends EngineBase {
     }
 
     private drawTestWindow(plotter: PlotterBase): void {
-        const linesBatch: ILinesBatch = {
+        const linesBatch: ILines = {
             lines: [[
                 this.testWindow.topLeft,
                 { x: this.testWindow.right, y: this.testWindow.top },

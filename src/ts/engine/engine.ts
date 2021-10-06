@@ -3,7 +3,7 @@ import { Rectangle } from "../misc/rectangle";
 import { Throttle } from "../misc/throttle";
 import { Zooming } from "../misc/zooming";
 import { EPrimitive, Parameters } from "../parameters";
-import { ILinesBatch, Line, PlotterBase } from "../plotter/plotter-base";
+import { ILines, Line, PlotterBase } from "../plotter/plotter-base";
 import { EVisibility, PrimitiveBase } from "../primitives/primitive-base";
 import { PrimitiveQuads } from "../primitives/primitive-quads";
 import { PrimitiveTriangles } from "../primitives/primitives-triangles";
@@ -15,7 +15,7 @@ type Layer = PrimitiveBase[];
 class Engine extends EngineBase {
     private rootPrimitive: PrimitiveBase;
     private layers: Layer[];
-    private linesBatches: ILinesBatch[];
+    private linesBatches: ILines[];
 
     private lastLayerBirthTimestamp: number;
 
@@ -192,7 +192,7 @@ class Engine extends EngineBase {
         if (currentPrimitivesCountForLastLayer <= 0.5 * idealPrimitivesCountForLastLayer) {
             // subdivide once more
             let newLayer: Layer = [];
-            const newLinesBatch: ILinesBatch = {
+            const newLinesBatch: ILines = {
                 lines: [],
                 thickness: 1,
             };

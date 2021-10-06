@@ -6,7 +6,7 @@ import { Zooming } from "../misc/zooming";
 
 type Line = IPoint[];
 
-interface ILinesBatch {
+interface ILines {
     lines: Line[];
     thickness: number;
 }
@@ -65,13 +65,13 @@ abstract class PlotterBase {
 
     public abstract get isReady(): boolean;
     protected abstract clearCanvas(color: Color): void;
-    public abstract drawLines(linesBatches: ILinesBatch[], color: Color, alpha: number): void;
+    public abstract drawLines(linesBatches: ILines[], color: Color, alpha: number): void;
     public abstract drawPolygons(polygons: IPolygon[], alpha: number): void;
 }
 
 export {
     Line,
-    ILinesBatch,
+    ILines,
     IPolygon,
     PlotterBase,
 };

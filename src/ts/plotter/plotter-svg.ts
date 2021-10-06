@@ -1,5 +1,5 @@
 import { Color } from "../misc/color";
-import { ILinesBatch, IPolygon, PlotterBase } from "./plotter-base";
+import { ILines, IPolygon, PlotterBase } from "./plotter-base";
 
 
 class PlotterSVG extends PlotterBase {
@@ -29,7 +29,7 @@ class PlotterSVG extends PlotterBase {
     // tslint:disable-next-line:no-empty
     protected clearCanvas(): void { }
 
-    public drawLines(linesBatches: ILinesBatch[], color: Color, alpha: number): void {
+    public drawLines(linesBatches: ILines[], color: Color, alpha: number): void {
         if (alpha > 0 && linesBatches) {
             this.lines.push(`\t<g stroke="${color.toHexaString()}" fill="none" opacity="${alpha}">`);
 

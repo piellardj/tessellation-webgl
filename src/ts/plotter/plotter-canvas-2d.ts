@@ -1,5 +1,5 @@
 import { Color } from "../misc/color";
-import { ILinesBatch, IPolygon, PlotterBase } from "./plotter-base";
+import { ILines, IPolygon, PlotterBase } from "./plotter-base";
 
 import "../page-interface-generated";
 
@@ -23,7 +23,7 @@ class PlotterCanvas2D extends PlotterBase {
         return true;
     }
 
-    public drawLines(linesBatches: ILinesBatch[], color: Color, alpha: number): void {
+    public drawLines(linesBatches: ILines[], color: Color, alpha: number): void {
         if (alpha > 0 && linesBatches) {
             this.context.fillStyle = "none";
             this.context.strokeStyle = (alpha >= 1) ? color.toHexaString() : color.toRgbaString(alpha);
