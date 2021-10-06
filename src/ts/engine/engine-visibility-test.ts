@@ -69,18 +69,7 @@ class EngineVisibilityTest extends EngineBase {
     }
 
     public update(): boolean {
-        const canvasSize = Page.Canvas.getSize();
-        const mousePosition = Parameters.mousePositionInPixels;
-        mousePosition.x -= 0.5 * canvasSize[0];
-        mousePosition.y -= 0.5 * canvasSize[1];
-
-        const testWindowWidth = this.zoom * this.testWindowBaseWidth;
-        const testWindowHeight = this.zoom * this.testWindowBaseHeight;
-
-        this.testWindow.topLeft.x = mousePosition.x - 0.5 * testWindowWidth;
-        this.testWindow.topLeft.y = mousePosition.y - 0.5 * testWindowHeight;
-        this.testWindow.bottomRight.x = mousePosition.x + 0.5 * testWindowWidth;
-        this.testWindow.bottomRight.y = mousePosition.y + 0.5 * testWindowHeight;
+        this.updateTestWindow();
 
         const newPrimitiveVisibilityStatus = this.primitive.computeVisibility(this.testWindow);
         if (this.lastPrimitiveVisibilityStatus !== newPrimitiveVisibilityStatus) {
@@ -129,6 +118,21 @@ class EngineVisibilityTest extends EngineBase {
         };
 
         plotter.drawLines([linesBatch], Color.WHITE, 1);
+    }
+
+    private updateTestWindow(): void {
+        const canvasSize = Page.Canvas.getSize();
+        const mousePosition = Parameters.mousePositionInPixels;
+        mousePosition.x -= 0.5 * canvasSize[0];
+        mousePosition.y -= 0.5 * canvasSize[1];
+
+        const testWindowWidth = this.zoom * this.testWindowBaseWidth;
+        const testWindowHeight = this.zoom * this.testWindowBaseHeight;
+
+        this.testWindow.topLeft.x = mousePosition.x - 0.5 * testWindowWidth;
+        this.testWindow.topLeft.y = mousePosition.y - 0.5 * testWindowHeight;
+        this.testWindow.bottomRight.x = mousePosition.x + 0.5 * testWindowWidth;
+        this.testWindow.bottomRight.y = mousePosition.y + 0.5 * testWindowHeight;
     }
 }
 
