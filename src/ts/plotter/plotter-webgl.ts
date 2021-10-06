@@ -25,6 +25,7 @@ interface IPendingPolygons {
 interface IVboPart {
     readonly indexOfFirstVertice: number;
     readonly verticesCount: number;
+    scheduledForDrawing: boolean;
 }
 
 interface IPartionedVbo<T extends IVboPart> {
@@ -150,6 +151,7 @@ class PlotterWebGL extends PlotterBase {
             this.linesVbo.vboParts.push({
                 indexOfFirstVertice,
                 verticesCount,
+                scheduledForDrawing: true,
                 color: pendingLinesSuperbatch.color,
                 alpha: pendingLinesSuperbatch.alpha,
             });
@@ -187,7 +189,9 @@ class PlotterWebGL extends PlotterBase {
     }
 
     private drawLinesVBO(zooming: Zooming): void {
-        if (this.shaderLines && this.linesVbo.vboParts.length > 0) {
+        const vbpPartsScheduledForDrawing = this.linesVbo.vboParts.filter((vboPart: IVboPart) => vboPart.scheduledForDrawing);
+
+        if (this.shaderLines && vbpPartsScheduledForDrawing.length > 0) {
             this.shaderLines.use();
 
             const aVertexLocation = this.shaderLines.a["aVertex"].loc;
@@ -198,10 +202,11 @@ class PlotterWebGL extends PlotterBase {
             this.shaderLines.u["uZoom"].value = [zooming.center.x, zooming.center.y, zooming.currentZoomFactor, 0];
             this.shaderLines.u["uScreenSize"].value = [0.5 * this.width, -0.5 * this.height];
 
-            for (const vboPart of this.linesVbo.vboParts) {
+            for (const vboPart of vbpPartsScheduledForDrawing) {
                 this.shaderLines.u["uColor"].value = [vboPart.color.r / 255, vboPart.color.g / 255, vboPart.color.b / 255, vboPart.alpha];
                 this.shaderLines.bindUniforms();
                 gl.drawArrays(gl.LINES, vboPart.indexOfFirstVertice, vboPart.verticesCount);
+                vboPart.scheduledForDrawing = false;
             }
         }
     }
@@ -223,6 +228,7 @@ class PlotterWebGL extends PlotterBase {
             this.polygonsVbo.vboParts.push({
                 indexOfFirstVertice,
                 verticesCount,
+                scheduledForDrawing: true,
                 alpha: polygonsBatch.alpha,
             });
         }
@@ -271,7 +277,9 @@ class PlotterWebGL extends PlotterBase {
     }
 
     private drawPolygonsVBO(zooming: Zooming): void {
-        if (this.shaderPolygons && this.polygonsVbo.vboParts.length > 0) {
+        const vbpPartsScheduledForDrawing = this.polygonsVbo.vboParts.filter((vboPart: IVboPart) => vboPart.scheduledForDrawing);
+
+        if (this.shaderPolygons && vbpPartsScheduledForDrawing.length > 0) {
             this.shaderPolygons.use();
 
             const BYTES_PER_FLOAT = Float32Array.BYTES_PER_ELEMENT;
@@ -286,10 +294,11 @@ class PlotterWebGL extends PlotterBase {
             this.shaderPolygons.u["uZoom"].value = [zooming.center.x, zooming.center.y, zooming.currentZoomFactor, 0];
             this.shaderPolygons.u["uScreenSize"].value = [0.5 * this.width, -0.5 * this.height];
 
-            for (const vboPart of this.polygonsVbo.vboParts) {
+            for (const vboPart of vbpPartsScheduledForDrawing) {
                 this.shaderPolygons.u["uAlpha"].value = vboPart.alpha;
                 this.shaderPolygons.bindUniforms();
                 gl.drawArrays(gl.TRIANGLES, vboPart.indexOfFirstVertice, vboPart.verticesCount);
+                vboPart.scheduledForDrawing = false;
             }
         }
     }
