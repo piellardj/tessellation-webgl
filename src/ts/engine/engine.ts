@@ -126,12 +126,7 @@ class Engine extends EngineBase {
             );
         }
 
-        const rootLayer = [this.rootPrimitive];
-        this.layers = [rootLayer];
-        this.linesBatches = [{
-            lines: [this.rootPrimitive.getOutline()],
-            thickness: 1,
-        }];
+        this.rebuildLayersCollections();
     }
 
     public recomputeColors(): void {
@@ -279,15 +274,13 @@ class Engine extends EngineBase {
 
         this.linesBatches = [];
         for (let iLayer = 0; iLayer < this.layers.length; iLayer++) {
-            const lines: Line[] = [];
+            let lines: Line[];
 
             if (iLayer === 0) {
-                Array.prototype.push.apply(lines, this.rootPrimitive.getOutline());
-            }
-
-            const isLastLayer = (iLayer === this.layers.length - 1);
-            if (!isLastLayer) {
-                for (const primitive of this.layers[iLayer]) {
+                lines = [this.rootPrimitive.getOutline()];
+            } else {
+                lines = [];
+                for (const primitive of this.layers[iLayer - 1]) {
                     lines.push(primitive.subdivision);
                 }
             }
