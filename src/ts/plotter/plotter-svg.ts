@@ -1,5 +1,5 @@
 import { Color } from "../misc/color";
-import { ILinesBatch, IPolygon, PlotterBase } from "./plotter-base";
+import { BatchOfLines, BatchOfPolygons, PlotterBase } from "./plotter-base";
 
 
 class PlotterSVG extends PlotterBase {
@@ -29,40 +29,38 @@ class PlotterSVG extends PlotterBase {
     // tslint:disable-next-line:no-empty
     protected clearCanvas(): void { }
 
-    public drawLines(linesBatches: ILinesBatch[], color: Color, alpha: number): void {
-        if (alpha > 0 && linesBatches) {
+    public drawLines(batchOfLines: BatchOfLines, thickness: number, color: Color, alpha: number): void {
+        if (alpha > 0 && batchOfLines) {
             this.lines.push(`\t<g stroke="${color.toHexaString()}" fill="none" opacity="${alpha}">`);
 
             const halfWidth = 0.5 * this.width;
             const halfHeight = 0.5 * this.height;
-            for (const linesBatch of linesBatches) {
+            for (const line of batchOfLines.items) {
                 const path: string[] = [];
 
-                for (const line of linesBatch.lines) {
-                    if (line.length >= 2) {
-                        path.push(`M${line[0].x + halfWidth} ${line[0].y + halfHeight}`);
+                if (line.length >= 2) {
+                    path.push(`M${line[0].x + halfWidth} ${line[0].y + halfHeight}`);
 
-                        for (let iP = 1; iP < line.length; iP++) {
-                            path.push(`L${line[iP].x + halfWidth} ${line[iP].y + halfHeight}`);
-                        }
+                    for (let iP = 1; iP < line.length; iP++) {
+                        path.push(`L${line[iP].x + halfWidth} ${line[iP].y + halfHeight}`);
                     }
                 }
 
                 if (path.length > 0) {
-                    this.lines.push(`\t\t<path stroke-width="${linesBatch.thickness}" d="${path.join()}"/>`);
+                    this.lines.push(`\t\t<path stroke-width="${thickness}" d="${path.join()}"/>`);
                 }
             }
             this.lines.push(`\t</g>`);
         }
     }
 
-    public drawPolygons(polygons: IPolygon[], alpha: number): void {
-        if (alpha > 0 && polygons) {
+    public drawPolygons(batchOfPolygons: BatchOfPolygons, alpha: number): void {
+        if (alpha > 0 && batchOfPolygons) {
             this.lines.push(`\t<g stroke="none" opacity="${alpha}">`);
 
             const halfWidth = 0.5 * this.width;
             const halfHeight = 0.5 * this.height;
-            for (const polygon of polygons) {
+            for (const polygon of batchOfPolygons.items) {
                 if (polygon.vertices.length >= 3) {
                     const path: string[] = [];
 
