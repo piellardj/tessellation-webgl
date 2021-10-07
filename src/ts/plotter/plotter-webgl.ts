@@ -221,10 +221,24 @@ class PlotterWebGL extends PlotterBase {
             this.shaderLines.u["uZoom"].value = [zooming.center.x, zooming.center.y, zooming.currentZoomFactor, 0];
             this.shaderLines.u["uScreenSize"].value = [0.5 * this.width, -0.5 * this.height];
 
-            for (const vboPart of vbpPartsScheduledForDrawing) {
-                this.shaderLines.u["uColor"].value = [vboPart.color.r / 255, vboPart.color.g / 255, vboPart.color.b / 255, vboPart.alpha];
+            let currentVboPartId = 0;
+            while (currentVboPartId < vbpPartsScheduledForDrawing.length) {
+                const currentVboPart = vbpPartsScheduledForDrawing[currentVboPartId];
+                const indexOfFirstVertice = currentVboPart.indexOfFirstVertice;
+                let verticesCount = currentVboPart.verticesCount;
+
+                let nextVboPart = vbpPartsScheduledForDrawing[currentVboPartId + 1];
+                while (this.doLinesVboPartsHaveSameUniforms(currentVboPart, nextVboPart)) {
+                    verticesCount += nextVboPart.verticesCount;
+                    currentVboPartId++;
+                    nextVboPart = vbpPartsScheduledForDrawing[currentVboPartId + 1];
+                }
+
+                this.shaderLines.u["uColor"].value = [currentVboPart.color.r / 255, currentVboPart.color.g / 255, currentVboPart.color.b / 255, currentVboPart.alpha];
                 this.shaderLines.bindUniforms();
-                gl.drawArrays(gl.LINES, vboPart.indexOfFirstVertice, vboPart.verticesCount);
+                gl.drawArrays(gl.LINES, indexOfFirstVertice, verticesCount);
+
+                currentVboPartId++;
             }
         }
     }
@@ -332,6 +346,14 @@ class PlotterWebGL extends PlotterBase {
 
     private selectVBOPartsScheduledForDrawing<T extends IVboPart>(partitionedVBO: IPartionedVbo<T>): T[] {
         return partitionedVBO.vboParts.filter((vboPart: T) => vboPart.scheduledForDrawing);
+    }
+
+    private doLinesVboPartsHaveSameUniforms(vboPart1: ILinesVboPart, vboPart2: ILinesVboPart): boolean {
+        return vboPart1 && vboPart2 &&
+            (vboPart1.color.r === vboPart2.color.r) &&
+            (vboPart1.color.g === vboPart2.color.g) &&
+            (vboPart1.color.b === vboPart2.color.b) &&
+            (vboPart1.alpha === vboPart2.alpha);
     }
 
     private asyncLoadShader(vertexFilename: string, fragmentFilename: string, callback: (shader: Shader) => unknown): void {
