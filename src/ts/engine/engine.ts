@@ -139,6 +139,10 @@ class Engine extends EngineBase {
 
     public recomputeColors(): void {
         this.rootPrimitive.color = this.computeRootPrimitiveColor();
+        // The colors of the primitive in the VBO so we need to reupload it.
+        for (const layer of this.layers) {
+            layer.primitives.geometryId.registerChange();
+        }
     }
 
     private computeRootPrimitiveColor(): Color {
