@@ -69,14 +69,13 @@ abstract class Parameters {
         return Page.Range.getValue(controlId.VIEWPORT_SCALE_RANGE_ID);
     }
 
-    public static get blending(): boolean {
-        return Page.Checkbox.isChecked(controlId.BLENDING_CHECKBOX_ID);
-    }
-
     public static get colorVariation(): number {
         return 255 * Page.Range.getValue(controlId.COLOR_VARIATION_RANGE_ID);
     }
 
+    public static get blending(): boolean {
+        return Page.Checkbox.isChecked(controlId.BLENDING_CHECKBOX_ID);
+    }
 
     public static get displayLines(): boolean {
         return Page.Checkbox.isChecked(controlId.DISPLAY_LINES_CHECKBOX_ID);
