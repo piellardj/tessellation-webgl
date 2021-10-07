@@ -23,7 +23,7 @@ class PlotterSVG extends PlotterBase {
     }
 
     // tslint:disable-next-line:no-empty
-    public prepare(): void { }
+    public initialize(): void { }
     // tslint:disable-next-line:no-empty
     protected clearCanvas(): void { }
 

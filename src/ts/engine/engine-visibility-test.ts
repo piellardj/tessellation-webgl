@@ -113,7 +113,7 @@ class EngineVisibilityTest extends EngineBase {
     }
 
     public draw(plotter: PlotterBase): void {
-        plotter.prepare();
+        plotter.initialize();
 
         plotter.drawPolygons(this.batchForPrimitive, 1);
 

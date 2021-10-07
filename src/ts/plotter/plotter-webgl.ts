@@ -97,7 +97,7 @@ class PlotterWebGL extends PlotterBase {
         });
     }
 
-    public prepare(): void {
+    public initialize(): void {
         for (const vboPart of this.linesVbo.vboParts) {
             vboPart.scheduledForDrawing = false;
         }

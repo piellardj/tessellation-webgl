@@ -63,7 +63,7 @@ abstract class PlotterBase {
         this.clearCanvas(backgroundColor);
     }
 
-    public abstract prepare(): void;
+    public abstract initialize(): void;
     public abstract finalize(zooming: Zooming): void;
 
     public abstract get isReady(): boolean;

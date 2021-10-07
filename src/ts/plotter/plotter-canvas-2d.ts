@@ -13,7 +13,7 @@ class PlotterCanvas2D extends PlotterBase {
     }
 
     // tslint:disable-next-line:no-empty
-    public prepare(): void { }
+    public initialize(): void { }
     // tslint:disable-next-line:no-empty
     public finalize(): void { }
 
