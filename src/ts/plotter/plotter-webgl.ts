@@ -144,7 +144,7 @@ class PlotterWebGL extends PlotterBase {
         gl.clear(gl.COLOR_BUFFER_BIT);
     }
 
-    public drawLines(batchOfLines: BatchOfLines, color: Color, alpha: number): void {
+    public drawLines(batchOfLines: BatchOfLines, _thickness: number, color: Color, alpha: number): void {
         this.pendingLines.push({ batchOfLines, color, alpha });
     }
 
@@ -161,11 +161,9 @@ class PlotterWebGL extends PlotterBase {
             const indexOfFirstVertice = nbVertices;
 
             let verticesCount = 0;
-            for (const lines of pendingLinesSuperbatch.batchOfLines.items) {
-                for (const line of lines.lines) {
-                    if (line.length >= 2) {
-                        verticesCount += 2 + 2 * (line.length - 2);
-                    }
+            for (const line of pendingLinesSuperbatch.batchOfLines.items) {
+                if (line.length >= 2) {
+                    verticesCount += 2 + 2 * (line.length - 2);
                 }
             }
             nbVertices += verticesCount;
@@ -184,22 +182,20 @@ class PlotterWebGL extends PlotterBase {
         const bufferData = new Float32Array(nbVertices * FLOATS_PER_VERTICE);
         let i = 0;
         for (const pendingLinesSuperbatch of this.pendingLines) {
-            for (const lines of pendingLinesSuperbatch.batchOfLines.items) {
-                for (const line of lines.lines) {
-                    if (line.length >= 2) {
-                        bufferData[i++] = line[0].x;
-                        bufferData[i++] = line[0].y;
+            for (const line of pendingLinesSuperbatch.batchOfLines.items) {
+                if (line.length >= 2) {
+                    bufferData[i++] = line[0].x;
+                    bufferData[i++] = line[0].y;
 
-                        for (let iP = 1; iP < line.length - 1; iP++) {
-                            bufferData[i++] = line[iP].x;
-                            bufferData[i++] = line[iP].y;
-                            bufferData[i++] = line[iP].x;
-                            bufferData[i++] = line[iP].y;
-                        }
-
-                        bufferData[i++] = line[line.length - 1].x;
-                        bufferData[i++] = line[line.length - 1].y;
+                    for (let iP = 1; iP < line.length - 1; iP++) {
+                        bufferData[i++] = line[iP].x;
+                        bufferData[i++] = line[iP].y;
+                        bufferData[i++] = line[iP].x;
+                        bufferData[i++] = line[iP].y;
                     }
+
+                    bufferData[i++] = line[line.length - 1].x;
+                    bufferData[i++] = line[line.length - 1].y;
                 }
             }
         }

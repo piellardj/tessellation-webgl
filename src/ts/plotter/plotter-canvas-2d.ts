@@ -23,24 +23,22 @@ class PlotterCanvas2D extends PlotterBase {
         return true;
     }
 
-    public drawLines(batchOfLines: BatchOfLines, color: Color, alpha: number): void {
+    public drawLines(batchOfLines: BatchOfLines, thickness: number, color: Color, alpha: number): void {
         if (alpha > 0 && batchOfLines) {
             this.context.fillStyle = "none";
             this.context.strokeStyle = (alpha >= 1) ? color.toHexaString() : color.toRgbaString(alpha);
 
             const halfWidth = 0.5 * this.width;
             const halfHeight = 0.5 * this.height;
-            for (const lines of batchOfLines.items) {
-                this.context.lineWidth = lines.thickness;
+            for (const line of batchOfLines.items) {
+                this.context.lineWidth = thickness;
 
                 this.context.beginPath();
-                for (const line of lines.lines) {
-                    if (line.length >= 2) {
-                        this.context.moveTo(line[0].x + halfWidth, line[0].y + halfHeight);
+                if (line.length >= 2) {
+                    this.context.moveTo(line[0].x + halfWidth, line[0].y + halfHeight);
 
-                        for (let iP = 1; iP < line.length; iP++) {
-                            this.context.lineTo(line[iP].x + halfWidth, line[iP].y + halfHeight);
-                        }
+                    for (let iP = 1; iP < line.length; iP++) {
+                        this.context.lineTo(line[iP].x + halfWidth, line[iP].y + halfHeight);
                     }
                 }
                 this.context.stroke();

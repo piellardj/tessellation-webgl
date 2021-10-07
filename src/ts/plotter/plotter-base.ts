@@ -5,23 +5,18 @@ import { Zooming } from "../misc/zooming";
 import { GeometryId } from "./geometry-id";
 
 
-type Line = IPoint[];
-
-interface ILines {
-    lines: Line[];
-    thickness: number;
+interface IBatch<T> {
+    readonly items: T[];
+    readonly geometryId: GeometryId;
 }
 
 interface IPolygon {
     vertices: IPoint[];
     color: Color;
 }
-interface IBatch<T> {
-    readonly items: T[];
-    readonly geometryId: GeometryId;
-}
 
-type BatchOfLines = IBatch<ILines>;
+type Line = IPoint[];
+type BatchOfLines = IBatch<Line>;
 
 abstract class PlotterBase {
     protected readonly canvas: HTMLCanvasElement;
@@ -72,14 +67,13 @@ abstract class PlotterBase {
 
     public abstract get isReady(): boolean;
     protected abstract clearCanvas(color: Color): void;
-    public abstract drawLines(batchOfLines: BatchOfLines, color: Color, alpha: number): void;
+    public abstract drawLines(batchOfLines: BatchOfLines, thickness: number, color: Color, alpha: number): void;
     public abstract drawPolygons(polygons: IPolygon[], alpha: number): void;
 }
 
 export {
     BatchOfLines,
     Line,
-    ILines,
     IPolygon,
     PlotterBase,
 };

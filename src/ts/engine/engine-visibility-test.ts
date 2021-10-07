@@ -45,18 +45,12 @@ class EngineVisibilityTest extends EngineBase {
 
         this.line = [{ x: -50, y: -50 }, { x: 70, y: 50 }];
         this.batchForLine = {
-            items: [{
-                lines: [this.line],
-                thickness: 1,
-            }],
+            items: [this.line],
             geometryId: GeometryId.new(),
         };
 
         this.batchForWindow = {
-            items: [{
-                lines: [],
-                thickness: 1,
-            }],
+            items: [],
             geometryId: GeometryId.new(),
         };
     }
@@ -112,14 +106,14 @@ class EngineVisibilityTest extends EngineBase {
 
         plotter.drawPolygons([this.primitive], 1);
 
-        plotter.drawLines(this.batchForLine, new Color(0, 255, 0), 1);
+        plotter.drawLines(this.batchForLine, 1, new Color(0, 255, 0), 1);
         this.drawTestWindow(plotter);
 
         plotter.finalize(Zooming.NO_ZOOMING);
     }
 
     private drawTestWindow(plotter: PlotterBase): void {
-        plotter.drawLines(this.batchForWindow, Color.WHITE, 1);
+        plotter.drawLines(this.batchForWindow, 1, Color.WHITE, 1);
     }
 
     private updateTestWindow(): void {
@@ -136,7 +130,7 @@ class EngineVisibilityTest extends EngineBase {
         this.testWindow.bottomRight.x = mousePosition.x + 0.5 * testWindowWidth;
         this.testWindow.bottomRight.y = mousePosition.y + 0.5 * testWindowHeight;
 
-        this.batchForWindow.items[0].lines[0] = [
+        this.batchForWindow.items[0] = [
             this.testWindow.topLeft,
             { x: this.testWindow.right, y: this.testWindow.top },
             this.testWindow.bottomRight,

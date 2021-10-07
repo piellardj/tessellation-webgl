@@ -4,7 +4,7 @@ import { Throttle } from "../misc/throttle";
 import { Zooming } from "../misc/zooming";
 import { EPrimitive, Parameters } from "../parameters";
 import { GeometryId } from "../plotter/geometry-id";
-import { BatchOfLines, ILines, Line, PlotterBase } from "../plotter/plotter-base";
+import { BatchOfLines, PlotterBase } from "../plotter/plotter-base";
 import { EVisibility, PrimitiveBase } from "../primitives/primitive-base";
 import { PrimitiveQuads } from "../primitives/primitive-quads";
 import { PrimitiveTriangles } from "../primitives/primitives-triangles";
@@ -16,7 +16,7 @@ type Layer = PrimitiveBase[];
 class Engine extends EngineBase {
     private rootPrimitive: PrimitiveBase;
     private layers: Layer[];
-    private linesBatches: ILines[];
+    private linesBatches: BatchOfLines[];
 
     private lastLayerBirthTimestamp: number;
 
@@ -40,6 +40,12 @@ class Engine extends EngineBase {
             somethingChanged = this.handleZoom(this.currentCumulatedZooming) || somethingChanged;
             somethingChanged = this.adjustLayersCount() || somethingChanged;
             somethingChanged = this.handleRecycling(viewport) || somethingChanged;
+
+            if (somethingChanged) {
+                for (const batchOfLines of this.linesBatches) {
+                    batchOfLines.geometryId.registerChange();
+                }
+            }
 
             // reset the cumulated zooming
             this.currentCumulatedZooming.center.x = zooming.center.x;
@@ -94,21 +100,10 @@ class Engine extends EngineBase {
         }
 
         if (Parameters.displayLines) {
-            if (plotter.supportsThickLines) {
-                this.adjustLinesThickness();
-            }
-
-            const batchOfOpaqueLines: BatchOfLines = {
-                items: this.linesBatches.slice(0, emergingLayer),
-                geometryId: GeometryId.new(),
-            };
-            plotter.drawLines(batchOfOpaqueLines, Parameters.linesColor, 1);
-            if (emergingLayer < this.linesBatches.length) {
-                const batchOfEmerginLines = {
-                    items: [this.linesBatches[emergingLayer]],
-                    geometryId: GeometryId.new(),
-                };
-                plotter.drawLines(batchOfEmerginLines, Parameters.linesColor, emergingLayerAlpha);
+            for (let iLayer = 0; iLayer < this.linesBatches.length; iLayer++) {
+                const thickness = Engine.getLineThicknessForLayer(iLayer, this.linesBatches.length);
+                const alpha = (iLayer === emergingLayer) ? emergingLayerAlpha : 1;
+                plotter.drawLines(this.linesBatches[iLayer], thickness, Parameters.linesColor, alpha);
             }
         }
 
@@ -200,19 +195,19 @@ class Engine extends EngineBase {
         if (currentPrimitivesCountForLastLayer <= 0.5 * idealPrimitivesCountForLastLayer) {
             // subdivide once more
             let newLayer: Layer = [];
-            const newLinesBatch: ILines = {
-                lines: [],
-                thickness: 1,
+            const newBatchOfLines: BatchOfLines = {
+                items: [],
+                geometryId: GeometryId.new(),
             };
 
             for (const primitive of lastLayer) {
                 primitive.subdivide();
-                newLinesBatch.lines.push(primitive.subdivision);
+                newBatchOfLines.items.push(primitive.subdivision);
                 newLayer = newLayer.concat(primitive.getDirectChildren() as PrimitiveBase[]);
             }
 
             this.layers.push(newLayer);
-            this.linesBatches.push(newLinesBatch);
+            this.linesBatches.push(newBatchOfLines);
             this.lastLayerBirthTimestamp = performance.now();
         } else if (currentPrimitivesCountForLastLayer >= 2 * idealPrimitivesCountForLastLayer) {
             // remove last subdivision
@@ -228,14 +223,12 @@ class Engine extends EngineBase {
         return true;
     }
 
-    private adjustLinesThickness(): void {
-        const MAX_THICKNESS = Parameters.thickness;
-
-        this.linesBatches[0].thickness = 1 + MAX_THICKNESS;
-
-        for (let iB = 1; iB < this.linesBatches.length; iB++) {
-            this.linesBatches[iB].thickness = 1 + MAX_THICKNESS * (this.linesBatches.length - 1 - iB) / (this.linesBatches.length - 1);
+    private static getLineThicknessForLayer(layerId: number, totalLayersCount: number): number {
+        let variablePart = 0;
+        if (layerId > 0) {
+            variablePart = Parameters.thickness * (totalLayersCount - 1 - layerId) / (totalLayersCount - 1);
         }
+        return 1 + variablePart;
     }
 
     private changeRootPrimitiveInNeeded(): boolean {
@@ -282,21 +275,20 @@ class Engine extends EngineBase {
 
         this.linesBatches = [];
         for (let iLayer = 0; iLayer < this.layers.length; iLayer++) {
-            let lines: Line[];
+            const newBatchOfLines: BatchOfLines = {
+                items: [],
+                geometryId: GeometryId.new(),
+            };
 
             if (iLayer === 0) {
-                lines = [this.rootPrimitive.getOutline()];
+                newBatchOfLines.items.push(this.rootPrimitive.getOutline());
             } else {
-                lines = [];
                 for (const primitive of this.layers[iLayer - 1]) {
-                    lines.push(primitive.subdivision);
+                    newBatchOfLines.items.push(primitive.subdivision);
                 }
             }
 
-            this.linesBatches.push({
-                lines,
-                thickness: 1,
-            });
+            this.linesBatches.push(newBatchOfLines);
         }
     }
 }
