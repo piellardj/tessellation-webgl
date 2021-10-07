@@ -25,6 +25,7 @@ registerPadStartPolyfill(); // for IE11
 class Color {
     public static readonly BLACK: Color = new Color(0, 0, 0);
     public static readonly WHITE: Color = new Color(255, 255, 255);
+    public static readonly RED: Color = new Color(255, 0, 0);
     public static readonly GREEN: Color = new Color(0, 255, 0);
 
     public static random(): Color {

@@ -63,7 +63,7 @@ class EngineVisibilityTest extends EngineBase {
     }
 
     public reset(): void {
-        const color = new Color(255, 0, 0);
+        const color = Color.RED;
 
         const primitiveType = Parameters.primitive;
         if (primitiveType === EPrimitive.QUADS) {
@@ -117,7 +117,7 @@ class EngineVisibilityTest extends EngineBase {
 
         plotter.drawPolygons(this.batchForPrimitive, 1);
 
-        plotter.drawLines(this.batchForLine, 1, new Color(0, 255, 0), 1);
+        plotter.drawLines(this.batchForLine, 1, Color.GREEN, 1);
         this.drawTestWindow(plotter);
 
         plotter.finalize(Zooming.NO_ZOOMING);
