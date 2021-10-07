@@ -52,6 +52,8 @@ class Engine extends EngineBase {
                 }
             }
 
+            this.updateIndicators();
+
             // reset the cumulated zooming
             this.currentCumulatedZooming.center.x = zooming.center.x;
             this.currentCumulatedZooming.center.y = zooming.center.y;
@@ -135,6 +137,7 @@ class Engine extends EngineBase {
         }
 
         this.rebuildLayersCollections();
+        this.updateIndicators();
     }
 
     public recomputeColors(): void {
@@ -307,6 +310,25 @@ class Engine extends EngineBase {
                 outlines,
             });
         }
+    }
+
+    private updateIndicators(): void {
+        Page.Canvas.setIndicatorText("tree-depth", this.rootPrimitive.treeDepth().toString());
+
+        Page.Canvas.setIndicatorText("primitives-count", this.layers[this.layers.length - 1].primitives.items.length.toString());
+
+        let totalPrimitivesCount = 0;
+        let segmentsCount = 0;
+        for (const layer of this.layers) {
+            totalPrimitivesCount += layer.primitives.items.length;
+
+            for (const line of layer.outlines.items) {
+                const nbLinePoints = line.length;
+                segmentsCount += (nbLinePoints > 1) ? (nbLinePoints - 1) : 0;
+            }
+        }
+        Page.Canvas.setIndicatorText("tree-nodes-count", totalPrimitivesCount.toString());
+        Page.Canvas.setIndicatorText("segments-count", segmentsCount.toString());
     }
 }
 

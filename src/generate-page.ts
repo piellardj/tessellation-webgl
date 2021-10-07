@@ -24,6 +24,22 @@ const data = {
             id: "max-frame-time",
             label: "Frame time (max)"
         },
+        {
+            id: "tree-depth",
+            label: "Tree depth"
+        },
+        {
+            id: "tree-nodes-count",
+            label: "Tree nodes count"
+        },
+        {
+            id: "primitives-count",
+            label: "Primitives count"
+        },
+        {
+            id: "segments-count",
+            label: "Segments count"
+        },
     ],
     canvas: {
         width: 512,
