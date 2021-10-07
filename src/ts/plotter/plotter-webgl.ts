@@ -1,6 +1,7 @@
 import { Color } from "../misc/color";
 import * as Loader from "../misc/loader";
 import { Zooming } from "../misc/zooming";
+import { GeometryId } from "./geometry-id";
 import { BatchOfLines, IPolygon, PlotterBase } from "./plotter-base";
 
 import * as GLCanvas from "../gl-utils/gl-canvas";
@@ -25,6 +26,7 @@ interface IPendingPolygons {
 interface IVboPart {
     readonly indexOfFirstVertice: number;
     readonly verticesCount: number;
+    readonly geometryId: GeometryId;
     scheduledForDrawing: boolean;
 }
 
@@ -35,8 +37,8 @@ interface IPartionedVbo<T extends IVboPart> {
 
 
 interface ILinesVboPart extends IVboPart {
-    readonly color: Color;
-    readonly alpha: number;
+    color: Color;
+    alpha: number;
 }
 
 interface IPolygonsVboPart extends IVboPart {
@@ -95,7 +97,10 @@ class PlotterWebGL extends PlotterBase {
     public get supportsThickLines(): boolean { return false; }
 
     public prepare(): void {
-        this.linesVbo.vboParts = [];
+        for (const vboPart of this.linesVbo.vboParts) {
+            vboPart.scheduledForDrawing = false;
+        }
+
         this.polygonsVbo.vboParts = [];
     }
 
@@ -106,7 +111,22 @@ class PlotterWebGL extends PlotterBase {
         }
 
         if (this.pendingLines.length > 0) {
-            this.buildAndUploadLinesVBO();
+            let needToRebuildVBO = false;
+            for (const pendingLines of this.pendingLines) {
+                const existingVboPart = this.findUploadedVBOPart(this.linesVbo, pendingLines.batchOfLines.geometryId);
+                if (existingVboPart) {
+                    existingVboPart.scheduledForDrawing = true;
+                    existingVboPart.alpha = pendingLines.alpha;
+                    existingVboPart.color = pendingLines.color;
+                } else {
+                    // no matching vboPart => we need to upload it to the GPU
+                    needToRebuildVBO = true;
+                }
+            }
+
+            if (needToRebuildVBO) {
+                this.buildAndUploadLinesVBO();
+            }
             this.pendingLines = [];
         }
 
@@ -133,6 +153,8 @@ class PlotterWebGL extends PlotterBase {
     }
 
     private buildAndUploadLinesVBO(): void {
+        this.linesVbo.vboParts = [];
+
         // optim: first, count vertices to be able to pre-reserve space
         let nbVertices = 0;
         for (const pendingLinesSuperbatch of this.pendingLines) {
@@ -151,6 +173,7 @@ class PlotterWebGL extends PlotterBase {
             this.linesVbo.vboParts.push({
                 indexOfFirstVertice,
                 verticesCount,
+                geometryId: pendingLinesSuperbatch.batchOfLines.geometryId.copy(),
                 scheduledForDrawing: true,
                 color: pendingLinesSuperbatch.color,
                 alpha: pendingLinesSuperbatch.alpha,
@@ -206,7 +229,6 @@ class PlotterWebGL extends PlotterBase {
                 this.shaderLines.u["uColor"].value = [vboPart.color.r / 255, vboPart.color.g / 255, vboPart.color.b / 255, vboPart.alpha];
                 this.shaderLines.bindUniforms();
                 gl.drawArrays(gl.LINES, vboPart.indexOfFirstVertice, vboPart.verticesCount);
-                vboPart.scheduledForDrawing = false;
             }
         }
     }
@@ -228,6 +250,7 @@ class PlotterWebGL extends PlotterBase {
             this.polygonsVbo.vboParts.push({
                 indexOfFirstVertice,
                 verticesCount,
+                geometryId: GeometryId.new(), // not used yet
                 scheduledForDrawing: true,
                 alpha: polygonsBatch.alpha,
             });
@@ -298,9 +321,17 @@ class PlotterWebGL extends PlotterBase {
                 this.shaderPolygons.u["uAlpha"].value = vboPart.alpha;
                 this.shaderPolygons.bindUniforms();
                 gl.drawArrays(gl.TRIANGLES, vboPart.indexOfFirstVertice, vboPart.verticesCount);
-                vboPart.scheduledForDrawing = false;
             }
         }
+    }
+
+    private findUploadedVBOPart<T extends IVboPart>(partitionedVBO: IPartionedVbo<T>, geometryId: GeometryId): T | null {
+        for (const vboPart of partitionedVBO.vboParts) {
+            if (vboPart.geometryId.isSameAs(geometryId)) {
+                return vboPart;
+            }
+        }
+        return null;
     }
 
     private selectVBOPartsScheduledForDrawing<T extends IVboPart>(partitionedVBO: IPartionedVbo<T>): T[] {

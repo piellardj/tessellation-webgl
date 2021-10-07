@@ -3,6 +3,7 @@ import { Rectangle } from "../misc/rectangle";
 import { Throttle } from "../misc/throttle";
 import { Zooming } from "../misc/zooming";
 import { EPrimitive, Parameters } from "../parameters";
+import { GeometryId } from "../plotter/geometry-id";
 import { BatchOfLines, ILines, Line, PlotterBase } from "../plotter/plotter-base";
 import { EVisibility, PrimitiveBase } from "../primitives/primitive-base";
 import { PrimitiveQuads } from "../primitives/primitive-quads";
@@ -99,11 +100,13 @@ class Engine extends EngineBase {
 
             const batchOfOpaqueLines: BatchOfLines = {
                 items: this.linesBatches.slice(0, emergingLayer),
+                geometryId: GeometryId.new(),
             };
             plotter.drawLines(batchOfOpaqueLines, Parameters.linesColor, 1);
             if (emergingLayer < this.linesBatches.length) {
                 const batchOfEmerginLines = {
                     items: [this.linesBatches[emergingLayer]],
+                    geometryId: GeometryId.new(),
                 };
                 plotter.drawLines(batchOfEmerginLines, Parameters.linesColor, emergingLayerAlpha);
             }

@@ -2,6 +2,7 @@ import { Color } from "../misc/color";
 import { Rectangle } from "../misc/rectangle";
 import { Zooming } from "../misc/zooming";
 import { EPrimitive, Parameters } from "../parameters";
+import { GeometryId } from "../plotter/geometry-id";
 import { BatchOfLines, Line, PlotterBase } from "../plotter/plotter-base";
 import { EVisibility, PrimitiveBase } from "../primitives/primitive-base";
 import { PrimitiveQuads } from "../primitives/primitive-quads";
@@ -47,7 +48,8 @@ class EngineVisibilityTest extends EngineBase {
             items: [{
                 lines: [this.line],
                 thickness: 1,
-            }]
+            }],
+            geometryId: GeometryId.new(),
         };
 
         this.batchForWindow = {
@@ -55,6 +57,7 @@ class EngineVisibilityTest extends EngineBase {
                 lines: [],
                 thickness: 1,
             }],
+            geometryId: GeometryId.new(),
         };
     }
 
@@ -140,8 +143,8 @@ class EngineVisibilityTest extends EngineBase {
             { x: this.testWindow.left, y: this.testWindow.bottom },
             this.testWindow.topLeft,
         ];
+        this.batchForWindow.geometryId.registerChange();
     }
 }
 
 export { EngineVisibilityTest };
-

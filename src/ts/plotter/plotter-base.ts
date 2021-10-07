@@ -2,6 +2,7 @@ import { Color } from "../misc/color";
 import { IPoint } from "../misc/point";
 import { Rectangle } from "../misc/rectangle";
 import { Zooming } from "../misc/zooming";
+import { GeometryId } from "./geometry-id";
 
 
 type Line = IPoint[];
@@ -17,6 +18,7 @@ interface IPolygon {
 }
 interface IBatch<T> {
     readonly items: T[];
+    readonly geometryId: GeometryId;
 }
 
 type BatchOfLines = IBatch<ILines>;
