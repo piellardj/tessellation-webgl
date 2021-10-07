@@ -13,16 +13,28 @@ import { PlotterWebGL } from "./plotter/plotter-webgl";
 import "./page-interface-generated";
 
 
-function createEngine(plotter: PlotterBase): Engine {
-    const engine = new Engine();
-    Parameters.recomputeColorsObservers.push(() => { engine.recomputeColors(); });
-    engine.reset(plotter.viewport);
-    return engine;
+function createPlotter(): PlotterBase {
+    if (Parameters.plotter === EPlotter.CANVAS2D) {
+        return new PlotterCanvas2D();
+    } else {
+        return new PlotterWebGL();
+    }
+}
+
+function createEngine(plotter: PlotterBase): EngineBase {
+    if (Parameters.debugMode) {
+        return new EngineVisibilityTest();
+    } else {
+        const engine = new Engine();
+        Parameters.recomputeColorsObservers.push(() => { engine.recomputeColors(); });
+        engine.reset(plotter.viewport);
+        return engine;
+    }
 }
 
 function main(): void {
-    const plotter: PlotterBase = (Parameters.plotter === EPlotter.CANVAS2D) ? new PlotterCanvas2D() : new PlotterWebGL();
-    const engine: EngineBase = Parameters.debugMode ? new EngineVisibilityTest() : createEngine(plotter);
+    const plotter = createPlotter();
+    const engine = createEngine(plotter);
     const zooming = new Zooming({ x: 0, y: 0 }, 0.2);
     const backgroundColor = Color.BLACK;
 
