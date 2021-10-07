@@ -186,19 +186,24 @@ class Engine extends EngineBase {
     }
 
     private handleRecycling(viewport: Rectangle): boolean {
-        const lastLayer = this.layers[this.layers.length - 1];
-        const nbPrimitivesLastLayer = lastLayer.primitives.items.length;
-
-        const prunedPrimitives = this.prunePrimitivesOutOfView(this.rootPrimitive, viewport);
-        const changedRootPrimitive = this.changeRootPrimitiveInNeeded();
-
-        if (changedRootPrimitive || prunedPrimitives) {
-            this.rebuildLayersCollections();
-
-            if (Parameters.verbose) {
-                console.log(`went from ${nbPrimitivesLastLayer} to ${lastLayer.primitives.items.length}`);
-            }
+        if (this.rootPrimitive.computeVisibility(viewport) === EVisibility.OUT_OF_VIEW) {
+            this.reset(viewport);
             return true;
+        } else {
+            const lastLayer = this.layers[this.layers.length - 1];
+            const nbPrimitivesLastLayer = lastLayer.primitives.items.length;
+
+            const prunedPrimitives = this.prunePrimitivesOutOfView(this.rootPrimitive, viewport);
+            const changedRootPrimitive = this.changeRootPrimitiveInNeeded();
+
+            if (changedRootPrimitive || prunedPrimitives) {
+                this.rebuildLayersCollections();
+
+                if (Parameters.verbose) {
+                    console.log(`went from ${nbPrimitivesLastLayer} to ${lastLayer.primitives.items.length}`);
+                }
+                return true;
+            }
         }
         return false;
     }
