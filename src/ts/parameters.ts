@@ -15,6 +15,7 @@ const controlId = {
 
     PLOTTER_TABS_ID:"plotter-tabs-id",
     COLOR_VARIATION_RANGE_ID: "color-variation-range-id",
+    SHOW_INDICATORS_CHECKBOX_ID: "show-indicators-checkbox-id",
 
     DISPLAY_LINES_CHECKBOX_ID: "display-lines-checkbox-id",
     THICKNESS_RANGE_ID: "thickness-range-id",
@@ -125,6 +126,12 @@ Page.ColorPicker.addObserver(controlId.LINES_COLOR_PICKER_ID, callRedraw);
 Page.FileControl.addDownloadObserver(controlId.DOWNLOAD_BUTTON, () => { callObservers(Parameters.downloadObservers); });
 
 Page.Controls.setVisibility(controlId.THICKNESS_RANGE_ID, Parameters.plotter === EPlotter.CANVAS2D);
+
+function updateIndicatorsVisibility(): void {
+    Page.Canvas.setIndicatorsVisibility(Page.Checkbox.isChecked(controlId.SHOW_INDICATORS_CHECKBOX_ID));
+}
+Page.Checkbox.addObserver(controlId.SHOW_INDICATORS_CHECKBOX_ID, updateIndicatorsVisibility);
+updateIndicatorsVisibility();
 
 Page.Tabs.setValues(controlId.PLOTTER_TABS_ID, [Parameters.plotter]);
 Page.Tabs.addObserver(controlId.PLOTTER_TABS_ID, (values: string[]) => {

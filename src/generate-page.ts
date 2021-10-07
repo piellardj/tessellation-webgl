@@ -130,6 +130,12 @@ const data = {
                     value: 0.3,
                     step: 0.05
                 },
+                {
+                    type: Demopage.supportedControls.Checkbox,
+                    title: "Show indicators",
+                    id: "show-indicators-checkbox-id",
+                    checked: false
+                },
             ]
         },
         {
