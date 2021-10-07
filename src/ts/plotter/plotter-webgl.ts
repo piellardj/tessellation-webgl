@@ -189,7 +189,7 @@ class PlotterWebGL extends PlotterBase {
     }
 
     private drawLinesVBO(zooming: Zooming): void {
-        const vbpPartsScheduledForDrawing = this.linesVbo.vboParts.filter((vboPart: IVboPart) => vboPart.scheduledForDrawing);
+        const vbpPartsScheduledForDrawing = this.selectVBOPartsScheduledForDrawing(this.linesVbo);
 
         if (this.shaderLines && vbpPartsScheduledForDrawing.length > 0) {
             this.shaderLines.use();
@@ -277,7 +277,7 @@ class PlotterWebGL extends PlotterBase {
     }
 
     private drawPolygonsVBO(zooming: Zooming): void {
-        const vbpPartsScheduledForDrawing = this.polygonsVbo.vboParts.filter((vboPart: IVboPart) => vboPart.scheduledForDrawing);
+        const vbpPartsScheduledForDrawing = this.selectVBOPartsScheduledForDrawing(this.polygonsVbo);
 
         if (this.shaderPolygons && vbpPartsScheduledForDrawing.length > 0) {
             this.shaderPolygons.use();
@@ -301,6 +301,10 @@ class PlotterWebGL extends PlotterBase {
                 vboPart.scheduledForDrawing = false;
             }
         }
+    }
+
+    private selectVBOPartsScheduledForDrawing<T extends IVboPart>(partitionedVBO: IPartionedVbo<T>): T[] {
+        return partitionedVBO.vboParts.filter((vboPart: T) => vboPart.scheduledForDrawing);
     }
 
     private asyncLoadShader(vertexFilename: string, fragmentFilename: string, callback: (shader: Shader) => unknown): void {
