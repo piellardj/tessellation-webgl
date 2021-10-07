@@ -88,11 +88,11 @@ class PlotterWebGL extends PlotterBase {
             vboParts: [],
         };
 
-        this.asyncLoadShader("shaderLines.vert", "shaderLines.frag", (shader: Shader) => {
+        PlotterWebGL.asyncLoadShader("shaderLines.vert", "shaderLines.frag", (shader: Shader) => {
             this.shaderLines = shader;
         });
 
-        this.asyncLoadShader("shaderPolygons.vert", "shaderPolygons.frag", (shader: Shader) => {
+        PlotterWebGL.asyncLoadShader("shaderPolygons.vert", "shaderPolygons.frag", (shader: Shader) => {
             this.shaderPolygons = shader;
         });
     }
@@ -115,7 +115,7 @@ class PlotterWebGL extends PlotterBase {
         if (this.pendingPolygonsList.length > 0) {
             let needToRebuildVBO = false;
             for (const pendingPolygons of this.pendingPolygonsList) {
-                const existingVboPart = this.findUploadedVBOPart(this.polygonsVbo, pendingPolygons.batchOfPolygons.geometryId);
+                const existingVboPart = PlotterWebGL.findUploadedVBOPart(this.polygonsVbo, pendingPolygons.batchOfPolygons.geometryId);
                 if (existingVboPart) {
                     existingVboPart.scheduledForDrawing = true;
                     existingVboPart.alpha = pendingPolygons.alpha;
@@ -134,7 +134,7 @@ class PlotterWebGL extends PlotterBase {
         if (this.pendingLinesList.length > 0) {
             let needToRebuildVBO = false;
             for (const pendingLines of this.pendingLinesList) {
-                const existingVboPart = this.findUploadedVBOPart(this.linesVbo, pendingLines.batchOfLines.geometryId);
+                const existingVboPart = PlotterWebGL.findUploadedVBOPart(this.linesVbo, pendingLines.batchOfLines.geometryId);
                 if (existingVboPart) {
                     existingVboPart.scheduledForDrawing = true;
                     existingVboPart.alpha = pendingLines.alpha;
@@ -225,7 +225,7 @@ class PlotterWebGL extends PlotterBase {
     }
 
     private drawLinesVBO(zooming: Zooming): void {
-        const vbpPartsScheduledForDrawing = this.selectVBOPartsScheduledForDrawing(this.linesVbo);
+        const vbpPartsScheduledForDrawing = PlotterWebGL.selectVBOPartsScheduledForDrawing(this.linesVbo);
 
         if (this.shaderLines && vbpPartsScheduledForDrawing.length > 0) {
             this.shaderLines.use();
@@ -235,7 +235,7 @@ class PlotterWebGL extends PlotterBase {
             gl.bindBuffer(gl.ARRAY_BUFFER, this.linesVbo.id);
             gl.vertexAttribPointer(aVertexLocation, 2, gl.FLOAT, false, 0, 0);
 
-            this.shaderLines.u["uZoom"].value = this.buildZoom(zooming);
+            this.shaderLines.u["uZoom"].value = PlotterWebGL.buildZoom(zooming);
             this.shaderLines.u["uScreenSize"].value = [0.5 * this.width, -0.5 * this.height];
 
             let currentVboPartId = 0;
@@ -245,7 +245,7 @@ class PlotterWebGL extends PlotterBase {
                 let verticesCount = currentVboPart.verticesCount;
 
                 let nextVboPart = vbpPartsScheduledForDrawing[currentVboPartId + 1];
-                while (this.doLinesVboPartsHaveSameUniforms(currentVboPart, nextVboPart)) {
+                while (PlotterWebGL.doLinesVboPartsHaveSameUniforms(currentVboPart, nextVboPart)) {
                     verticesCount += nextVboPart.verticesCount;
                     currentVboPartId++;
                     nextVboPart = vbpPartsScheduledForDrawing[currentVboPartId + 1];
@@ -327,7 +327,7 @@ class PlotterWebGL extends PlotterBase {
     }
 
     private drawPolygonsVBO(zooming: Zooming): void {
-        const vbpPartsScheduledForDrawing = this.selectVBOPartsScheduledForDrawing(this.polygonsVbo);
+        const vbpPartsScheduledForDrawing = PlotterWebGL.selectVBOPartsScheduledForDrawing(this.polygonsVbo);
 
         if (this.shaderPolygons && vbpPartsScheduledForDrawing.length > 0) {
             this.shaderPolygons.use();
@@ -341,7 +341,7 @@ class PlotterWebGL extends PlotterBase {
             gl.enableVertexAttribArray(aColorLoc);
             gl.vertexAttribPointer(aColorLoc, 4, gl.FLOAT, false, BYTES_PER_FLOAT * 6, BYTES_PER_FLOAT * 2);
 
-            this.shaderPolygons.u["uZoom"].value = this.buildZoom(zooming);
+            this.shaderPolygons.u["uZoom"].value = PlotterWebGL.buildZoom(zooming);
             this.shaderPolygons.u["uScreenSize"].value = [0.5 * this.width, -0.5 * this.height];
 
             for (const vboPart of vbpPartsScheduledForDrawing) {
@@ -352,7 +352,7 @@ class PlotterWebGL extends PlotterBase {
         }
     }
 
-    private findUploadedVBOPart<T extends IVboPart>(partitionedVBO: IPartionedVbo<T>, geometryId: GeometryId): T | null {
+    private static findUploadedVBOPart<T extends IVboPart>(partitionedVBO: IPartionedVbo<T>, geometryId: GeometryId): T | null {
         for (const vboPart of partitionedVBO.vboParts) {
             if (vboPart.geometryId.isSameAs(geometryId)) {
                 return vboPart;
@@ -361,11 +361,11 @@ class PlotterWebGL extends PlotterBase {
         return null;
     }
 
-    private selectVBOPartsScheduledForDrawing<T extends IVboPart>(partitionedVBO: IPartionedVbo<T>): T[] {
+    private static selectVBOPartsScheduledForDrawing<T extends IVboPart>(partitionedVBO: IPartionedVbo<T>): T[] {
         return partitionedVBO.vboParts.filter((vboPart: T) => vboPart.scheduledForDrawing);
     }
 
-    private doLinesVboPartsHaveSameUniforms(vboPart1: ILinesVboPart, vboPart2: ILinesVboPart): boolean {
+    private static doLinesVboPartsHaveSameUniforms(vboPart1: ILinesVboPart, vboPart2: ILinesVboPart): boolean {
         return vboPart1 && vboPart2 &&
             (vboPart1.color.r === vboPart2.color.r) &&
             (vboPart1.color.g === vboPart2.color.g) &&
@@ -373,7 +373,7 @@ class PlotterWebGL extends PlotterBase {
             (vboPart1.alpha === vboPart2.alpha);
     }
 
-    private asyncLoadShader(vertexFilename: string, fragmentFilename: string, callback: (shader: Shader) => unknown): void {
+    private static asyncLoadShader(vertexFilename: string, fragmentFilename: string, callback: (shader: Shader) => unknown): void {
         const id = `${vertexFilename}__${fragmentFilename}__${Math.random()}`;
 
         Loader.registerLoadingObject(id);
@@ -393,7 +393,7 @@ class PlotterWebGL extends PlotterBase {
         });
     }
 
-    private buildZoom(zooming: Zooming): [number, number, number, number] {
+    private static buildZoom(zooming: Zooming): [number, number, number, number] {
         return [zooming.center.x, zooming.center.y, zooming.currentZoomFactor, Parameters.scale];
     }
 }
