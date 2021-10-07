@@ -58,7 +58,7 @@ abstract class PlotterBase {
         this._height = this.canvas.height;
     }
 
-    public initialize(backgroundColor: Color): void {
+    public reset(backgroundColor: Color): void {
         this.resizeCanvas();
         this.clearCanvas(backgroundColor);
     }

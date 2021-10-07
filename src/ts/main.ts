@@ -41,7 +41,7 @@ function main(): void {
 
     Parameters.downloadObservers.push(() => {
         const svgPlotter = new PlotterSVG();
-        svgPlotter.initialize(backgroundColor);
+        svgPlotter.reset(backgroundColor);
         engine.draw(svgPlotter);
         const fileName = "subdivisions.svg";
         const svgString = svgPlotter.output();
@@ -90,7 +90,7 @@ function main(): void {
         }
 
         if (needToRedraw && plotter.isReady) {
-            plotter.initialize(backgroundColor);
+            plotter.reset(backgroundColor);
             engine.draw(plotter);
             needToRedraw = false;
         }

@@ -13,9 +13,9 @@ class PlotterSVG extends PlotterBase {
         return true;
     }
 
-    public initialize(backgroundColor: Color): void {
+    public reset(backgroundColor: Color): void {
         this.lines = [];
-        super.initialize(backgroundColor);
+        super.reset(backgroundColor);
 
         this.lines.push(`<?xml version="1.0" encoding="UTF-8" standalone="no"?>`);
         this.lines.push(`<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 ${this.width} ${this.height}">`);
