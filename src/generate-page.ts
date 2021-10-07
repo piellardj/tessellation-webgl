@@ -65,9 +65,9 @@ const data = {
                     title: "Zooming speed",
                     id: "zooming-speed-range-id",
                     min: 0,
-                    max: 10,
+                    max: 1,
                     value: 0.3,
-                    step: 0.1
+                    step: 0.01
                 },
                 {
                     type: Demopage.supportedControls.Button,
