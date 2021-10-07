@@ -11,12 +11,14 @@ import { PrimitiveTriangles } from "../primitives/primitives-triangles";
 import { EngineBase } from "./engine-base";
 
 
-type Layer = PrimitiveBase[];
+interface ILayer {
+    primitives: PrimitiveBase[];
+    outlines: BatchOfLines;
+}
 
 class Engine extends EngineBase {
     private rootPrimitive: PrimitiveBase;
-    private layers: Layer[];
-    private linesBatches: BatchOfLines[];
+    private layers: ILayer[];
 
     private lastLayerBirthTimestamp: number;
 
@@ -42,8 +44,8 @@ class Engine extends EngineBase {
             somethingChanged = this.handleRecycling(viewport) || somethingChanged;
 
             if (somethingChanged) {
-                for (const batchOfLines of this.linesBatches) {
-                    batchOfLines.geometryId.registerChange();
+                for (const layer of this.layers) {
+                    layer.outlines.geometryId.registerChange();
                 }
             }
 
@@ -94,16 +96,16 @@ class Engine extends EngineBase {
 
         plotter.prepare();
 
-        plotter.drawPolygons(this.layers[lastSolidLayer], 1);
+        plotter.drawPolygons(this.layers[lastSolidLayer].primitives, 1);
         if (emergingLayer < this.layers.length) {
-            plotter.drawPolygons(this.layers[emergingLayer], emergingLayerAlpha);
+            plotter.drawPolygons(this.layers[emergingLayer].primitives, emergingLayerAlpha);
         }
 
         if (Parameters.displayLines) {
-            for (let iLayer = 0; iLayer < this.linesBatches.length; iLayer++) {
-                const thickness = Engine.getLineThicknessForLayer(iLayer, this.linesBatches.length);
+            for (let iLayer = 0; iLayer < this.layers.length; iLayer++) {
+                const thickness = Engine.getLineThicknessForLayer(iLayer, this.layers.length);
                 const alpha = (iLayer === emergingLayer) ? emergingLayerAlpha : 1;
-                plotter.drawLines(this.linesBatches[iLayer], thickness, Parameters.linesColor, alpha);
+                plotter.drawLines(this.layers[iLayer].outlines, thickness, Parameters.linesColor, alpha);
             }
         }
 
@@ -171,7 +173,8 @@ class Engine extends EngineBase {
     }
 
     private handleRecycling(viewport: Rectangle): boolean {
-        const nbPrimitivesLastLayer = this.layers[this.layers.length - 1].length;
+        const lastLayer = this.layers[this.layers.length - 1];
+        const nbPrimitivesLastLayer = lastLayer.primitives.length;
 
         const prunedPrimitives = this.prunePrimitivesOutOfView(this.rootPrimitive, viewport);
         const changedRootPrimitive = this.changeRootPrimitiveInNeeded();
@@ -180,7 +183,7 @@ class Engine extends EngineBase {
             this.rebuildLayersCollections();
 
             if (Parameters.verbose) {
-                console.log(`went from ${nbPrimitivesLastLayer} to ${this.layers[this.layers.length - 1].length}`);
+                console.log(`went from ${nbPrimitivesLastLayer} to ${lastLayer.primitives.length}`);
             }
             return true;
         }
@@ -190,32 +193,33 @@ class Engine extends EngineBase {
     private adjustLayersCount(): boolean {
         const lastLayer = this.layers[this.layers.length - 1];
         const idealPrimitivesCountForLastLayer = Math.pow(2, Parameters.depth - 1);
-        const currentPrimitivesCountForLastLayer = lastLayer.length;
+        const currentPrimitivesCountForLastLayer = lastLayer.primitives.length;
 
         if (currentPrimitivesCountForLastLayer <= 0.5 * idealPrimitivesCountForLastLayer) {
             // subdivide once more
-            let newLayer: Layer = [];
-            const newBatchOfLines: BatchOfLines = {
+            let primitivesOfNewLayer: PrimitiveBase[] = [];
+            const outlinesOfNewLayer: BatchOfLines = {
                 items: [],
                 geometryId: GeometryId.new(),
             };
 
-            for (const primitive of lastLayer) {
+            for (const primitive of lastLayer.primitives) {
                 primitive.subdivide();
-                newBatchOfLines.items.push(primitive.subdivision);
-                newLayer = newLayer.concat(primitive.getDirectChildren() as PrimitiveBase[]);
+                primitivesOfNewLayer = primitivesOfNewLayer.concat(primitive.getDirectChildren() as PrimitiveBase[]);
+                outlinesOfNewLayer.items.push(primitive.subdivision);
             }
 
-            this.layers.push(newLayer);
-            this.linesBatches.push(newBatchOfLines);
             this.lastLayerBirthTimestamp = performance.now();
+            this.layers.push({
+                primitives: primitivesOfNewLayer,
+                outlines: outlinesOfNewLayer,
+            });
         } else if (currentPrimitivesCountForLastLayer >= 2 * idealPrimitivesCountForLastLayer) {
             // remove last subdivision
-            for (const primitive of lastLayer) {
+            for (const primitive of lastLayer.primitives) {
                 primitive.removeChildren();
             }
             this.layers.pop();
-            this.linesBatches.pop();
         } else { // nothing to do
             return false;
         }
@@ -269,26 +273,25 @@ class Engine extends EngineBase {
 
         this.layers = [];
         for (let iDepth = 0; iDepth < treeDepth; iDepth++) {
-            const layerOfCurrentDepth = this.rootPrimitive.getChildrenOfDepth(iDepth);
-            this.layers.push(layerOfCurrentDepth as Layer);
-        }
+            const primitives = this.rootPrimitive.getChildrenOfDepth(iDepth) as PrimitiveBase[];
 
-        this.linesBatches = [];
-        for (let iLayer = 0; iLayer < this.layers.length; iLayer++) {
-            const newBatchOfLines: BatchOfLines = {
+            const outlines: BatchOfLines = {
                 items: [],
                 geometryId: GeometryId.new(),
             };
-
-            if (iLayer === 0) {
-                newBatchOfLines.items.push(this.rootPrimitive.getOutline());
+            if (iDepth === 0) {
+                outlines.items.push(this.rootPrimitive.getOutline());
             } else {
-                for (const primitive of this.layers[iLayer - 1]) {
-                    newBatchOfLines.items.push(primitive.subdivision);
+                const primitivesOfParentLayer = this.layers[iDepth - 1].primitives;
+                for (const primitive of primitivesOfParentLayer) {
+                    outlines.items.push(primitive.subdivision);
                 }
             }
 
-            this.linesBatches.push(newBatchOfLines);
+            this.layers.push({
+                primitives,
+                outlines,
+            });
         }
     }
 }
