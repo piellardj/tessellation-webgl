@@ -86,7 +86,7 @@ class Engine extends EngineBase {
 
         let lastSolidLayer = this.layers.length - 1;
         let emergingLayerAlpha = 0;
-        if (this.layers.length > 1) {
+        if (Parameters.blending && this.layers.length > 1) {
             if (Parameters.zoomingSpeed > 0) {
                 const emergingTimeOfLastLayer = 1000 / Math.pow((1 + Parameters.zoomingSpeed), 2);
                 const ageOfLastLayer = performance.now() - this.lastLayerBirthTimestamp;

@@ -15,6 +15,7 @@ const controlId = {
 
     PLOTTER_TABS_ID:"plotter-tabs-id",
     COLOR_VARIATION_RANGE_ID: "color-variation-range-id",
+    BLENDING_CHECKBOX_ID: "blending-checkbox-id",
     SHOW_INDICATORS_CHECKBOX_ID: "show-indicators-checkbox-id",
 
     DISPLAY_LINES_CHECKBOX_ID: "display-lines-checkbox-id",
@@ -63,6 +64,9 @@ abstract class Parameters {
         return Page.Range.getValue(controlId.ZOOMING_SPEED_RANGE_ID);
     }
 
+    public static get blending(): boolean {
+        return Page.Checkbox.isChecked(controlId.BLENDING_CHECKBOX_ID);
+    }
 
     public static get colorVariation(): number {
         return 255 * Page.Range.getValue(controlId.COLOR_VARIATION_RANGE_ID);

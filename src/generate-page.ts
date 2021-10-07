@@ -132,6 +132,12 @@ const data = {
                 },
                 {
                     type: Demopage.supportedControls.Checkbox,
+                    title: "Blend in",
+                    id: "blending-checkbox-id",
+                    checked: true
+                },
+                {
+                    type: Demopage.supportedControls.Checkbox,
                     title: "Show indicators",
                     id: "show-indicators-checkbox-id",
                     checked: false
