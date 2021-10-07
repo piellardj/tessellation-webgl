@@ -2,6 +2,7 @@ import { Engine } from "./engine/engine";
 import { EngineBase } from "./engine/engine-base";
 import { EngineVisibilityTest } from "./engine/engine-visibility-test";
 import { Color } from "./misc/color";
+import { FrametimeMonitor } from "./misc/frame-time-monitor";
 import { downloadTextFile } from "./misc/web";
 import { Zooming } from "./misc/zooming";
 import { EPlotter, Parameters } from "./parameters";
@@ -57,19 +58,26 @@ function main(): void {
     let needToRedraw = true;
     Parameters.redrawObservers.push(() => { needToRedraw = true; });
 
+    const frametimeMonitor = new FrametimeMonitor();
+    setInterval(() => {
+        frametimeMonitor.updateIndicators();
+    }, 1000);
 
     const MAX_DT = 1 / 30;
-    let lastUpdateTimestamp = performance.now();
+    let lastFrameTimestamp = performance.now();
     function mainLoop(): void {
         const now = performance.now();
+        const timeSinceLastFrame = now - lastFrameTimestamp;
+        frametimeMonitor.registerFrameTime(timeSinceLastFrame);
+
         zooming.speed = Parameters.zoomingSpeed;
-        zooming.dt = 0.001 * (now - lastUpdateTimestamp);
+        zooming.dt = 0.001 * timeSinceLastFrame;
         if (zooming.dt > MAX_DT) {
             // A high dt means a low FPS because of too many computations,
             // however the higher the dt, the more computation will be needed... Clamp it.
             zooming.dt = MAX_DT;
         }
-        lastUpdateTimestamp = now;
+        lastFrameTimestamp = now;
 
         if (Page.Canvas.isMouseDown()) {
             const mousePosition = Parameters.mousePositionInPixels;

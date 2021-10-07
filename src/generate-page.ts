@@ -15,7 +15,16 @@ const data = {
     scriptFiles: [
         "script/main.min.js"
     ],
-    indicators: [],
+    indicators: [
+        {
+            id: "average-frame-time",
+            label: "Frame time (average)"
+        },
+        {
+            id: "max-frame-time",
+            label: "Frame time (max)"
+        },
+    ],
     canvas: {
         width: 512,
         height: 512,
