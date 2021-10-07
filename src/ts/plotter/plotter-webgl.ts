@@ -97,8 +97,6 @@ class PlotterWebGL extends PlotterBase {
         });
     }
 
-    public get supportsThickLines(): boolean { return false; }
-
     public prepare(): void {
         for (const vboPart of this.linesVbo.vboParts) {
             vboPart.scheduledForDrawing = false;

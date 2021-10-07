@@ -34,8 +34,6 @@ abstract class PlotterBase {
         this.resizeCanvas();
     }
 
-    public abstract get supportsThickLines(): boolean;
-
     public get viewport(): Rectangle {
         return new Rectangle(-0.5 * this._width, 0.5 * this._width, -0.5 * this._height, 0.5 * this._height);
     }
