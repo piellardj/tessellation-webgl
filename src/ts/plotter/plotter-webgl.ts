@@ -56,8 +56,8 @@ class PlotterWebGL extends PlotterBase {
     private readonly linesVbo: IPartionedVbo<ILinesVboPart>;
     private readonly polygonsVbo: IPartionedVbo<IPolygonsVboPart>;
 
-    private pendingLines: IPendingLines[] = [];
-    private pendingPolygons: IPendingPolygons[] = [];
+    private pendingLinesList: IPendingLines[] = [];
+    private pendingPolygonsList: IPendingPolygons[] = [];
 
     public constructor() {
         super();
@@ -110,9 +110,9 @@ class PlotterWebGL extends PlotterBase {
     }
 
     public finalize(zooming: Zooming): void {
-        if (this.pendingPolygons.length > 0) {
+        if (this.pendingPolygonsList.length > 0) {
             let needToRebuildVBO = false;
-            for (const pendingPolygons of this.pendingPolygons) {
+            for (const pendingPolygons of this.pendingPolygonsList) {
                 const existingVboPart = this.findUploadedVBOPart(this.polygonsVbo, pendingPolygons.batchOfPolygons.geometryId);
                 if (existingVboPart) {
                     existingVboPart.scheduledForDrawing = true;
@@ -126,12 +126,12 @@ class PlotterWebGL extends PlotterBase {
             if (needToRebuildVBO) {
                 this.buildAndUploadPolygonsVBO();
             }
-            this.pendingPolygons = [];
+            this.pendingPolygonsList = [];
         }
 
-        if (this.pendingLines.length > 0) {
+        if (this.pendingLinesList.length > 0) {
             let needToRebuildVBO = false;
-            for (const pendingLines of this.pendingLines) {
+            for (const pendingLines of this.pendingLinesList) {
                 const existingVboPart = this.findUploadedVBOPart(this.linesVbo, pendingLines.batchOfLines.geometryId);
                 if (existingVboPart) {
                     existingVboPart.scheduledForDrawing = true;
@@ -146,7 +146,7 @@ class PlotterWebGL extends PlotterBase {
             if (needToRebuildVBO) {
                 this.buildAndUploadLinesVBO();
             }
-            this.pendingLines = [];
+            this.pendingLinesList = [];
         }
 
         this.drawPolygonsVBO(zooming);
@@ -164,11 +164,11 @@ class PlotterWebGL extends PlotterBase {
     }
 
     public drawLines(batchOfLines: BatchOfLines, _thickness: number, color: Color, alpha: number): void {
-        this.pendingLines.push({ batchOfLines, color, alpha });
+        this.pendingLinesList.push({ batchOfLines, color, alpha });
     }
 
     public drawPolygons(batchOfPolygons: BatchOfPolygons, alpha: number): void {
-        this.pendingPolygons.push({ batchOfPolygons, alpha });
+        this.pendingPolygonsList.push({ batchOfPolygons, alpha });
     }
 
     private buildAndUploadLinesVBO(): void {
@@ -176,11 +176,11 @@ class PlotterWebGL extends PlotterBase {
 
         // optim: first, count vertices to be able to pre-reserve space
         let nbVertices = 0;
-        for (const pendingLinesSuperbatch of this.pendingLines) {
+        for (const pendingLines of this.pendingLinesList) {
             const indexOfFirstVertice = nbVertices;
 
             let verticesCount = 0;
-            for (const line of pendingLinesSuperbatch.batchOfLines.items) {
+            for (const line of pendingLines.batchOfLines.items) {
                 if (line.length >= 2) {
                     verticesCount += 2 + 2 * (line.length - 2);
                 }
@@ -190,18 +190,18 @@ class PlotterWebGL extends PlotterBase {
             this.linesVbo.vboParts.push({
                 indexOfFirstVertice,
                 verticesCount,
-                geometryId: pendingLinesSuperbatch.batchOfLines.geometryId.copy(),
+                geometryId: pendingLines.batchOfLines.geometryId.copy(),
                 scheduledForDrawing: true,
-                color: pendingLinesSuperbatch.color,
-                alpha: pendingLinesSuperbatch.alpha,
+                color: pendingLines.color,
+                alpha: pendingLines.alpha,
             });
         }
 
         const FLOATS_PER_VERTICE = 2;
         const bufferData = new Float32Array(nbVertices * FLOATS_PER_VERTICE);
         let i = 0;
-        for (const pendingLinesSuperbatch of this.pendingLines) {
-            for (const line of pendingLinesSuperbatch.batchOfLines.items) {
+        for (const pendingLines of this.pendingLinesList) {
+            for (const line of pendingLines.batchOfLines.items) {
                 if (line.length >= 2) {
                     bufferData[i++] = line[0].x;
                     bufferData[i++] = line[0].y;
@@ -265,11 +265,11 @@ class PlotterWebGL extends PlotterBase {
     private buildAndUploadPolygonsVBO(): void {
         // optim: first, count vertices to be able to pre-reserve space
         let nbVertices = 0;
-        for (const polygonsBatch of this.pendingPolygons) {
+        for (const pendingPolygons of this.pendingPolygonsList) {
             const indexOfFirstVertice = nbVertices;
 
             let verticesCount = 0;
-            for (const polygon of polygonsBatch.batchOfPolygons.items) {
+            for (const polygon of pendingPolygons.batchOfPolygons.items) {
                 if (polygon.vertices.length >= 3) {
                     verticesCount += 3 * (polygon.vertices.length - 2);
                 }
@@ -279,17 +279,17 @@ class PlotterWebGL extends PlotterBase {
             this.polygonsVbo.vboParts.push({
                 indexOfFirstVertice,
                 verticesCount,
-                geometryId: polygonsBatch.batchOfPolygons.geometryId.copy(),
+                geometryId: pendingPolygons.batchOfPolygons.geometryId.copy(),
                 scheduledForDrawing: true,
-                alpha: polygonsBatch.alpha,
+                alpha: pendingPolygons.alpha,
             });
         }
 
         const FLOATS_PER_VERTICE = 6;
         const bufferData = new Float32Array(nbVertices * FLOATS_PER_VERTICE);
         let i = 0;
-        for (const polygonsBatch of this.pendingPolygons) {
-            for (const polygon of polygonsBatch.batchOfPolygons.items) {
+        for (const pendingPolygons of this.pendingPolygonsList) {
+            for (const polygon of pendingPolygons.batchOfPolygons.items) {
                 if (polygon.vertices.length >= 3) {
                     const red = polygon.color.r / 255;
                     const green = polygon.color.g / 255;
