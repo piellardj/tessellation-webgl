@@ -81,8 +81,11 @@ abstract class Parameters {
         return Page.Checkbox.isChecked(controlId.DISPLAY_LINES_CHECKBOX_ID);
     }
 
+    public static get isThicknessEnabled(): boolean {
+        return Parameters.plotter === EPlotter.CANVAS2D;
+    }
     public static get thickness(): number {
-        if (Parameters.plotter === EPlotter.CANVAS2D) {
+        if (Parameters.isThicknessEnabled) {
             return Page.Range.getValue(controlId.THICKNESS_RANGE_ID);
         } else {
             return 0;
@@ -134,7 +137,7 @@ Page.ColorPicker.addObserver(controlId.LINES_COLOR_PICKER_ID, callRedraw);
 Page.FileControl.addDownloadObserver(controlId.DOWNLOAD_BUTTON, () => { callObservers(Parameters.downloadObservers); });
 
 Page.Controls.setVisibility(controlId.VIEWPORT_SCALE_RANGE_ID, Parameters.plotter === EPlotter.WEBGL);
-Page.Controls.setVisibility(controlId.THICKNESS_RANGE_ID, Parameters.plotter === EPlotter.CANVAS2D);
+Page.Controls.setVisibility(controlId.THICKNESS_RANGE_ID, Parameters.isThicknessEnabled);
 
 function updateIndicatorsVisibility(): void {
     Page.Canvas.setIndicatorsVisibility(Page.Checkbox.isChecked(controlId.SHOW_INDICATORS_CHECKBOX_ID));
