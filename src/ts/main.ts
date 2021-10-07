@@ -67,7 +67,7 @@ function main(): void {
         if (zooming.dt > MAX_DT) {
             // A high dt means a low FPS because of too many computations,
             // however the higher the dt, the more computation will be needed... Clamp it.
-            // zooming.dt = MAX_DT;
+            zooming.dt = MAX_DT;
         }
         lastUpdateTimestamp = now;
 
