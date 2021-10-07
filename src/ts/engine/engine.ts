@@ -4,15 +4,17 @@ import { Throttle } from "../misc/throttle";
 import { Zooming } from "../misc/zooming";
 import { EPrimitive, Parameters } from "../parameters";
 import { GeometryId } from "../plotter/geometry-id";
-import { BatchOfLines, PlotterBase } from "../plotter/plotter-base";
+import { BatchOfLines, IBatch, PlotterBase } from "../plotter/plotter-base";
 import { EVisibility, PrimitiveBase } from "../primitives/primitive-base";
 import { PrimitiveQuads } from "../primitives/primitive-quads";
 import { PrimitiveTriangles } from "../primitives/primitives-triangles";
 import { EngineBase } from "./engine-base";
 
 
+type BatchOfPrimitives = IBatch<PrimitiveBase>;
+
 interface ILayer {
-    primitives: PrimitiveBase[];
+    primitives: BatchOfPrimitives;
     outlines: BatchOfLines;
 }
 
@@ -45,6 +47,7 @@ class Engine extends EngineBase {
 
             if (somethingChanged) {
                 for (const layer of this.layers) {
+                    layer.primitives.geometryId.registerChange();
                     layer.outlines.geometryId.registerChange();
                 }
             }
@@ -174,7 +177,7 @@ class Engine extends EngineBase {
 
     private handleRecycling(viewport: Rectangle): boolean {
         const lastLayer = this.layers[this.layers.length - 1];
-        const nbPrimitivesLastLayer = lastLayer.primitives.length;
+        const nbPrimitivesLastLayer = lastLayer.primitives.items.length;
 
         const prunedPrimitives = this.prunePrimitivesOutOfView(this.rootPrimitive, viewport);
         const changedRootPrimitive = this.changeRootPrimitiveInNeeded();
@@ -183,7 +186,7 @@ class Engine extends EngineBase {
             this.rebuildLayersCollections();
 
             if (Parameters.verbose) {
-                console.log(`went from ${nbPrimitivesLastLayer} to ${lastLayer.primitives.length}`);
+                console.log(`went from ${nbPrimitivesLastLayer} to ${lastLayer.primitives.items.length}`);
             }
             return true;
         }
@@ -193,19 +196,22 @@ class Engine extends EngineBase {
     private adjustLayersCount(): boolean {
         const lastLayer = this.layers[this.layers.length - 1];
         const idealPrimitivesCountForLastLayer = Math.pow(2, Parameters.depth - 1);
-        const currentPrimitivesCountForLastLayer = lastLayer.primitives.length;
+        const currentPrimitivesCountForLastLayer = lastLayer.primitives.items.length;
 
         if (currentPrimitivesCountForLastLayer <= 0.5 * idealPrimitivesCountForLastLayer) {
             // subdivide once more
-            let primitivesOfNewLayer: PrimitiveBase[] = [];
+            const primitivesOfNewLayer: BatchOfPrimitives = {
+                items: [],
+                geometryId: GeometryId.new(),
+            };
             const outlinesOfNewLayer: BatchOfLines = {
                 items: [],
                 geometryId: GeometryId.new(),
             };
 
-            for (const primitive of lastLayer.primitives) {
+            for (const primitive of lastLayer.primitives.items) {
                 primitive.subdivide();
-                primitivesOfNewLayer = primitivesOfNewLayer.concat(primitive.getDirectChildren() as PrimitiveBase[]);
+                Array.prototype.push.apply(primitivesOfNewLayer.items, primitive.getDirectChildren() as PrimitiveBase[]);
                 outlinesOfNewLayer.items.push(primitive.subdivision);
             }
 
@@ -216,7 +222,7 @@ class Engine extends EngineBase {
             });
         } else if (currentPrimitivesCountForLastLayer >= 2 * idealPrimitivesCountForLastLayer) {
             // remove last subdivision
-            for (const primitive of lastLayer.primitives) {
+            for (const primitive of lastLayer.primitives.items) {
                 primitive.removeChildren();
             }
             this.layers.pop();
@@ -273,7 +279,11 @@ class Engine extends EngineBase {
 
         this.layers = [];
         for (let iDepth = 0; iDepth < treeDepth; iDepth++) {
-            const primitives = this.rootPrimitive.getChildrenOfDepth(iDepth) as PrimitiveBase[];
+            const primitives: BatchOfPrimitives = {
+                items: this.rootPrimitive.getChildrenOfDepth(iDepth) as PrimitiveBase[],
+                geometryId: GeometryId.new(),
+            };
+
 
             const outlines: BatchOfLines = {
                 items: [],
@@ -283,7 +293,7 @@ class Engine extends EngineBase {
                 outlines.items.push(this.rootPrimitive.getOutline());
             } else {
                 const primitivesOfParentLayer = this.layers[iDepth - 1].primitives;
-                for (const primitive of primitivesOfParentLayer) {
+                for (const primitive of primitivesOfParentLayer.items) {
                     outlines.items.push(primitive.subdivision);
                 }
             }

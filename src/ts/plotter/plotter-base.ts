@@ -14,6 +14,7 @@ interface IPolygon {
     vertices: IPoint[];
     color: Color;
 }
+type BatchOfPolygons = IBatch<IPolygon>;
 
 type Line = IPoint[];
 type BatchOfLines = IBatch<Line>;
@@ -68,12 +69,14 @@ abstract class PlotterBase {
     public abstract get isReady(): boolean;
     protected abstract clearCanvas(color: Color): void;
     public abstract drawLines(batchOfLines: BatchOfLines, thickness: number, color: Color, alpha: number): void;
-    public abstract drawPolygons(polygons: IPolygon[], alpha: number): void;
+    public abstract drawPolygons(batchOfPolygons: BatchOfPolygons, alpha: number): void;
 }
 
 export {
     BatchOfLines,
+    BatchOfPolygons,
     Line,
+    IBatch,
     IPolygon,
     PlotterBase,
 };

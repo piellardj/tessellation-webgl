@@ -3,7 +3,7 @@ import { Rectangle } from "../misc/rectangle";
 import { Zooming } from "../misc/zooming";
 import { EPrimitive, Parameters } from "../parameters";
 import { GeometryId } from "../plotter/geometry-id";
-import { BatchOfLines, Line, PlotterBase } from "../plotter/plotter-base";
+import { BatchOfLines, BatchOfPolygons, Line, PlotterBase } from "../plotter/plotter-base";
 import { EVisibility, PrimitiveBase } from "../primitives/primitive-base";
 import { PrimitiveQuads } from "../primitives/primitive-quads";
 import { PrimitiveTriangles } from "../primitives/primitives-triangles";
@@ -19,6 +19,7 @@ class EngineVisibilityTest extends EngineBase {
     private zoom: number = 1;
 
     private primitive: PrimitiveBase;
+    private readonly batchForPrimitive: BatchOfPolygons;
 
     private readonly line: Line;
     private readonly batchForLine: BatchOfLines;
@@ -32,7 +33,6 @@ class EngineVisibilityTest extends EngineBase {
 
         this.testWindow = new Rectangle(0, 0, 0, 0);
 
-        this.reset();
 
         Page.Canvas.Observers.mouseWheel.push((delta: number) => {
             this.zoom += 0.1 * delta;
@@ -42,6 +42,11 @@ class EngineVisibilityTest extends EngineBase {
                 this.zoom = 3;
             }
         });
+
+        this.batchForPrimitive = {
+            items: [],
+            geometryId: GeometryId.new(),
+        };
 
         this.line = [{ x: -50, y: -50 }, { x: 70, y: 50 }];
         this.batchForLine = {
@@ -53,6 +58,8 @@ class EngineVisibilityTest extends EngineBase {
             items: [],
             geometryId: GeometryId.new(),
         };
+
+        this.reset();
     }
 
     public reset(): void {
@@ -75,6 +82,10 @@ class EngineVisibilityTest extends EngineBase {
                 color,
             );
         }
+
+        this.batchForPrimitive.items.length = 0;
+        this.batchForPrimitive.items.push(this.primitive);
+        this.batchForPrimitive.geometryId.registerChange();
 
         this.lastPrimitiveVisibilityStatus = null;
         this.lastLineIntersectingStatus = null;
@@ -104,7 +115,7 @@ class EngineVisibilityTest extends EngineBase {
     public draw(plotter: PlotterBase): void {
         plotter.prepare();
 
-        plotter.drawPolygons([this.primitive], 1);
+        plotter.drawPolygons(this.batchForPrimitive, 1);
 
         plotter.drawLines(this.batchForLine, 1, new Color(0, 255, 0), 1);
         this.drawTestWindow(plotter);

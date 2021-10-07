@@ -1,5 +1,5 @@
 import { Color } from "../misc/color";
-import { BatchOfLines, IPolygon, PlotterBase } from "./plotter-base";
+import { BatchOfLines, BatchOfPolygons, PlotterBase } from "./plotter-base";
 
 
 class PlotterSVG extends PlotterBase {
@@ -54,13 +54,13 @@ class PlotterSVG extends PlotterBase {
         }
     }
 
-    public drawPolygons(polygons: IPolygon[], alpha: number): void {
-        if (alpha > 0 && polygons) {
+    public drawPolygons(batchOfPolygons: BatchOfPolygons, alpha: number): void {
+        if (alpha > 0 && batchOfPolygons) {
             this.lines.push(`\t<g stroke="none" opacity="${alpha}">`);
 
             const halfWidth = 0.5 * this.width;
             const halfHeight = 0.5 * this.height;
-            for (const polygon of polygons) {
+            for (const polygon of batchOfPolygons.items) {
                 if (polygon.vertices.length >= 3) {
                     const path: string[] = [];
 

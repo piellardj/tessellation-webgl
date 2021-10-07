@@ -1,5 +1,5 @@
 import { Color } from "../misc/color";
-import { BatchOfLines, IPolygon, PlotterBase } from "./plotter-base";
+import { BatchOfLines, BatchOfPolygons, PlotterBase } from "./plotter-base";
 
 import "../page-interface-generated";
 
@@ -47,13 +47,13 @@ class PlotterCanvas2D extends PlotterBase {
         }
     }
 
-    public drawPolygons(polygons: IPolygon[], alpha: number): void {
-        if (alpha > 0 && polygons) {
+    public drawPolygons(batchOfPolygons: BatchOfPolygons, alpha: number): void {
+        if (alpha > 0 && batchOfPolygons) {
             this.context.strokeStyle = "none";
 
             const halfWidth = 0.5 * this.width;
             const halfHeight = 0.5 * this.height;
-            for (const polygon of polygons) {
+            for (const polygon of batchOfPolygons.items) {
                 if (polygon.vertices.length >= 3) {
                     this.context.fillStyle = (alpha >= 1) ? polygon.color.toHexaString() : polygon.color.toRgbaString(alpha);
 
