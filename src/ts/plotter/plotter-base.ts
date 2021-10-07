@@ -4,6 +4,8 @@ import { Rectangle } from "../misc/rectangle";
 import { Zooming } from "../misc/zooming";
 import { GeometryId } from "./geometry-id";
 
+import "../page-interface-generated";
+
 
 interface IBatch<T> {
     readonly items: T[];

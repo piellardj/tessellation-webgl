@@ -1,6 +1,7 @@
 import { Color } from "../misc/color";
 import * as Loader from "../misc/loader";
 import { Zooming } from "../misc/zooming";
+import { Parameters } from "../parameters";
 import { GeometryId } from "./geometry-id";
 import { BatchOfLines, BatchOfPolygons, PlotterBase } from "./plotter-base";
 
@@ -9,6 +10,8 @@ import { gl } from "../gl-utils/gl-canvas";
 import { Shader } from "../gl-utils/shader";
 import * as ShaderManager from "../gl-utils/shader-manager";
 import { Viewport } from "../gl-utils/viewport";
+
+import "../page-interface-generated";
 
 
 interface IPendingLines {
@@ -234,7 +237,7 @@ class PlotterWebGL extends PlotterBase {
             gl.bindBuffer(gl.ARRAY_BUFFER, this.linesVbo.id);
             gl.vertexAttribPointer(aVertexLocation, 2, gl.FLOAT, false, 0, 0);
 
-            this.shaderLines.u["uZoom"].value = [zooming.center.x, zooming.center.y, zooming.currentZoomFactor, 0];
+            this.shaderLines.u["uZoom"].value = this.buildZoom(zooming);
             this.shaderLines.u["uScreenSize"].value = [0.5 * this.width, -0.5 * this.height];
 
             let currentVboPartId = 0;
@@ -340,7 +343,7 @@ class PlotterWebGL extends PlotterBase {
             gl.enableVertexAttribArray(aColorLoc);
             gl.vertexAttribPointer(aColorLoc, 4, gl.FLOAT, false, BYTES_PER_FLOAT * 6, BYTES_PER_FLOAT * 2);
 
-            this.shaderPolygons.u["uZoom"].value = [zooming.center.x, zooming.center.y, zooming.currentZoomFactor, 0];
+            this.shaderPolygons.u["uZoom"].value = this.buildZoom(zooming);
             this.shaderPolygons.u["uScreenSize"].value = [0.5 * this.width, -0.5 * this.height];
 
             for (const vboPart of vbpPartsScheduledForDrawing) {
@@ -390,6 +393,10 @@ class PlotterWebGL extends PlotterBase {
                 Page.Demopage.setErrorMessage(`${name}-shader-error`, `Failed to build '${name}' shader.`);
             }
         });
+    }
+
+    private buildZoom(zooming: Zooming): [number, number, number, number] {
+        return [zooming.center.x, zooming.center.y, zooming.currentZoomFactor, Parameters.scale];
     }
 }
 

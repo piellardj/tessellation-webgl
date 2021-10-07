@@ -10,6 +10,8 @@ import { PrimitiveQuads } from "../primitives/primitive-quads";
 import { PrimitiveTriangles } from "../primitives/primitives-triangles";
 import { EngineBase } from "./engine-base";
 
+import "../page-interface-generated";
+
 
 type BatchOfPrimitives = IBatch<PrimitiveBase>;
 
