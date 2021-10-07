@@ -1,7 +1,6 @@
 import { Engine } from "./engine/engine";
 import { EngineBase } from "./engine/engine-base";
 import { EngineVisibilityTest } from "./engine/engine-visibility-test";
-import { Color } from "./misc/color";
 import { FrametimeMonitor } from "./misc/frame-time-monitor";
 import { downloadTextFile } from "./misc/web";
 import { Zooming } from "./misc/zooming";
@@ -37,11 +36,9 @@ function main(): void {
     const plotter = createPlotter();
     const engine = createEngine(plotter);
     const zooming = new Zooming({ x: 0, y: 0 }, 0.2);
-    const backgroundColor = Color.BLACK;
 
     Parameters.downloadObservers.push(() => {
         const svgPlotter = new PlotterSVG();
-        svgPlotter.reset(backgroundColor);
         engine.draw(svgPlotter);
         const fileName = "subdivisions.svg";
         const svgString = svgPlotter.output();
@@ -90,7 +87,7 @@ function main(): void {
         }
 
         if (needToRedraw && plotter.isReady) {
-            plotter.reset(backgroundColor);
+            plotter.resizeCanvas();
             engine.draw(plotter);
             needToRedraw = false;
         }

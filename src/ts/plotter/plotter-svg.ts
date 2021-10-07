@@ -13,19 +13,20 @@ class PlotterSVG extends PlotterBase {
         return true;
     }
 
-    public reset(backgroundColor: Color): void {
+    // tslint:disable-next-line:no-empty
+    public initialize(): void {
         this.lines = [];
-        super.reset(backgroundColor);
-
         this.lines.push(`<?xml version="1.0" encoding="UTF-8" standalone="no"?>`);
         this.lines.push(`<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 ${this.width} ${this.height}">`);
-        this.lines.push(`\t<rect fill="${backgroundColor.toHexaString()}" stroke="none" x="0" y="0" width="${this.width}" height="${this.height}"/>`);
     }
 
-    // tslint:disable-next-line:no-empty
-    public initialize(): void { }
-    // tslint:disable-next-line:no-empty
-    protected clearCanvas(): void { }
+    public finalize(): void {
+        this.lines.push(`</svg>`);
+    }
+
+    public clearCanvas(color: Color): void {
+        this.lines.push(`\t<rect fill="${color.toHexaString()}" stroke="none" x="0" y="0" width="${this.width}" height="${this.height}"/>`);
+    }
 
     public drawLines(batchOfLines: BatchOfLines, thickness: number, color: Color, alpha: number): void {
         if (alpha > 0 && batchOfLines) {
@@ -76,10 +77,6 @@ class PlotterSVG extends PlotterBase {
             }
             this.lines.push(`\t</g>`);
         }
-    }
-
-    public finalize(): void {
-        this.lines.push(`</svg>`);
     }
 
     public output(): string {

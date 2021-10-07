@@ -12,13 +12,18 @@ class PlotterCanvas2D extends PlotterBase {
         this.context = this.canvas.getContext("2d", { alpha: false });
     }
 
+    public get isReady(): boolean {
+        return true;
+    }
+
     // tslint:disable-next-line:no-empty
     public initialize(): void { }
     // tslint:disable-next-line:no-empty
     public finalize(): void { }
 
-    public get isReady(): boolean {
-        return true;
+    public clearCanvas(color: Color): void {
+        this.context.fillStyle = color.toHexaString();
+        this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
     }
 
     public drawLines(batchOfLines: BatchOfLines, thickness: number, color: Color, alpha: number): void {
@@ -65,11 +70,6 @@ class PlotterCanvas2D extends PlotterBase {
                 }
             }
         }
-    }
-
-    protected clearCanvas(color: Color): void {
-        this.context.fillStyle = color.toHexaString();
-        this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
     }
 }
 

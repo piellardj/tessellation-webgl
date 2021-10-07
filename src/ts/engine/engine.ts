@@ -102,6 +102,7 @@ class Engine extends EngineBase {
         const emergingLayer = lastSolidLayer + 1;
 
         plotter.initialize();
+        plotter.clearCanvas(Color.BLACK);
 
         plotter.drawPolygons(this.layers[lastSolidLayer].primitives, 1);
         if (emergingLayer < this.layers.length) {

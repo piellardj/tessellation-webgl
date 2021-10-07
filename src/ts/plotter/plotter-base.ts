@@ -58,16 +58,12 @@ abstract class PlotterBase {
         this._height = this.canvas.height;
     }
 
-    public reset(backgroundColor: Color): void {
-        this.resizeCanvas();
-        this.clearCanvas(backgroundColor);
-    }
+    public abstract get isReady(): boolean;
 
     public abstract initialize(): void;
     public abstract finalize(zooming: Zooming): void;
 
-    public abstract get isReady(): boolean;
-    protected abstract clearCanvas(color: Color): void;
+    public abstract clearCanvas(color: Color): void;
     public abstract drawLines(batchOfLines: BatchOfLines, thickness: number, color: Color, alpha: number): void;
     public abstract drawPolygons(batchOfPolygons: BatchOfPolygons, alpha: number): void;
 }

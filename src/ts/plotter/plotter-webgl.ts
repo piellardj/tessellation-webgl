@@ -97,6 +97,10 @@ class PlotterWebGL extends PlotterBase {
         });
     }
 
+    public get isReady(): boolean {
+        return !!this.shaderLines && !!this.shaderPolygons;
+    }
+
     public initialize(): void {
         for (const vboPart of this.linesVbo.vboParts) {
             vboPart.scheduledForDrawing = false;
@@ -151,11 +155,7 @@ class PlotterWebGL extends PlotterBase {
         this.drawLinesVBO(zooming);
     }
 
-    public get isReady(): boolean {
-        return !!this.shaderLines && !!this.shaderPolygons;
-    }
-
-    protected clearCanvas(color: Color): void {
+    public clearCanvas(color: Color): void {
         Viewport.setFullCanvas(gl);
         gl.clearColor(color.r, color.g, color.b, 1);
         gl.clear(gl.COLOR_BUFFER_BIT);
