@@ -13,7 +13,7 @@ const controlId = {
     ZOOMING_SPEED_RANGE_ID: "zooming-speed-range-id",
     RESET_BUTTON_ID: "reset-button-id",
 
-    PLOTTER_TABS_ID:"plotter-tabs-id",
+    PLOTTER_TABS_ID: "plotter-tabs-id",
     COLOR_VARIATION_RANGE_ID: "color-variation-range-id",
     BLENDING_CHECKBOX_ID: "blending-checkbox-id",
     SHOW_INDICATORS_CHECKBOX_ID: "show-indicators-checkbox-id",
