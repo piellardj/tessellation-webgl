@@ -38,6 +38,15 @@ function main(): void {
     const zooming = new Zooming({ x: 0, y: 0 }, 0.2);
     const backgroundColor = Color.BLACK;
 
+    Parameters.downloadObservers.push(() => {
+        const svgPlotter = new PlotterSVG();
+        svgPlotter.initialize(backgroundColor);
+        engine.draw(svgPlotter);
+        const fileName = "subdivisions.svg";
+        const svgString = svgPlotter.output();
+        downloadTextFile(fileName, svgString);
+    });
+
     Parameters.resetObservers.push(() => {
         plotter.resizeCanvas();
         engine.reset(plotter.viewport);
@@ -48,14 +57,6 @@ function main(): void {
     let needToRedraw = true;
     Parameters.redrawObservers.push(() => { needToRedraw = true; });
 
-    Parameters.downloadObservers.push(() => {
-        const svgPlotter = new PlotterSVG();
-        svgPlotter.initialize(backgroundColor);
-        engine.draw(svgPlotter);
-        const fileName = "subdivisions.svg";
-        const svgString = svgPlotter.output();
-        downloadTextFile(fileName, svgString);
-    });
 
     const MAX_DT = 1 / 30;
     let lastUpdateTimestamp = performance.now();
