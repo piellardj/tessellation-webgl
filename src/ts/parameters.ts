@@ -14,6 +14,7 @@ const controlId = {
     RESET_BUTTON_ID: "reset-button-id",
 
     PLOTTER_TABS_ID: "plotter-tabs-id",
+    VIEWPORT_SCALE_RANGE_ID: "viewport-scale-range-id",
     COLOR_VARIATION_RANGE_ID: "color-variation-range-id",
     BLENDING_CHECKBOX_ID: "blending-checkbox-id",
     SHOW_INDICATORS_CHECKBOX_ID: "show-indicators-checkbox-id",
@@ -62,6 +63,10 @@ abstract class Parameters {
 
     public static get zoomingSpeed(): number {
         return Page.Range.getValue(controlId.ZOOMING_SPEED_RANGE_ID);
+    }
+
+    public static get scale(): number {
+        return Page.Range.getValue(controlId.VIEWPORT_SCALE_RANGE_ID);
     }
 
     public static get blending(): boolean {
@@ -129,6 +134,7 @@ Page.ColorPicker.addObserver(controlId.LINES_COLOR_PICKER_ID, callRedraw);
 
 Page.FileControl.addDownloadObserver(controlId.DOWNLOAD_BUTTON, () => { callObservers(Parameters.downloadObservers); });
 
+Page.Controls.setVisibility(controlId.VIEWPORT_SCALE_RANGE_ID, Parameters.plotter === EPlotter.WEBGL);
 Page.Controls.setVisibility(controlId.THICKNESS_RANGE_ID, Parameters.plotter === EPlotter.CANVAS2D);
 
 function updateIndicatorsVisibility(): void {

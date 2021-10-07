@@ -123,6 +123,15 @@ const data = {
                 },
                 {
                     type: Demopage.supportedControls.Range,
+                    title: "Scale",
+                    id: "viewport-scale-range-id",
+                    min: 0.25,
+                    max: 1,
+                    value: 1,
+                    step: 0.01
+                },
+                {
+                    type: Demopage.supportedControls.Range,
                     title: "Color variation",
                     id: "color-variation-range-id",
                     min: 0,
