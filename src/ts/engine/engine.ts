@@ -43,7 +43,7 @@ class Engine extends EngineBase {
 
         const maintainance = () => {
             // apply the cumulated zooming
-            somethingChanged = this.handleZoom(zooming) || somethingChanged;
+            somethingChanged = this.applyCumulatedZooming(zooming) || somethingChanged;
             somethingChanged = this.adjustLayersCount() || somethingChanged;
             somethingChanged = this.handleRecycling(viewport) || somethingChanged;
 
@@ -171,7 +171,7 @@ class Engine extends EngineBase {
         return bestColor;
     }
 
-    private handleZoom(newZoom: Zooming): boolean {
+    private applyCumulatedZooming(newZoom: Zooming): boolean {
         let appliedZoom = false;
 
         if (this.currentCumulatedZooming.speed !== 0) {
