@@ -1,7 +1,7 @@
 # tessellation-webgl
 Tessellation is the process of partitioning space into a set of smaller polygons.
 
-This project aims at creating interesting scenes by using iterative tessellation and coloring. Each scene is completely random and supports infinite zooming. You can explore anywhere you like by using the left mouse button.
+This project aims at colorful art by using iterative tessellation. Each scene is completely random and supports infinite zooming. You can explore anywhere you like by using the left mouse button.
 
 Unfortunately, WebGL doesn't support geometry nor tessellation shaders. I perform the tessellation itself is CPU-side and monothreaded, however for good real-time performance during zooming, a big part of the computation is delegated to the GPU.
 
