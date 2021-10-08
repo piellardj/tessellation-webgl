@@ -33,7 +33,7 @@ class TreeNode {
             for (const child of this.children) {
                 const subchildren = child.getChildrenOfDepth(depth - 1);
                 if (subchildren.length > 0) {
-                    Array.prototype.push.apply(result, subchildren);
+                    result = result.concat(subchildren);
                 }
             }
         }
