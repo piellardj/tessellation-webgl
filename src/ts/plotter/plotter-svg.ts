@@ -1,9 +1,11 @@
 import { Color } from "../misc/color";
+import { Parameters } from "../parameters";
 import { BatchOfLines, BatchOfPolygons, PlotterBase } from "./plotter-base";
 
 
 class PlotterSVG extends PlotterBase {
-    private lines: string[];
+    private lines: string[] = [];
+    private scaling: number = 1;
 
     public constructor() {
         super();
@@ -16,21 +18,34 @@ class PlotterSVG extends PlotterBase {
     // tslint:disable-next-line:no-empty
     public initialize(): void {
         this.lines = [];
+        this.scaling = Parameters.scale;
+
         this.lines.push(`<?xml version="1.0" encoding="UTF-8" standalone="no"?>`);
         this.lines.push(`<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 ${this.width} ${this.height}">`);
+
+        if (this.scaling !== 1) {
+            this.lines.push(`\t<g transform="scale(${this.scaling})" transform-origin="${0.5 * this.width} ${0.5 * this.height}">`);
+        }
     }
 
     public finalize(): void {
+        if (this.scaling !== 1) {
+            this.lines.push(`\t</g>`);
+        }
         this.lines.push(`</svg>`);
     }
 
     public clearCanvas(color: Color): void {
-        this.lines.push(`\t<rect fill="${color.toHexaString()}" stroke="none" x="0" y="0" width="${this.width}" height="${this.height}"/>`);
+        let revertTransform = "";
+        if (this.scaling !== 1) {
+            revertTransform = ` transform="scale(${1 / this.scaling})" transform-origin="${0.5 * this.width} ${0.5 * this.height}"`;
+        }
+        this.lines.push(`\t<rect fill="${color.toHexaString()}" stroke="none" x="0" y="0" width="${this.width}" height="${this.height}"${revertTransform}/>`);
     }
 
     public drawLines(batchOfLines: BatchOfLines, thickness: number, color: Color, alpha: number): void {
         if (alpha > 0 && batchOfLines) {
-            this.lines.push(`\t<g stroke="${color.toHexaString()}" fill="none" opacity="${alpha}">`);
+            this.lines.push(`\t\t<g stroke="${color.toHexaString()}" fill="none" opacity="${alpha}">`);
 
             const halfWidth = 0.5 * this.width;
             const halfHeight = 0.5 * this.height;
@@ -46,16 +61,16 @@ class PlotterSVG extends PlotterBase {
                 }
 
                 if (path.length > 0) {
-                    this.lines.push(`\t\t<path stroke-width="${thickness}" d="${path.join()}"/>`);
+                    this.lines.push(`\t\t\t<path stroke-width="${thickness}" d="${path.join()}"/>`);
                 }
             }
-            this.lines.push(`\t</g>`);
+            this.lines.push(`\t\t</g>`);
         }
     }
 
     public drawPolygons(batchOfPolygons: BatchOfPolygons, alpha: number): void {
         if (alpha > 0 && batchOfPolygons) {
-            this.lines.push(`\t<g stroke="none" opacity="${alpha}">`);
+            this.lines.push(`\t\t<g stroke="none" opacity="${alpha}">`);
 
             const halfWidth = 0.5 * this.width;
             const halfHeight = 0.5 * this.height;
@@ -71,11 +86,11 @@ class PlotterSVG extends PlotterBase {
                     }
 
                     if (path.length > 0) {
-                        this.lines.push(`\t\t<path fill="${polygon.color.toHexaString()}" d="${path.join()}"/>`);
+                        this.lines.push(`\t\t\t<path fill="${polygon.color.toHexaString()}" d="${path.join()}"/>`);
                     }
                 }
             }
-            this.lines.push(`\t</g>`);
+            this.lines.push(`\t\t</g>`);
         }
     }
 
