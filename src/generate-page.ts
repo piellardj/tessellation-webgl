@@ -9,7 +9,7 @@ const data = {
     introduction: [
         "TODO INTRO"
     ],
-    githubProjectName: "tesselation-webgl",
+    githubProjectName: "tessellation-webgl",
     additionalLinks: [],
     styleFiles: [],
     scriptFiles: [
