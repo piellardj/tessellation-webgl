@@ -216,7 +216,8 @@ class Engine extends EngineBase {
         const idealPrimitivesCountForLastLayer = Math.pow(2, Parameters.depth - 1);
         const currentPrimitivesCountForLastLayer = lastLayer.primitives.items.length;
 
-        if (currentPrimitivesCountForLastLayer <= 0.5 * idealPrimitivesCountForLastLayer) {
+        const subdivisionFactor = 2;
+        if (currentPrimitivesCountForLastLayer <= idealPrimitivesCountForLastLayer / subdivisionFactor) {
             // subdivide once more
             const primitivesOfNewLayer: BatchOfPrimitives = {
                 items: [],
@@ -238,7 +239,7 @@ class Engine extends EngineBase {
                 primitives: primitivesOfNewLayer,
                 outlines: outlinesOfNewLayer,
             });
-        } else if (currentPrimitivesCountForLastLayer >= 2 * idealPrimitivesCountForLastLayer) {
+        } else if (currentPrimitivesCountForLastLayer >= subdivisionFactor * idealPrimitivesCountForLastLayer) {
             // remove last subdivision
             for (const primitive of lastLayer.primitives.items) {
                 primitive.removeChildren();
