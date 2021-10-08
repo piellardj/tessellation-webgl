@@ -59,11 +59,11 @@ const data = {
                         {
                             value: "quads",
                             label: "Quads",
-                            checked: true
                         },
                         {
                             value: "triangles",
-                            label: "Triangles"
+                            label: "Triangles",
+                            checked: true
                         }
                     ]
                 },
@@ -73,7 +73,7 @@ const data = {
                     id: "depth-range-id",
                     min: 1,
                     max: 16,
-                    value: 10,
+                    value: 14,
                     step: 1
                 },
                 {
@@ -160,7 +160,7 @@ const data = {
                     type: Demopage.supportedControls.Checkbox,
                     title: "Display lines",
                     id: "display-lines-checkbox-id",
-                    checked: true
+                    checked: false
                 },
                 {
                     type: Demopage.supportedControls.Range,
