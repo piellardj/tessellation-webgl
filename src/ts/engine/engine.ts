@@ -154,8 +154,8 @@ class Engine extends EngineBase {
     }
 
     private computeRootPrimitiveColor(): Color {
-        const minLuminosity = 0.6;
-        const maxLuminosity = 0.9;
+        const minLuminosity = 0.3;
+        const maxLuminosity = 0.7;
         const maxNbTries = 10;
 
         let bestColor = Color.random();
