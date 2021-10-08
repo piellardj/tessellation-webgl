@@ -43,7 +43,7 @@ class Engine extends EngineBase {
 
         const maintainance = () => {
             // apply the cumulated zooming
-            somethingChanged = this.handleZoom(this.currentCumulatedZooming) || somethingChanged;
+            somethingChanged = this.handleZoom(zooming) || somethingChanged;
             somethingChanged = this.adjustLayersCount() || somethingChanged;
             somethingChanged = this.handleRecycling(viewport) || somethingChanged;
 
@@ -55,12 +55,6 @@ class Engine extends EngineBase {
             }
 
             this.updateIndicators();
-
-            // reset the cumulated zooming
-            this.currentCumulatedZooming.center.x = zooming.center.x;
-            this.currentCumulatedZooming.center.y = zooming.center.y;
-            this.currentCumulatedZooming.speed = zooming.speed;
-            this.currentCumulatedZooming.dt = 0;
         };
 
         const zoomingHasChanged =
@@ -177,12 +171,21 @@ class Engine extends EngineBase {
         return bestColor;
     }
 
-    private handleZoom(zooming: Zooming): boolean {
-        if (zooming.speed !== 0) {
-            this.rootPrimitive.zoom(zooming, true);
-            return true;
+    private handleZoom(newZoom: Zooming): boolean {
+        let appliedZoom = false;
+
+        if (this.currentCumulatedZooming.speed !== 0) {
+            this.rootPrimitive.zoom(this.currentCumulatedZooming, true);
+            appliedZoom = true;
         }
-        return false;
+
+        // reset the cumulated zooming
+        this.currentCumulatedZooming.center.x = newZoom.center.x;
+        this.currentCumulatedZooming.center.y = newZoom.center.y;
+        this.currentCumulatedZooming.speed = newZoom.speed;
+        this.currentCumulatedZooming.dt = 0;
+                
+        return appliedZoom;
     }
 
     private handleRecycling(viewport: Rectangle): boolean {
