@@ -1,6 +1,6 @@
 {
-  "name": "subdivisions-webgl",
-  "homepage": "https://piellardj.github.io/subdivisions-webgl",
+  "name": "tesselation-webgl",
+  "homepage": "https://piellardj.github.io/tesselation-webgl",
   "scripts": {
     "pre-commit": "npm run rebuild && npm run lint",
     "http-server": "http-server ./docs -p 8080",
@@ -13,7 +13,7 @@
     "webpack": "webpack --config src/config/webpack.config.js"
   },
   "author": "Jérémie PIELLARD <jeremie.piellard@gmail.com> (https://github.com/piellardj)",
-  "repository": "github:piellardj/subdivisions-webgl",
+  "repository": "github:piellardj/tesselation-webgl",
   "devDependencies": {
     "@types/fs-extra": "^9.0.12",
     "@types/node": "^16.7.1",
