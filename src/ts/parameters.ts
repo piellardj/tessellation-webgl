@@ -136,6 +136,7 @@ Page.Range.addObserver(controlId.COLOR_VARIATION_RANGE_ID, () => {
     callRedraw();
 });
 
+Page.Range.addObserver(controlId.VIEWPORT_SCALE_RANGE_ID, callRedraw);
 Page.Checkbox.addObserver(controlId.DISPLAY_LINES_CHECKBOX_ID, callRedraw);
 Page.Canvas.Observers.canvasResize.push(callRedraw);
 Page.Range.addObserver(controlId.THICKNESS_RANGE_ID, callRedraw);
