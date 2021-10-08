@@ -29,6 +29,7 @@ const controlId = {
 enum EPrimitive {
     QUADS = "quads",
     TRIANGLES = "triangles",
+    NESTED_TRIANGLES = "triangles-nested",
 }
 
 enum EPlotter {

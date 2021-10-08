@@ -8,6 +8,7 @@ import { BatchOfLines, IBatch, PlotterBase } from "../plotter/plotter-base";
 import { EVisibility, PrimitiveBase } from "../primitives/primitive-base";
 import { PrimitiveQuads } from "../primitives/primitive-quads";
 import { PrimitiveTriangles } from "../primitives/primitives-triangles";
+import { PrimitiveTrianglesNested } from "../primitives/primitives-triangles-nested";
 import { EngineBase } from "./engine-base";
 
 import "../page-interface-generated";
@@ -124,8 +125,15 @@ class Engine extends EngineBase {
                 { x: viewport.right, y: viewport.bottom },
                 this.computeRootPrimitiveColor(),
             );
-        } else {
+        } else if (primitiveType === EPrimitive.TRIANGLES) {
             this.rootPrimitive = new PrimitiveTriangles(
+                { x: viewport.left, y: viewport.bottom },
+                { x: viewport.right, y: viewport.bottom },
+                { x: 0, y: viewport.top },
+                this.computeRootPrimitiveColor(),
+            );
+        } else {
+            this.rootPrimitive = new PrimitiveTrianglesNested(
                 { x: viewport.left, y: viewport.bottom },
                 { x: viewport.right, y: viewport.bottom },
                 { x: 0, y: viewport.top },
@@ -184,7 +192,7 @@ class Engine extends EngineBase {
         this.currentCumulatedZooming.center.y = newZoom.center.y;
         this.currentCumulatedZooming.speed = newZoom.speed;
         this.currentCumulatedZooming.dt = 0;
-                
+
         return appliedZoom;
     }
 
@@ -345,3 +353,4 @@ class Engine extends EngineBase {
 }
 
 export { Engine };
+

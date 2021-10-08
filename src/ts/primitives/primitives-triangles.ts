@@ -9,9 +9,9 @@ import { EVisibility, PrimitiveBase } from "./primitive-base";
 
 class PrimitiveTriangles extends PrimitiveBase {
     public constructor(
-        private readonly p1: IPoint,
-        private readonly p2: IPoint,
-        private readonly p3: IPoint,
+        protected readonly p1: IPoint,
+        protected readonly p2: IPoint,
+        protected readonly p3: IPoint,
         color: Color) {
         super(color);
     }
