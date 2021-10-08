@@ -4,10 +4,12 @@ import { Demopage } from "webpage-templates";
 
 
 const data = {
-    title: "Subdivisions",
-    description: "TODO DESCRIPTION",
+    title: "Tessellation",
+    description: "WebGL tessellation used to create infinite colorful art.",
     introduction: [
-        "TODO INTRO"
+        "Tessellation is the process of partitioning space into a set of smaller polygons.",
+        "This WebGL project aims at creating interesting scenes by using iterative tessellation and coloring. Each scene is completely random and supports infinite zooming. You can explore anywhere you like by using the left mouse button."
+
     ],
     githubProjectName: "tessellation-webgl",
     additionalLinks: [],
