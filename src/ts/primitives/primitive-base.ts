@@ -18,6 +18,9 @@ abstract class PrimitiveBase extends TreeNode implements IPolygon {
     public subdivision: Line | null = null;
     protected _color: Color;
 
+    /* Returns how many children are created when subdivided */
+    public abstract get subdivisionFactor(): number;
+
     protected constructor(color: Color) {
         super();
         this.color = color;

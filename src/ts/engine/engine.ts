@@ -216,7 +216,7 @@ class Engine extends EngineBase {
         const idealPrimitivesCountForLastLayer = Math.pow(2, Parameters.depth - 1);
         const currentPrimitivesCountForLastLayer = lastLayer.primitives.items.length;
 
-        const subdivisionFactor = 2;
+        const subdivisionFactor = this.rootPrimitive.subdivisionFactor;
         if (currentPrimitivesCountForLastLayer <= idealPrimitivesCountForLastLayer / subdivisionFactor) {
             // subdivide once more
             const primitivesOfNewLayer: BatchOfPrimitives = {

@@ -17,6 +17,10 @@ class PrimitiveQuads extends PrimitiveBase {
         super(color);
     }
 
+    public get subdivisionFactor(): number {
+        return 2;
+    }
+
     public subdivide(): void {
         this.removeChildren();
 
