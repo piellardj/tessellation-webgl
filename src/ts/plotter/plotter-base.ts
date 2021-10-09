@@ -23,7 +23,7 @@ type BatchOfLines = IBatch<Line>;
 
 abstract class PlotterBase {
     protected readonly canvas: HTMLCanvasElement;
-    private readonly cssPixel: number;
+    protected readonly cssPixel: number;
 
     private _width: number;
     private _height: number;

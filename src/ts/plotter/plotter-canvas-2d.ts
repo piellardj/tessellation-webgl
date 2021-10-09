@@ -34,7 +34,7 @@ class PlotterCanvas2D extends PlotterBase {
             const halfWidth = 0.5 * this.width;
             const halfHeight = 0.5 * this.height;
             for (const line of batchOfLines.items) {
-                this.context.lineWidth = thickness;
+                this.context.lineWidth = thickness * this.cssPixel;
 
                 this.context.beginPath();
                 if (line.length >= 2) {
