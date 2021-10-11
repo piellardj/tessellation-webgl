@@ -9,7 +9,6 @@ import { EVisibility, PrimitiveBase } from "../primitives/primitive-base";
 import { PrimitiveQuads } from "../primitives/primitive-quads";
 import { PrimitiveTriangles } from "../primitives/primitives-triangles";
 import { PrimitiveTrianglesNested } from "../primitives/primitives-triangles-nested";
-import { EngineBase } from "./engine-base";
 
 import "../page-interface-generated";
 
@@ -21,7 +20,7 @@ interface ILayer {
     outlines: BatchOfLines;
 }
 
-class Engine extends EngineBase {
+class Engine {
     private rootPrimitive: PrimitiveBase;
     private layers: ILayer[];
 
@@ -31,7 +30,6 @@ class Engine extends EngineBase {
     private readonly maintainanceThrottle: Throttle;
 
     public constructor() {
-        super();
         this.reset(new Rectangle(0, 512, 0, 512));
         this.currentCumulatedZooming = new Zooming({ x: 0, y: 0 }, 0);
         this.maintainanceThrottle = new Throttle(100);

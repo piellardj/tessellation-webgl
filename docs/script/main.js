@@ -2,169 +2,6 @@
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
-/***/ "./src/ts/engine/engine-base.ts":
-/*!**************************************!*\
-  !*** ./src/ts/engine/engine-base.ts ***!
-  \**************************************/
-/***/ (function(__unused_webpack_module, exports) {
-
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.EngineBase = void 0;
-var EngineBase = (function () {
-    function EngineBase() {
-    }
-    return EngineBase;
-}());
-exports.EngineBase = EngineBase;
-
-
-/***/ }),
-
-/***/ "./src/ts/engine/engine-visibility-test.ts":
-/*!*************************************************!*\
-  !*** ./src/ts/engine/engine-visibility-test.ts ***!
-  \*************************************************/
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.EngineVisibilityTest = void 0;
-var color_1 = __webpack_require__(/*! ../misc/color */ "./src/ts/misc/color.ts");
-var rectangle_1 = __webpack_require__(/*! ../misc/rectangle */ "./src/ts/misc/rectangle.ts");
-var zooming_1 = __webpack_require__(/*! ../misc/zooming */ "./src/ts/misc/zooming.ts");
-var parameters_1 = __webpack_require__(/*! ../parameters */ "./src/ts/parameters.ts");
-var geometry_id_1 = __webpack_require__(/*! ../plotter/geometry-id */ "./src/ts/plotter/geometry-id.ts");
-var primitive_base_1 = __webpack_require__(/*! ../primitives/primitive-base */ "./src/ts/primitives/primitive-base.ts");
-var primitive_quads_1 = __webpack_require__(/*! ../primitives/primitive-quads */ "./src/ts/primitives/primitive-quads.ts");
-var primitives_triangles_1 = __webpack_require__(/*! ../primitives/primitives-triangles */ "./src/ts/primitives/primitives-triangles.ts");
-var engine_base_1 = __webpack_require__(/*! ./engine-base */ "./src/ts/engine/engine-base.ts");
-__webpack_require__(/*! ../page-interface-generated */ "./src/ts/page-interface-generated.ts");
-var EngineVisibilityTest = (function (_super) {
-    __extends(EngineVisibilityTest, _super);
-    function EngineVisibilityTest() {
-        var _this = _super.call(this) || this;
-        _this.testWindowBaseWidth = 300;
-        _this.testWindowBaseHeight = 120;
-        _this.zoom = 1;
-        _this.lastPrimitiveVisibilityStatus = null;
-        _this.lastLineIntersectingStatus = null;
-        _this.testWindow = new rectangle_1.Rectangle(0, 0, 0, 0);
-        Page.Canvas.Observers.mouseWheel.push(function (delta) {
-            _this.zoom += 0.1 * delta;
-            if (_this.zoom < 0.1) {
-                _this.zoom = 0.1;
-            }
-            else if (_this.zoom > 3) {
-                _this.zoom = 3;
-            }
-        });
-        _this.batchForPrimitive = {
-            items: [],
-            geometryId: geometry_id_1.GeometryId.new(),
-        };
-        _this.line = [{ x: -50, y: -50 }, { x: 70, y: 50 }];
-        _this.batchForLine = {
-            items: [_this.line],
-            geometryId: geometry_id_1.GeometryId.new(),
-        };
-        _this.batchForWindow = {
-            items: [],
-            geometryId: geometry_id_1.GeometryId.new(),
-        };
-        _this.reset();
-        return _this;
-    }
-    EngineVisibilityTest.prototype.reset = function () {
-        var color = color_1.Color.RED;
-        var primitiveType = parameters_1.Parameters.primitive;
-        if (primitiveType === parameters_1.EPrimitive.QUADS) {
-            this.primitive = new primitive_quads_1.PrimitiveQuads({ x: -150 * Math.random(), y: -150 * Math.random() }, { x: +150 * Math.random(), y: -150 * Math.random() }, { x: -150 * Math.random(), y: +150 * Math.random() }, { x: +150 * Math.random(), y: +150 * Math.random() }, color);
-        }
-        else {
-            this.primitive = new primitives_triangles_1.PrimitiveTriangles({ x: -100 - 50 * Math.random(), y: -100 - 50 * Math.random() }, { x: +100 + 50 * Math.random(), y: -100 - 50 * Math.random() }, { x: +100 + 50 * (Math.random() - 0.5), y: +100 + 50 * Math.random() }, color);
-        }
-        this.batchForPrimitive.items.length = 0;
-        this.batchForPrimitive.items.push(this.primitive);
-        this.batchForPrimitive.geometryId.registerChange();
-        this.lastPrimitiveVisibilityStatus = null;
-        this.lastLineIntersectingStatus = null;
-    };
-    EngineVisibilityTest.prototype.update = function () {
-        this.updateTestWindow();
-        var newPrimitiveVisibilityStatus = this.primitive.computeVisibility(this.testWindow);
-        if (this.lastPrimitiveVisibilityStatus !== newPrimitiveVisibilityStatus) {
-            if (newPrimitiveVisibilityStatus === primitive_base_1.EVisibility.COVERS_VIEW) {
-                console.log("Primitive coverage: COVERS_VIEW");
-            }
-            else if (newPrimitiveVisibilityStatus === primitive_base_1.EVisibility.OUT_OF_VIEW) {
-                console.log("Primitive coverage: OUT_OF_VIEW");
-            }
-            else {
-                console.log("Primitive coverage: VISIBLE");
-            }
-            this.lastPrimitiveVisibilityStatus = newPrimitiveVisibilityStatus;
-        }
-        var newLineIntersectionStatus = this.testWindow.lineIntersectsBoundaries(this.line[0], this.line[1]);
-        if (this.lastLineIntersectingStatus !== newLineIntersectionStatus) {
-            console.log("Line intersection: " + newLineIntersectionStatus);
-            this.lastLineIntersectingStatus = newLineIntersectionStatus;
-        }
-        return true;
-    };
-    EngineVisibilityTest.prototype.draw = function (plotter) {
-        plotter.initialize();
-        plotter.clearCanvas(color_1.Color.BLACK);
-        plotter.drawPolygons(this.batchForPrimitive, 1);
-        plotter.drawLines(this.batchForLine, 1, color_1.Color.GREEN, 1);
-        this.drawTestWindow(plotter);
-        plotter.finalize(zooming_1.Zooming.NO_ZOOMING);
-    };
-    EngineVisibilityTest.prototype.drawTestWindow = function (plotter) {
-        plotter.drawLines(this.batchForWindow, 1, color_1.Color.WHITE, 1);
-    };
-    EngineVisibilityTest.prototype.updateTestWindow = function () {
-        var canvasSize = Page.Canvas.getSize();
-        var mousePosition = parameters_1.Parameters.mousePositionInPixels;
-        mousePosition.x -= 0.5 * canvasSize[0];
-        mousePosition.y -= 0.5 * canvasSize[1];
-        var testWindowWidth = this.zoom * this.testWindowBaseWidth;
-        var testWindowHeight = this.zoom * this.testWindowBaseHeight;
-        this.testWindow.topLeft.x = mousePosition.x - 0.5 * testWindowWidth;
-        this.testWindow.topLeft.y = mousePosition.y - 0.5 * testWindowHeight;
-        this.testWindow.bottomRight.x = mousePosition.x + 0.5 * testWindowWidth;
-        this.testWindow.bottomRight.y = mousePosition.y + 0.5 * testWindowHeight;
-        this.batchForWindow.items[0] = [
-            this.testWindow.topLeft,
-            { x: this.testWindow.right, y: this.testWindow.top },
-            this.testWindow.bottomRight,
-            { x: this.testWindow.left, y: this.testWindow.bottom },
-            this.testWindow.topLeft,
-        ];
-        this.batchForWindow.geometryId.registerChange();
-    };
-    return EngineVisibilityTest;
-}(engine_base_1.EngineBase));
-exports.EngineVisibilityTest = EngineVisibilityTest;
-
-
-/***/ }),
-
 /***/ "./src/ts/engine/engine.ts":
 /*!*********************************!*\
   !*** ./src/ts/engine/engine.ts ***!
@@ -172,21 +9,6 @@ exports.EngineVisibilityTest = EngineVisibilityTest;
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Engine = void 0;
 var color_1 = __webpack_require__(/*! ../misc/color */ "./src/ts/misc/color.ts");
@@ -199,16 +21,12 @@ var primitive_base_1 = __webpack_require__(/*! ../primitives/primitive-base */ "
 var primitive_quads_1 = __webpack_require__(/*! ../primitives/primitive-quads */ "./src/ts/primitives/primitive-quads.ts");
 var primitives_triangles_1 = __webpack_require__(/*! ../primitives/primitives-triangles */ "./src/ts/primitives/primitives-triangles.ts");
 var primitives_triangles_nested_1 = __webpack_require__(/*! ../primitives/primitives-triangles-nested */ "./src/ts/primitives/primitives-triangles-nested.ts");
-var engine_base_1 = __webpack_require__(/*! ./engine-base */ "./src/ts/engine/engine-base.ts");
 __webpack_require__(/*! ../page-interface-generated */ "./src/ts/page-interface-generated.ts");
-var Engine = (function (_super) {
-    __extends(Engine, _super);
+var Engine = (function () {
     function Engine() {
-        var _this = _super.call(this) || this;
-        _this.reset(new rectangle_1.Rectangle(0, 512, 0, 512));
-        _this.currentCumulatedZooming = new zooming_1.Zooming({ x: 0, y: 0 }, 0);
-        _this.maintainanceThrottle = new throttle_1.Throttle(100);
-        return _this;
+        this.reset(new rectangle_1.Rectangle(0, 512, 0, 512));
+        this.currentCumulatedZooming = new zooming_1.Zooming({ x: 0, y: 0 }, 0);
+        this.maintainanceThrottle = new throttle_1.Throttle(100);
     }
     Engine.prototype.update = function (viewport, zooming) {
         var _this = this;
@@ -470,7 +288,7 @@ var Engine = (function (_super) {
         Page.Canvas.setIndicatorText("segments-count", segmentsCount.toString());
     };
     return Engine;
-}(engine_base_1.EngineBase));
+}());
 exports.Engine = Engine;
 
 
@@ -1089,6 +907,116 @@ var Viewport = (function () {
     return Viewport;
 }());
 exports.Viewport = Viewport;
+
+
+/***/ }),
+
+/***/ "./src/ts/main.ts":
+/*!************************!*\
+  !*** ./src/ts/main.ts ***!
+  \************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+var engine_1 = __webpack_require__(/*! ./engine/engine */ "./src/ts/engine/engine.ts");
+var frame_time_monitor_1 = __webpack_require__(/*! ./misc/frame-time-monitor */ "./src/ts/misc/frame-time-monitor.ts");
+var web_1 = __webpack_require__(/*! ./misc/web */ "./src/ts/misc/web.ts");
+var zooming_1 = __webpack_require__(/*! ./misc/zooming */ "./src/ts/misc/zooming.ts");
+var parameters_1 = __webpack_require__(/*! ./parameters */ "./src/ts/parameters.ts");
+var plotter_canvas_2d_1 = __webpack_require__(/*! ./plotter/plotter-canvas-2d */ "./src/ts/plotter/plotter-canvas-2d.ts");
+var plotter_svg_1 = __webpack_require__(/*! ./plotter/plotter-svg */ "./src/ts/plotter/plotter-svg.ts");
+var plotter_webgl_1 = __webpack_require__(/*! ./plotter/plotter-webgl */ "./src/ts/plotter/plotter-webgl.ts");
+var Testing = __importStar(__webpack_require__(/*! ./testing/main-testing */ "./src/ts/testing/main-testing.ts"));
+__webpack_require__(/*! ./page-interface-generated */ "./src/ts/page-interface-generated.ts");
+function createPlotter() {
+    if (parameters_1.Parameters.plotter === parameters_1.EPlotter.CANVAS2D) {
+        return new plotter_canvas_2d_1.PlotterCanvas2D();
+    }
+    else {
+        return new plotter_webgl_1.PlotterWebGL();
+    }
+}
+function main() {
+    var plotter = createPlotter();
+    var engine = new engine_1.Engine();
+    var zooming = new zooming_1.Zooming({ x: 0, y: 0 }, 0.2);
+    parameters_1.Parameters.recomputeColorsObservers.push(function () { engine.recomputeColors(); });
+    parameters_1.Parameters.downloadObservers.push(function () {
+        var svgPlotter = new plotter_svg_1.PlotterSVG();
+        engine.draw(svgPlotter);
+        var fileName = "subdivisions.svg";
+        var svgString = svgPlotter.output();
+        web_1.downloadTextFile(fileName, svgString);
+    });
+    function reset() {
+        plotter.resizeCanvas();
+        engine.reset(plotter.viewport);
+        zooming.center.x = 0;
+        zooming.center.y = 0;
+    }
+    parameters_1.Parameters.resetObservers.push(reset);
+    reset();
+    var needToRedraw = true;
+    parameters_1.Parameters.redrawObservers.push(function () { needToRedraw = true; });
+    var frametimeMonitor = new frame_time_monitor_1.FrametimeMonitor();
+    setInterval(function () {
+        frametimeMonitor.updateIndicators();
+    }, 1000);
+    var MAX_DT = 1 / 30;
+    var lastFrameTimestamp = performance.now();
+    function mainLoop() {
+        var now = performance.now();
+        var timeSinceLastFrame = now - lastFrameTimestamp;
+        frametimeMonitor.registerFrameTime(timeSinceLastFrame);
+        zooming.speed = parameters_1.Parameters.zoomingSpeed;
+        zooming.dt = 0.001 * timeSinceLastFrame;
+        if (zooming.dt > MAX_DT) {
+            zooming.dt = MAX_DT;
+        }
+        lastFrameTimestamp = now;
+        if (Page.Canvas.isMouseDown()) {
+            var mousePosition = parameters_1.Parameters.mousePositionInPixels;
+            zooming.center.x = mousePosition.x - 0.5 * plotter.width;
+            zooming.center.y = mousePosition.y - 0.5 * plotter.height;
+        }
+        if (engine.update(plotter.viewport, zooming) || zooming.speed > 0) {
+            needToRedraw = true;
+        }
+        if (needToRedraw && plotter.isReady) {
+            plotter.resizeCanvas();
+            engine.draw(plotter);
+            needToRedraw = false;
+        }
+        requestAnimationFrame(mainLoop);
+    }
+    mainLoop();
+}
+if (parameters_1.Parameters.debugMode) {
+    Testing.main();
+}
+else {
+    main();
+}
 
 
 /***/ }),
@@ -2903,6 +2831,175 @@ var PrimitiveTriangles = (function (_super) {
 exports.PrimitiveTriangles = PrimitiveTriangles;
 
 
+/***/ }),
+
+/***/ "./src/ts/testing/main-testing.ts":
+/*!****************************************!*\
+  !*** ./src/ts/testing/main-testing.ts ***!
+  \****************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.main = void 0;
+var parameters_1 = __webpack_require__(/*! ../parameters */ "./src/ts/parameters.ts");
+var plotter_canvas_2d_1 = __webpack_require__(/*! ../plotter/plotter-canvas-2d */ "./src/ts/plotter/plotter-canvas-2d.ts");
+var plotter_webgl_1 = __webpack_require__(/*! ../plotter/plotter-webgl */ "./src/ts/plotter/plotter-webgl.ts");
+var test_engine_1 = __webpack_require__(/*! ./test-engine */ "./src/ts/testing/test-engine.ts");
+function createPlotter() {
+    if (parameters_1.Parameters.plotter === parameters_1.EPlotter.CANVAS2D) {
+        return new plotter_canvas_2d_1.PlotterCanvas2D();
+    }
+    else {
+        return new plotter_webgl_1.PlotterWebGL();
+    }
+}
+function main() {
+    var plotter = createPlotter();
+    var testEngine = new test_engine_1.TestEngine();
+    parameters_1.Parameters.resetObservers.push(function () {
+        plotter.resizeCanvas();
+        testEngine.reset();
+    });
+    function mainLoop() {
+        testEngine.update();
+        if (plotter.isReady) {
+            plotter.resizeCanvas();
+            testEngine.draw(plotter);
+        }
+        requestAnimationFrame(mainLoop);
+    }
+    mainLoop();
+}
+exports.main = main;
+
+
+/***/ }),
+
+/***/ "./src/ts/testing/test-engine.ts":
+/*!***************************************!*\
+  !*** ./src/ts/testing/test-engine.ts ***!
+  \***************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.TestEngine = void 0;
+var color_1 = __webpack_require__(/*! ../misc/color */ "./src/ts/misc/color.ts");
+var rectangle_1 = __webpack_require__(/*! ../misc/rectangle */ "./src/ts/misc/rectangle.ts");
+var zooming_1 = __webpack_require__(/*! ../misc/zooming */ "./src/ts/misc/zooming.ts");
+var parameters_1 = __webpack_require__(/*! ../parameters */ "./src/ts/parameters.ts");
+var geometry_id_1 = __webpack_require__(/*! ../plotter/geometry-id */ "./src/ts/plotter/geometry-id.ts");
+var primitive_base_1 = __webpack_require__(/*! ../primitives/primitive-base */ "./src/ts/primitives/primitive-base.ts");
+var primitive_quads_1 = __webpack_require__(/*! ../primitives/primitive-quads */ "./src/ts/primitives/primitive-quads.ts");
+var primitives_triangles_1 = __webpack_require__(/*! ../primitives/primitives-triangles */ "./src/ts/primitives/primitives-triangles.ts");
+__webpack_require__(/*! ../page-interface-generated */ "./src/ts/page-interface-generated.ts");
+var TestEngine = (function () {
+    function TestEngine() {
+        var _this = this;
+        this.testWindowBaseWidth = 300;
+        this.testWindowBaseHeight = 120;
+        this.zoom = 1;
+        this.lastPrimitiveVisibilityStatus = null;
+        this.lastLineIntersectingStatus = null;
+        this.testWindow = new rectangle_1.Rectangle(0, 0, 0, 0);
+        Page.Canvas.Observers.mouseWheel.push(function (delta) {
+            _this.zoom += 0.1 * delta;
+            if (_this.zoom < 0.1) {
+                _this.zoom = 0.1;
+            }
+            else if (_this.zoom > 3) {
+                _this.zoom = 3;
+            }
+        });
+        this.batchForPrimitive = {
+            items: [],
+            geometryId: geometry_id_1.GeometryId.new(),
+        };
+        this.line = [{ x: -50, y: -50 }, { x: 70, y: 50 }];
+        this.batchForLine = {
+            items: [this.line],
+            geometryId: geometry_id_1.GeometryId.new(),
+        };
+        this.batchForWindow = {
+            items: [],
+            geometryId: geometry_id_1.GeometryId.new(),
+        };
+        this.reset();
+    }
+    TestEngine.prototype.reset = function () {
+        var color = color_1.Color.RED;
+        var primitiveType = parameters_1.Parameters.primitive;
+        if (primitiveType === parameters_1.EPrimitive.QUADS) {
+            this.primitive = new primitive_quads_1.PrimitiveQuads({ x: -150 * Math.random(), y: -150 * Math.random() }, { x: +150 * Math.random(), y: -150 * Math.random() }, { x: -150 * Math.random(), y: +150 * Math.random() }, { x: +150 * Math.random(), y: +150 * Math.random() }, color);
+        }
+        else {
+            this.primitive = new primitives_triangles_1.PrimitiveTriangles({ x: -100 - 50 * Math.random(), y: -100 - 50 * Math.random() }, { x: +100 + 50 * Math.random(), y: -100 - 50 * Math.random() }, { x: +100 + 50 * (Math.random() - 0.5), y: +100 + 50 * Math.random() }, color);
+        }
+        this.batchForPrimitive.items.length = 0;
+        this.batchForPrimitive.items.push(this.primitive);
+        this.batchForPrimitive.geometryId.registerChange();
+        this.lastPrimitiveVisibilityStatus = null;
+        this.lastLineIntersectingStatus = null;
+    };
+    TestEngine.prototype.update = function () {
+        this.updateTestWindow();
+        var newPrimitiveVisibilityStatus = this.primitive.computeVisibility(this.testWindow);
+        if (this.lastPrimitiveVisibilityStatus !== newPrimitiveVisibilityStatus) {
+            if (newPrimitiveVisibilityStatus === primitive_base_1.EVisibility.COVERS_VIEW) {
+                console.log("Primitive coverage: COVERS_VIEW");
+            }
+            else if (newPrimitiveVisibilityStatus === primitive_base_1.EVisibility.OUT_OF_VIEW) {
+                console.log("Primitive coverage: OUT_OF_VIEW");
+            }
+            else {
+                console.log("Primitive coverage: VISIBLE");
+            }
+            this.lastPrimitiveVisibilityStatus = newPrimitiveVisibilityStatus;
+        }
+        var newLineIntersectionStatus = this.testWindow.lineIntersectsBoundaries(this.line[0], this.line[1]);
+        if (this.lastLineIntersectingStatus !== newLineIntersectionStatus) {
+            console.log("Line intersection: " + newLineIntersectionStatus);
+            this.lastLineIntersectingStatus = newLineIntersectionStatus;
+        }
+        return true;
+    };
+    TestEngine.prototype.draw = function (plotter) {
+        plotter.initialize();
+        plotter.clearCanvas(color_1.Color.BLACK);
+        plotter.drawPolygons(this.batchForPrimitive, 1);
+        plotter.drawLines(this.batchForLine, 1, color_1.Color.GREEN, 1);
+        this.drawTestWindow(plotter);
+        plotter.finalize(zooming_1.Zooming.NO_ZOOMING);
+    };
+    TestEngine.prototype.drawTestWindow = function (plotter) {
+        plotter.drawLines(this.batchForWindow, 1, color_1.Color.WHITE, 1);
+    };
+    TestEngine.prototype.updateTestWindow = function () {
+        var canvasSize = Page.Canvas.getSize();
+        var mousePosition = parameters_1.Parameters.mousePositionInPixels;
+        mousePosition.x -= 0.5 * canvasSize[0];
+        mousePosition.y -= 0.5 * canvasSize[1];
+        var testWindowWidth = this.zoom * this.testWindowBaseWidth;
+        var testWindowHeight = this.zoom * this.testWindowBaseHeight;
+        this.testWindow.topLeft.x = mousePosition.x - 0.5 * testWindowWidth;
+        this.testWindow.topLeft.y = mousePosition.y - 0.5 * testWindowHeight;
+        this.testWindow.bottomRight.x = mousePosition.x + 0.5 * testWindowWidth;
+        this.testWindow.bottomRight.y = mousePosition.y + 0.5 * testWindowHeight;
+        this.batchForWindow.items[0] = [
+            this.testWindow.topLeft,
+            { x: this.testWindow.right, y: this.testWindow.top },
+            this.testWindow.bottomRight,
+            { x: this.testWindow.left, y: this.testWindow.bottom },
+            this.testWindow.topLeft,
+        ];
+        this.batchForWindow.geometryId.registerChange();
+    };
+    return TestEngine;
+}());
+exports.TestEngine = TestEngine;
+
+
 /***/ })
 
 /******/ 	});
@@ -2932,99 +3029,12 @@ exports.PrimitiveTriangles = PrimitiveTriangles;
 /******/ 	}
 /******/ 	
 /************************************************************************/
-var __webpack_exports__ = {};
-// This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
-!function() {
-var exports = __webpack_exports__;
-/*!************************!*\
-  !*** ./src/ts/main.ts ***!
-  \************************/
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-var engine_1 = __webpack_require__(/*! ./engine/engine */ "./src/ts/engine/engine.ts");
-var engine_visibility_test_1 = __webpack_require__(/*! ./engine/engine-visibility-test */ "./src/ts/engine/engine-visibility-test.ts");
-var frame_time_monitor_1 = __webpack_require__(/*! ./misc/frame-time-monitor */ "./src/ts/misc/frame-time-monitor.ts");
-var web_1 = __webpack_require__(/*! ./misc/web */ "./src/ts/misc/web.ts");
-var zooming_1 = __webpack_require__(/*! ./misc/zooming */ "./src/ts/misc/zooming.ts");
-var parameters_1 = __webpack_require__(/*! ./parameters */ "./src/ts/parameters.ts");
-var plotter_canvas_2d_1 = __webpack_require__(/*! ./plotter/plotter-canvas-2d */ "./src/ts/plotter/plotter-canvas-2d.ts");
-var plotter_svg_1 = __webpack_require__(/*! ./plotter/plotter-svg */ "./src/ts/plotter/plotter-svg.ts");
-var plotter_webgl_1 = __webpack_require__(/*! ./plotter/plotter-webgl */ "./src/ts/plotter/plotter-webgl.ts");
-__webpack_require__(/*! ./page-interface-generated */ "./src/ts/page-interface-generated.ts");
-function createPlotter() {
-    if (parameters_1.Parameters.plotter === parameters_1.EPlotter.CANVAS2D) {
-        return new plotter_canvas_2d_1.PlotterCanvas2D();
-    }
-    else {
-        return new plotter_webgl_1.PlotterWebGL();
-    }
-}
-function createEngine(plotter) {
-    if (parameters_1.Parameters.debugMode) {
-        return new engine_visibility_test_1.EngineVisibilityTest();
-    }
-    else {
-        var engine_2 = new engine_1.Engine();
-        parameters_1.Parameters.recomputeColorsObservers.push(function () { engine_2.recomputeColors(); });
-        engine_2.reset(plotter.viewport);
-        return engine_2;
-    }
-}
-function main() {
-    var plotter = createPlotter();
-    var engine = createEngine(plotter);
-    var zooming = new zooming_1.Zooming({ x: 0, y: 0 }, 0.2);
-    parameters_1.Parameters.downloadObservers.push(function () {
-        var svgPlotter = new plotter_svg_1.PlotterSVG();
-        engine.draw(svgPlotter);
-        var fileName = "subdivisions.svg";
-        var svgString = svgPlotter.output();
-        web_1.downloadTextFile(fileName, svgString);
-    });
-    parameters_1.Parameters.resetObservers.push(function () {
-        plotter.resizeCanvas();
-        engine.reset(plotter.viewport);
-        zooming.center.x = 0;
-        zooming.center.y = 0;
-    });
-    var needToRedraw = true;
-    parameters_1.Parameters.redrawObservers.push(function () { needToRedraw = true; });
-    var frametimeMonitor = new frame_time_monitor_1.FrametimeMonitor();
-    setInterval(function () {
-        frametimeMonitor.updateIndicators();
-    }, 1000);
-    var MAX_DT = 1 / 30;
-    var lastFrameTimestamp = performance.now();
-    function mainLoop() {
-        var now = performance.now();
-        var timeSinceLastFrame = now - lastFrameTimestamp;
-        frametimeMonitor.registerFrameTime(timeSinceLastFrame);
-        zooming.speed = parameters_1.Parameters.zoomingSpeed;
-        zooming.dt = 0.001 * timeSinceLastFrame;
-        if (zooming.dt > MAX_DT) {
-            zooming.dt = MAX_DT;
-        }
-        lastFrameTimestamp = now;
-        if (Page.Canvas.isMouseDown()) {
-            var mousePosition = parameters_1.Parameters.mousePositionInPixels;
-            zooming.center.x = mousePosition.x - 0.5 * plotter.width;
-            zooming.center.y = mousePosition.y - 0.5 * plotter.height;
-        }
-        if (engine.update(plotter.viewport, zooming) || zooming.speed > 0) {
-            needToRedraw = true;
-        }
-        if (needToRedraw && plotter.isReady) {
-            plotter.resizeCanvas();
-            engine.draw(plotter);
-            needToRedraw = false;
-        }
-        requestAnimationFrame(mainLoop);
-    }
-    mainLoop();
-}
-main();
-
-}();
+/******/ 	
+/******/ 	// startup
+/******/ 	// Load entry module and return exports
+/******/ 	// This entry module is referenced by other modules so it can't be inlined
+/******/ 	var __webpack_exports__ = __webpack_require__("./src/ts/main.ts");
+/******/ 	
 /******/ })()
 ;
 //# sourceMappingURL=main.js.map

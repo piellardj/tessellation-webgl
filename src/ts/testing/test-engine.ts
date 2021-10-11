@@ -7,12 +7,11 @@ import { BatchOfLines, BatchOfPolygons, Line, PlotterBase } from "../plotter/plo
 import { EVisibility, PrimitiveBase } from "../primitives/primitive-base";
 import { PrimitiveQuads } from "../primitives/primitive-quads";
 import { PrimitiveTriangles } from "../primitives/primitives-triangles";
-import { EngineBase } from "./engine-base";
 
 import "../page-interface-generated";
 
 
-class EngineVisibilityTest extends EngineBase {
+class TestEngine {
     private readonly testWindow: Rectangle;
     private readonly testWindowBaseWidth: number = 300;
     private readonly testWindowBaseHeight: number = 120;
@@ -29,10 +28,7 @@ class EngineVisibilityTest extends EngineBase {
     private lastLineIntersectingStatus: boolean | null = null;
 
     public constructor() {
-        super();
-
         this.testWindow = new Rectangle(0, 0, 0, 0);
-
 
         Page.Canvas.Observers.mouseWheel.push((delta: number) => {
             this.zoom += 0.1 * delta;
@@ -153,4 +149,4 @@ class EngineVisibilityTest extends EngineBase {
     }
 }
 
-export { EngineVisibilityTest };
+export { TestEngine };
