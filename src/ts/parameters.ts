@@ -66,15 +66,8 @@ abstract class Parameters {
         return Page.Range.getValue(controlId.ZOOMING_SPEED_RANGE_ID);
     }
 
-    public static get isScaleEnabled(): boolean {
-        return Parameters.plotter === EPlotter.WEBGL;
-    }
     public static get scaling(): number {
-        if (Parameters.isScaleEnabled) {
-            return Page.Range.getValue(controlId.SCALING_RANGE_ID);
-        } else {
-            return 1;
-        }
+        return Page.Range.getValue(controlId.SCALING_RANGE_ID);
     }
 
     public static get colorVariation(): number {
@@ -145,7 +138,6 @@ Page.ColorPicker.addObserver(controlId.LINES_COLOR_PICKER_ID, callRedraw);
 
 Page.FileControl.addDownloadObserver(controlId.DOWNLOAD_BUTTON, () => { callObservers(Parameters.downloadObservers); });
 
-Page.Controls.setVisibility(controlId.SCALING_RANGE_ID, Parameters.isScaleEnabled);
 Page.Controls.setVisibility(controlId.THICKNESS_RANGE_ID, Parameters.isThicknessEnabled);
 
 function updateIndicatorsVisibility(): void {

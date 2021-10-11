@@ -16,9 +16,18 @@ class PlotterCanvas2D extends PlotterBase {
         return true;
     }
 
-    public initialize(backgroundColor: Color): void {
+    public initialize(backgroundColor: Color, scaling: number): void {
+        // reset all transforms
+        this.context.setTransform(1, 0, 0, 1, 0, 0);
+
+        // clear canvas
         this.context.fillStyle = backgroundColor.toHexaString();
         this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // apply scaling
+        this.context.translate(+0.5 * this.width, +0.5 * this.height);
+        this.context.scale(scaling, scaling);
+        this.context.translate(-0.5 * this.width, -0.5 * this.height);
     }
 
     // tslint:disable-next-line:no-empty

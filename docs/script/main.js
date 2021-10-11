@@ -1563,21 +1563,9 @@ var Parameters = (function () {
         enumerable: false,
         configurable: true
     });
-    Object.defineProperty(Parameters, "isScaleEnabled", {
-        get: function () {
-            return Parameters.plotter === EPlotter.WEBGL;
-        },
-        enumerable: false,
-        configurable: true
-    });
     Object.defineProperty(Parameters, "scaling", {
         get: function () {
-            if (Parameters.isScaleEnabled) {
-                return Page.Range.getValue(controlId.SCALING_RANGE_ID);
-            }
-            else {
-                return 1;
-            }
+            return Page.Range.getValue(controlId.SCALING_RANGE_ID);
         },
         enumerable: false,
         configurable: true
@@ -1677,7 +1665,6 @@ Page.Canvas.Observers.canvasResize.push(callRedraw);
 Page.Range.addObserver(controlId.THICKNESS_RANGE_ID, callRedraw);
 Page.ColorPicker.addObserver(controlId.LINES_COLOR_PICKER_ID, callRedraw);
 Page.FileControl.addDownloadObserver(controlId.DOWNLOAD_BUTTON, function () { callObservers(Parameters.downloadObservers); });
-Page.Controls.setVisibility(controlId.SCALING_RANGE_ID, Parameters.isScaleEnabled);
 Page.Controls.setVisibility(controlId.THICKNESS_RANGE_ID, Parameters.isThicknessEnabled);
 function updateIndicatorsVisibility() {
     Page.Canvas.setIndicatorsVisibility(Page.Checkbox.isChecked(controlId.SHOW_INDICATORS_CHECKBOX_ID));
@@ -1824,9 +1811,13 @@ var PlotterCanvas2D = (function (_super) {
         enumerable: false,
         configurable: true
     });
-    PlotterCanvas2D.prototype.initialize = function (backgroundColor) {
+    PlotterCanvas2D.prototype.initialize = function (backgroundColor, scaling) {
+        this.context.setTransform(1, 0, 0, 1, 0, 0);
         this.context.fillStyle = backgroundColor.toHexaString();
         this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.context.translate(+0.5 * this.width, +0.5 * this.height);
+        this.context.scale(scaling, scaling);
+        this.context.translate(-0.5 * this.width, -0.5 * this.height);
     };
     PlotterCanvas2D.prototype.finalize = function () { };
     PlotterCanvas2D.prototype.drawLines = function (batchOfLines, thickness, color, alpha) {
