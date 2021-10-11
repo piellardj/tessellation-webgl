@@ -3,7 +3,7 @@ import { Color } from "../misc/color";
 import { IPoint } from "../misc/point";
 import { Rectangle } from "../misc/rectangle";
 import { Zoom } from "../misc/zoom";
-import { IPolygon } from "../plotter/plotter-canvas";
+import { IPolygon } from "../plotter/types";
 import { EPrimitiveType } from "./primitive-type-enum";
 
 

@@ -1,7 +1,7 @@
 import { Color } from "../misc/color";
 import { Zoom } from "../misc/zoom";
-import { BatchOfLines, BatchOfPolygons } from "./plotter-canvas";
 import { IPlotter } from "./plotter-interface";
+import { BatchOfLines, BatchOfPolygons } from "./types";
 
 
 class PlotterSVG implements IPlotter {

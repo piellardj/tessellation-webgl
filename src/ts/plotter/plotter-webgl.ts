@@ -2,8 +2,9 @@ import { Color } from "../misc/color";
 import * as Loader from "../misc/loader";
 import { Zoom } from "../misc/zoom";
 import { GeometryId } from "./geometry-id";
-import { BatchOfLines, BatchOfPolygons, PlotterCanvas } from "./plotter-canvas";
+import { PlotterCanvas } from "./plotter-canvas";
 import { IPlotter } from "./plotter-interface";
+import { BatchOfLines, BatchOfPolygons } from "./types";
 
 import * as GLCanvas from "../gl-utils/gl-canvas";
 import { gl } from "../gl-utils/gl-canvas";

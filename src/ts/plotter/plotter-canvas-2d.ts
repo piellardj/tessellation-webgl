@@ -1,7 +1,8 @@
 import { Color } from "../misc/color";
 import { Zoom } from "../misc/zoom";
-import { BatchOfLines, BatchOfPolygons, PlotterCanvas } from "./plotter-canvas";
+import { PlotterCanvas } from "./plotter-canvas";
 import { IPlotter } from "./plotter-interface";
+import { BatchOfLines, BatchOfPolygons } from "./types";
 
 import "../page-interface-generated";
 

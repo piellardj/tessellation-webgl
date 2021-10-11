@@ -1,24 +1,7 @@
-import { Color } from "../misc/color";
-import { IPoint } from "../misc/point";
 import { Rectangle } from "../misc/rectangle";
-import { GeometryId } from "./geometry-id";
 
 import "../page-interface-generated";
 
-
-interface IBatch<T> {
-    readonly items: T[];
-    readonly geometryId: GeometryId;
-}
-
-interface IPolygon {
-    vertices: IPoint[];
-    color: Color;
-}
-type BatchOfPolygons = IBatch<IPolygon>;
-
-type Line = IPoint[];
-type BatchOfLines = IBatch<Line>;
 
 abstract class PlotterCanvas {
     protected readonly canvas: HTMLCanvasElement;
@@ -59,11 +42,6 @@ abstract class PlotterCanvas {
 }
 
 export {
-    BatchOfLines,
-    BatchOfPolygons,
-    Line,
-    IBatch,
-    IPolygon,
     PlotterCanvas,
 };
 
