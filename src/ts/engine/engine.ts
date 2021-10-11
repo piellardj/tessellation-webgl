@@ -199,7 +199,6 @@ class Engine {
 
             return changedRootPrimitive || prunedPrimitives;
         }
-        return false;
     }
 
     private adjustLayersCount(): boolean {
