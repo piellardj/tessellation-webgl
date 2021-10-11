@@ -4,7 +4,6 @@ import { BatchOfLines, BatchOfPolygons, PlotterBase } from "./plotter-base";
 
 class PlotterSVG extends PlotterBase {
     private lines: string[] = [];
-    private scaling: number = 1;
 
     public constructor() {
         super();
@@ -16,20 +15,15 @@ class PlotterSVG extends PlotterBase {
 
     public initialize(backgroundColor: Color, scaling: number): void {
         this.lines = [];
-        this.scaling = scaling;
 
         this.lines.push(`<?xml version="1.0" encoding="UTF-8" standalone="no"?>`);
         this.lines.push(`<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 ${this.width} ${this.height}">`);
-        if (this.scaling !== 1) {
-            this.lines.push(`\t<g transform="scale(${this.scaling})" transform-origin="${0.5 * this.width} ${0.5 * this.height}">`);
-        }
         this.lines.push(`<rect fill="${backgroundColor.toHexaString()}" stroke="none" x="0" y="0" width="${this.width}" height="${this.height}"/>`);
+        this.lines.push(`\t<g transform="scale(${scaling})" transform-origin="${0.5 * this.width} ${0.5 * this.height}">`);
     }
 
     public finalize(): void {
-        if (this.scaling !== 1) {
-            this.lines.push(`\t</g>`);
-        }
+        this.lines.push(`\t</g>`);
         this.lines.push(`</svg>`);
     }
 
