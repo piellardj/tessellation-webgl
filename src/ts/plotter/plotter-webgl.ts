@@ -157,7 +157,7 @@ class PlotterWebGL extends PlotterBase {
 
     public clearCanvas(color: Color): void {
         Viewport.setFullCanvas(gl);
-        gl.clearColor(color.r, color.g, color.b, 1);
+        gl.clearColor(color.r / 255, color.g / 255, color.b / 255, 1);
         gl.clear(gl.COLOR_BUFFER_BIT);
     }
 
