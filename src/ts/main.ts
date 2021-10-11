@@ -1,4 +1,5 @@
 import { Engine } from "./engine/engine";
+import { IEngine } from "./engine/engine-interface";
 import { FrametimeMonitor } from "./misc/frame-time-monitor";
 import { IPoint } from "./misc/point";
 import { downloadTextFile } from "./misc/web";
@@ -23,7 +24,7 @@ function createPlotter(): PlotterBase {
 
 function main(): void {
     const plotter = createPlotter();
-    const engine = new Engine();
+    const engine: IEngine = new Engine();
 
     Parameters.recomputeColorsObservers.push(() => {
         engine.recomputeColors(Parameters.colorVariation);

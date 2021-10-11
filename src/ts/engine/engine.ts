@@ -6,10 +6,11 @@ import { Parameters } from "../parameters";
 import { GeometryId } from "../plotter/geometry-id";
 import { BatchOfLines, IBatch, PlotterBase } from "../plotter/plotter-base";
 import { EVisibility, PrimitiveBase } from "../primitives/primitive-base";
-import { EPrimitiveType } from "../primitives/primitive-type-enum";
 import { PrimitiveQuads } from "../primitives/primitive-quads";
 import { PrimitiveTriangles } from "../primitives/primitive-triangles";
 import { PrimitiveTrianglesNested } from "../primitives/primitive-triangles-nested";
+import { EPrimitiveType } from "../primitives/primitive-type-enum";
+import { IEngine } from "./engine-interface";
 
 import "../page-interface-generated";
 
@@ -21,7 +22,7 @@ interface ILayer {
     outlines: BatchOfLines;
 }
 
-class Engine {
+class Engine implements IEngine {
     private rootPrimitive: PrimitiveBase;
     private layers: ILayer[];
 
