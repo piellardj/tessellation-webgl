@@ -21,7 +21,7 @@ class PrimitiveQuads extends PrimitiveBase {
         return 2;
     }
 
-    public subdivide(): void {
+    public subdivide(childrenColorVariation: number): void {
         this.removeChildren();
 
         const minRand = 0.5 * Parameters.balance;
@@ -39,8 +39,8 @@ class PrimitiveQuads extends PrimitiveBase {
             ];
 
             this.addChildren(
-                new PrimitiveQuads(this.topLeft, this.subdivision[0], this.bottomLeft, this.subdivision[1], this.color.computeCloseColor()),
-                new PrimitiveQuads(this.subdivision[0], this.topRight, this.subdivision[1], this.bottomRight, this.color.computeCloseColor())
+                new PrimitiveQuads(this.topLeft, this.subdivision[0], this.bottomLeft, this.subdivision[1], this.color.computeCloseColor(childrenColorVariation)),
+                new PrimitiveQuads(this.subdivision[0], this.topRight, this.subdivision[1], this.bottomRight, this.color.computeCloseColor(childrenColorVariation))
             );
         } else { // current is more tall than wide => subdivide horizontally
             this.subdivision = [
@@ -49,8 +49,8 @@ class PrimitiveQuads extends PrimitiveBase {
             ];
 
             this.addChildren(
-                new PrimitiveQuads(this.topLeft, this.topRight, this.subdivision[0], this.subdivision[1], this.color.computeCloseColor()),
-                new PrimitiveQuads(this.subdivision[0], this.subdivision[1], this.bottomLeft, this.bottomRight, this.color.computeCloseColor())
+                new PrimitiveQuads(this.topLeft, this.topRight, this.subdivision[0], this.subdivision[1], this.color.computeCloseColor(childrenColorVariation)),
+                new PrimitiveQuads(this.subdivision[0], this.subdivision[1], this.bottomLeft, this.bottomRight, this.color.computeCloseColor(childrenColorVariation))
             );
         }
     }

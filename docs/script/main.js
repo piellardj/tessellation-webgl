@@ -94,7 +94,8 @@ var Engine = (function () {
         this.updateIndicators();
     };
     Engine.prototype.recomputeColors = function () {
-        this.rootPrimitive.color = this.computeRootPrimitiveColor();
+        var newColor = this.computeRootPrimitiveColor();
+        this.rootPrimitive.setColor(newColor, parameters_1.Parameters.colorVariation);
         for (var _i = 0, _a = this.layers; _i < _a.length; _i++) {
             var layer = _a[_i];
             layer.primitives.geometryId.registerChange();
@@ -153,7 +154,6 @@ var Engine = (function () {
             }
             return changedRootPrimitive || prunedPrimitives;
         }
-        return false;
     };
     Engine.prototype.adjustLayersCount = function () {
         var lastLayer = this.layers[this.layers.length - 1];
@@ -171,7 +171,7 @@ var Engine = (function () {
             };
             for (var _i = 0, _a = lastLayer.primitives.items; _i < _a.length; _i++) {
                 var primitive = _a[_i];
-                primitive.subdivide();
+                primitive.subdivide(parameters_1.Parameters.colorVariation);
                 Array.prototype.push.apply(primitivesOfNewLayer.items, primitive.getDirectChildren());
                 outlinesOfNewLayer.items.push(primitive.subdivision);
             }
@@ -1057,12 +1057,11 @@ exports.squaredDistance = squaredDistance;
 /*!******************************!*\
   !*** ./src/ts/misc/color.ts ***!
   \******************************/
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+/***/ (function(__unused_webpack_module, exports) {
 
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Color = void 0;
-var parameters_1 = __webpack_require__(/*! ../parameters */ "./src/ts/parameters.ts");
 function registerPadStartPolyfill() {
     if (typeof String.prototype.padStart !== "function") {
         String.prototype.padStart = function padStart(maxLength, fillString) {
@@ -1103,8 +1102,8 @@ var Color = (function () {
     Color.prototype.toRgbaString = function (alpha) {
         return "rgba(" + this.r + ", " + this.g + ", " + this.b + ", " + alpha + ")";
     };
-    Color.prototype.computeCloseColor = function () {
-        return new Color(Color.computeCloseChannelValue(this.r), Color.computeCloseChannelValue(this.g), Color.computeCloseChannelValue(this.b));
+    Color.prototype.computeCloseColor = function (colorVariation) {
+        return new Color(Color.computeCloseChannelValue(this.r, colorVariation), Color.computeCloseChannelValue(this.g, colorVariation), Color.computeCloseChannelValue(this.b, colorVariation));
     };
     Object.defineProperty(Color.prototype, "luminosity", {
         get: function () {
@@ -1116,9 +1115,8 @@ var Color = (function () {
     Color.randomChannel = function () {
         return Math.floor(256 * Math.random());
     };
-    Color.computeCloseChannelValue = function (v) {
-        var variation = parameters_1.Parameters.colorVariation;
-        var raw = v + Math.round(variation * (Math.random() - 0.5));
+    Color.computeCloseChannelValue = function (referenceValue, variation) {
+        var raw = referenceValue + Math.round(variation * (Math.random() - 0.5));
         if (raw < 0) {
             return 0;
         }
@@ -1829,9 +1827,9 @@ var PlotterCanvas2D = (function (_super) {
         this.context.translate(+0.5 * this.width, +0.5 * this.height);
         this.context.scale(scaling, scaling);
         this.context.translate(-0.5 * this.width, -0.5 * this.height);
-        var zoomScale = zoom.scale;
         var zoomTranslate = zoom.translate;
         this.context.translate(zoomTranslate.x, zoomTranslate.y);
+        var zoomScale = zoom.scale;
         this.context.translate(+0.5 * this.width, +0.5 * this.height);
         this.context.scale(zoomScale, zoomScale);
         this.context.translate(-0.5 * this.width, -0.5 * this.height);
@@ -2391,20 +2389,21 @@ var PrimitiveBase = (function (_super) {
     function PrimitiveBase(color) {
         var _this = _super.call(this) || this;
         _this.subdivision = null;
-        _this.color = color;
+        _this._color = color;
         return _this;
     }
+    PrimitiveBase.prototype.setColor = function (color, childrenColorVariation) {
+        this._color = color;
+        var children = this.getDirectChildren();
+        for (var _i = 0, children_1 = children; _i < children_1.length; _i++) {
+            var child = children_1[_i];
+            var childColor = this.color.computeCloseColor(childrenColorVariation);
+            child.setColor(childColor, childrenColorVariation);
+        }
+    };
     Object.defineProperty(PrimitiveBase.prototype, "color", {
         get: function () {
             return this._color;
-        },
-        set: function (color) {
-            this._color = color;
-            var children = this.getDirectChildren();
-            for (var _i = 0, children_1 = children; _i < children_1.length; _i++) {
-                var child = children_1[_i];
-                child.color = this.color.computeCloseColor();
-            }
         },
         enumerable: false,
         configurable: true
@@ -2496,7 +2495,7 @@ var PrimitiveQuads = (function (_super) {
         enumerable: false,
         configurable: true
     });
-    PrimitiveQuads.prototype.subdivide = function () {
+    PrimitiveQuads.prototype.subdivide = function (childrenColorVariation) {
         this.removeChildren();
         var minRand = 0.5 * parameters_1.Parameters.balance;
         var maxRand = 1 - minRand;
@@ -2509,14 +2508,14 @@ var PrimitiveQuads = (function (_super) {
                 Arithmetics.interpolatePoint(this.topLeft, this.topRight, rand1),
                 Arithmetics.interpolatePoint(this.bottomLeft, this.bottomRight, rand2),
             ];
-            this.addChildren(new PrimitiveQuads(this.topLeft, this.subdivision[0], this.bottomLeft, this.subdivision[1], this.color.computeCloseColor()), new PrimitiveQuads(this.subdivision[0], this.topRight, this.subdivision[1], this.bottomRight, this.color.computeCloseColor()));
+            this.addChildren(new PrimitiveQuads(this.topLeft, this.subdivision[0], this.bottomLeft, this.subdivision[1], this.color.computeCloseColor(childrenColorVariation)), new PrimitiveQuads(this.subdivision[0], this.topRight, this.subdivision[1], this.bottomRight, this.color.computeCloseColor(childrenColorVariation)));
         }
         else {
             this.subdivision = [
                 Arithmetics.interpolatePoint(this.topLeft, this.bottomLeft, rand1),
                 Arithmetics.interpolatePoint(this.topRight, this.bottomRight, rand2),
             ];
-            this.addChildren(new PrimitiveQuads(this.topLeft, this.topRight, this.subdivision[0], this.subdivision[1], this.color.computeCloseColor()), new PrimitiveQuads(this.subdivision[0], this.subdivision[1], this.bottomLeft, this.bottomRight, this.color.computeCloseColor()));
+            this.addChildren(new PrimitiveQuads(this.topLeft, this.topRight, this.subdivision[0], this.subdivision[1], this.color.computeCloseColor(childrenColorVariation)), new PrimitiveQuads(this.subdivision[0], this.subdivision[1], this.bottomLeft, this.bottomRight, this.color.computeCloseColor(childrenColorVariation)));
         }
     };
     Object.defineProperty(PrimitiveQuads.prototype, "vertices", {
@@ -2646,7 +2645,7 @@ var PrimitiveTrianglesNested = (function (_super) {
         enumerable: false,
         configurable: true
     });
-    PrimitiveTrianglesNested.prototype.subdivide = function () {
+    PrimitiveTrianglesNested.prototype.subdivide = function (childrenColorVariation) {
         this.removeChildren();
         this.midPoint1 = this.randomNewPoint(this.p1, this.p2);
         this.midPoint2 = this.randomNewPoint(this.p2, this.p3);
@@ -2657,7 +2656,7 @@ var PrimitiveTrianglesNested = (function (_super) {
             this.midPoint3,
             this.midPoint1,
         ];
-        this.addChildren(new PrimitiveTrianglesNested(this.midPoint1, this.midPoint2, this.midPoint3, this.color.computeCloseColor()), new PrimitiveTrianglesNested(this.p1, this.midPoint1, this.midPoint3, this.color.computeCloseColor()), new PrimitiveTrianglesNested(this.p2, this.midPoint2, this.midPoint1, this.color.computeCloseColor()), new PrimitiveTrianglesNested(this.p3, this.midPoint3, this.midPoint2, this.color.computeCloseColor()));
+        this.addChildren(new PrimitiveTrianglesNested(this.midPoint1, this.midPoint2, this.midPoint3, this.color.computeCloseColor(childrenColorVariation)), new PrimitiveTrianglesNested(this.p1, this.midPoint1, this.midPoint3, this.color.computeCloseColor(childrenColorVariation)), new PrimitiveTrianglesNested(this.p2, this.midPoint2, this.midPoint1, this.color.computeCloseColor(childrenColorVariation)), new PrimitiveTrianglesNested(this.p3, this.midPoint3, this.midPoint2, this.color.computeCloseColor(childrenColorVariation)));
     };
     PrimitiveTrianglesNested.prototype.applyZoom = function (zoom, isRoot) {
         if (isRoot) {
@@ -2748,7 +2747,7 @@ var PrimitiveTriangles = (function (_super) {
         enumerable: false,
         configurable: true
     });
-    PrimitiveTriangles.prototype.subdivide = function () {
+    PrimitiveTriangles.prototype.subdivide = function (childrenColorVariation) {
         var _this = this;
         this.removeChildren();
         var subdivideInternal = function (sourcePoint, otherPoint1, otherPoint2) {
@@ -2759,7 +2758,7 @@ var PrimitiveTriangles = (function (_super) {
                 sourcePoint,
                 Arithmetics.interpolatePoint(otherPoint1, otherPoint2, rand),
             ];
-            _this.addChildren(new PrimitiveTriangles(sourcePoint, otherPoint1, _this.subdivision[1], _this.color.computeCloseColor()), new PrimitiveTriangles(sourcePoint, _this.subdivision[1], otherPoint2, _this.color.computeCloseColor()));
+            _this.addChildren(new PrimitiveTriangles(sourcePoint, otherPoint1, _this.subdivision[1], _this.color.computeCloseColor(childrenColorVariation)), new PrimitiveTriangles(sourcePoint, _this.subdivision[1], otherPoint2, _this.color.computeCloseColor(childrenColorVariation)));
         };
         var distance12 = Arithmetics.squaredDistance(this.p1, this.p2);
         var distance23 = Arithmetics.squaredDistance(this.p2, this.p3);

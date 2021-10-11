@@ -20,7 +20,7 @@ class PrimitiveTriangles extends PrimitiveBase {
         return 2;
     }
 
-    public subdivide(): void {
+    public subdivide(childrenColorVariation: number): void {
         this.removeChildren();
 
         const subdivideInternal = (sourcePoint: IPoint, otherPoint1: IPoint, otherPoint2: IPoint) => {
@@ -34,8 +34,8 @@ class PrimitiveTriangles extends PrimitiveBase {
             ];
 
             this.addChildren(
-                new PrimitiveTriangles(sourcePoint, otherPoint1, this.subdivision[1], this.color.computeCloseColor()),
-                new PrimitiveTriangles(sourcePoint, this.subdivision[1], otherPoint2, this.color.computeCloseColor())
+                new PrimitiveTriangles(sourcePoint, otherPoint1, this.subdivision[1], this.color.computeCloseColor(childrenColorVariation)),
+                new PrimitiveTriangles(sourcePoint, this.subdivision[1], otherPoint2, this.color.computeCloseColor(childrenColorVariation))
             );
         };
 

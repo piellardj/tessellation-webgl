@@ -130,7 +130,9 @@ class Engine {
     }
 
     public recomputeColors(): void {
-        this.rootPrimitive.color = this.computeRootPrimitiveColor();
+        const newColor = this.computeRootPrimitiveColor();
+        this.rootPrimitive.setColor(newColor, Parameters.colorVariation);
+
         // The colors of the primitive in the VBO so we need to reupload it.
         for (const layer of this.layers) {
             layer.primitives.geometryId.registerChange();
@@ -219,7 +221,7 @@ class Engine {
             };
 
             for (const primitive of lastLayer.primitives.items) {
-                primitive.subdivide();
+                primitive.subdivide(Parameters.colorVariation);
                 Array.prototype.push.apply(primitivesOfNewLayer.items, primitive.getDirectChildren() as PrimitiveBase[]);
                 outlinesOfNewLayer.items.push(primitive.subdivision);
             }

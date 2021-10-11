@@ -19,7 +19,7 @@ class PrimitiveTrianglesNested extends PrimitiveTriangles {
         return 4;
     }
 
-    public subdivide(): void {
+    public subdivide(childrenColorVariation: number): void {
         this.removeChildren();
 
         this.midPoint1 = this.randomNewPoint(this.p1, this.p2);
@@ -34,10 +34,10 @@ class PrimitiveTrianglesNested extends PrimitiveTriangles {
         ];
 
         this.addChildren(
-            new PrimitiveTrianglesNested(this.midPoint1, this.midPoint2, this.midPoint3, this.color.computeCloseColor()),
-            new PrimitiveTrianglesNested(this.p1, this.midPoint1, this.midPoint3, this.color.computeCloseColor()),
-            new PrimitiveTrianglesNested(this.p2, this.midPoint2, this.midPoint1, this.color.computeCloseColor()),
-            new PrimitiveTrianglesNested(this.p3, this.midPoint3, this.midPoint2, this.color.computeCloseColor()),
+            new PrimitiveTrianglesNested(this.midPoint1, this.midPoint2, this.midPoint3, this.color.computeCloseColor(childrenColorVariation)),
+            new PrimitiveTrianglesNested(this.p1, this.midPoint1, this.midPoint3, this.color.computeCloseColor(childrenColorVariation)),
+            new PrimitiveTrianglesNested(this.p2, this.midPoint2, this.midPoint1, this.color.computeCloseColor(childrenColorVariation)),
+            new PrimitiveTrianglesNested(this.p3, this.midPoint3, this.midPoint2, this.color.computeCloseColor(childrenColorVariation)),
         );
     }
 

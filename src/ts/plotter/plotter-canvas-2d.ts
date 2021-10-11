@@ -33,7 +33,7 @@ class PlotterCanvas2D extends PlotterBase {
         // apply zoom
         const zoomTranslate = zoom.translate;
         this.context.translate(zoomTranslate.x, zoomTranslate.y);
-        
+
         const zoomScale = zoom.scale;
         this.context.translate(+0.5 * this.width, +0.5 * this.height);
         this.context.scale(zoomScale, zoomScale);
