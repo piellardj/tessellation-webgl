@@ -20,13 +20,12 @@ type BatchOfPrimitives = IBatch<PrimitiveBase>;
 interface ILayer {
     primitives: BatchOfPrimitives;
     outlines: BatchOfLines;
+    readonly birthTimestamp: number;
 }
 
 class Engine implements IEngine {
     private rootPrimitive: PrimitiveBase;
     private layers: ILayer[];
-
-    private lastLayerBirthTimestamp: number;
 
     private readonly cumulatedZoom: Zoom;
     private readonly maintainanceThrottle: Throttle;
@@ -73,7 +72,8 @@ class Engine implements IEngine {
         if (Parameters.blending && this.layers.length > 1) {
             if (Parameters.zoomingSpeed > 0) {
                 const emergingTimeOfLastLayer = 1000 / Math.pow((1 + Parameters.zoomingSpeed), 2);
-                const ageOfLastLayer = performance.now() - this.lastLayerBirthTimestamp;
+                const lastLayer = this.layers[this.layers.length - 1];
+                const ageOfLastLayer = performance.now() - lastLayer.birthTimestamp;
                 if (ageOfLastLayer < emergingTimeOfLastLayer) {
                     // last layer is still blending in
                     lastSolidLayer--;
@@ -126,7 +126,17 @@ class Engine implements IEngine {
             );
         }
 
-        this.rebuildLayersCollections();
+        this.layers = [{
+            primitives: {
+                items: [this.rootPrimitive],
+                geometryId: GeometryId.new(),
+            },
+            outlines: {
+                items: [this.rootPrimitive.getOutline()],
+                geometryId: GeometryId.new(),
+            },
+            birthTimestamp: performance.now(),
+        }];
         this.updateIndicators();
     }
 
@@ -220,10 +230,10 @@ class Engine implements IEngine {
                 outlinesOfNewLayer.items.push(primitive.subdivision);
             }
 
-            this.lastLayerBirthTimestamp = performance.now();
             this.layers.push({
                 primitives: primitivesOfNewLayer,
                 outlines: outlinesOfNewLayer,
+                birthTimestamp: performance.now()
             });
         } else if (currentPrimitivesCountForLastLayer >= subdivisionFactor * idealPrimitivesCountForLastLayer) {
             // remove last subdivision
@@ -277,12 +287,9 @@ class Engine implements IEngine {
     }
 
     private rebuildLayersCollections(): void {
-        const treeDepth = this.rootPrimitive.treeDepth();
-
-        this.layers = [];
-        for (let iDepth = 0; iDepth < treeDepth; iDepth++) {
+        for (let iLayer = 0; iLayer < this.layers.length; iLayer++) {
             const primitives: BatchOfPrimitives = {
-                items: this.rootPrimitive.getChildrenOfDepth(iDepth) as PrimitiveBase[],
+                items: this.rootPrimitive.getChildrenOfDepth(iLayer) as PrimitiveBase[],
                 geometryId: GeometryId.new(),
             };
 
@@ -291,19 +298,17 @@ class Engine implements IEngine {
                 items: [],
                 geometryId: GeometryId.new(),
             };
-            if (iDepth === 0) {
+            if (iLayer === 0) {
                 outlines.items.push(this.rootPrimitive.getOutline());
             } else {
-                const primitivesOfParentLayer = this.layers[iDepth - 1].primitives;
+                const primitivesOfParentLayer = this.layers[iLayer - 1].primitives;
                 for (const primitive of primitivesOfParentLayer.items) {
                     outlines.items.push(primitive.subdivision);
                 }
             }
 
-            this.layers.push({
-                primitives,
-                outlines,
-            });
+            this.layers[iLayer].primitives = primitives;
+            this.layers[iLayer].outlines = outlines;
         }
     }
 
