@@ -29,7 +29,7 @@ function main(): void {
 
     Parameters.downloadObservers.push(() => {
         const svgPlotter = new PlotterSVG();
-        engine.draw(svgPlotter);
+        engine.draw(svgPlotter, Parameters.scaling);
         const fileName = "subdivisions.svg";
         const svgString = svgPlotter.output();
         downloadTextFile(fileName, svgString);
@@ -84,7 +84,7 @@ function main(): void {
 
         if (needToRedraw && plotter.isReady) {
             plotter.resizeCanvas();
-            engine.draw(plotter);
+            engine.draw(plotter, Parameters.scaling);
             needToRedraw = false;
         }
 

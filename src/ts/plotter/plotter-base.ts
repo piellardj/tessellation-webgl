@@ -60,7 +60,7 @@ abstract class PlotterBase {
 
     public abstract get isReady(): boolean;
 
-    public abstract initialize(): void;
+    public abstract initialize(scaling: number): void;
     public abstract finalize(zoom: Zoom): void;
 
     public abstract clearCanvas(color: Color): void;

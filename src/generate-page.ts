@@ -126,8 +126,8 @@ const data = {
                 },
                 {
                     type: Demopage.supportedControls.Range,
-                    title: "Scale",
-                    id: "viewport-scale-range-id",
+                    title: "Scaling",
+                    id: "scaling-range-id",
                     min: 0.25,
                     max: 1,
                     value: 1,

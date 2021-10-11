@@ -1,7 +1,6 @@
 import { Color } from "../misc/color";
 import * as Loader from "../misc/loader";
 import { Zoom } from "../misc/zoom";
-import { Parameters } from "../parameters";
 import { GeometryId } from "./geometry-id";
 import { BatchOfLines, BatchOfPolygons, PlotterBase } from "./plotter-base";
 
@@ -59,6 +58,8 @@ class PlotterWebGL extends PlotterBase {
     private pendingLinesList: IPendingLines[] = [];
     private pendingPolygonsList: IPendingPolygons[] = [];
 
+    private scaling: number = 1;
+
     public constructor() {
         super();
 
@@ -101,7 +102,9 @@ class PlotterWebGL extends PlotterBase {
         return !!this.shaderLines && !!this.shaderPolygons;
     }
 
-    public initialize(): void {
+    public initialize(scaling: number): void {
+        this.scaling = scaling;
+
         for (const vboPart of this.linesVbo.vboParts) {
             vboPart.scheduledForDrawing = false;
         }
@@ -235,7 +238,7 @@ class PlotterWebGL extends PlotterBase {
             gl.bindBuffer(gl.ARRAY_BUFFER, this.linesVbo.id);
             gl.vertexAttribPointer(aVertexLocation, 2, gl.FLOAT, false, 0, 0);
 
-            this.shaderLines.u["uZoom"].value = PlotterWebGL.buildZoomUniform(zoom);
+            this.shaderLines.u["uZoom"].value = this.buildZoomUniform(zoom);
             this.shaderLines.u["uScreenSize"].value = [0.5 * this.width, -0.5 * this.height];
 
             let currentVboPartId = 0;
@@ -341,7 +344,7 @@ class PlotterWebGL extends PlotterBase {
             gl.enableVertexAttribArray(aColorLoc);
             gl.vertexAttribPointer(aColorLoc, 4, gl.FLOAT, false, BYTES_PER_FLOAT * 6, BYTES_PER_FLOAT * 2);
 
-            this.shaderPolygons.u["uZoom"].value = PlotterWebGL.buildZoomUniform(zoom);
+            this.shaderPolygons.u["uZoom"].value = this.buildZoomUniform(zoom);
             this.shaderPolygons.u["uScreenSize"].value = [0.5 * this.width, -0.5 * this.height];
 
             for (const vboPart of vbpPartsScheduledForDrawing) {
@@ -350,6 +353,11 @@ class PlotterWebGL extends PlotterBase {
                 gl.drawArrays(gl.TRIANGLES, vboPart.indexOfFirstVertice, vboPart.verticesCount);
             }
         }
+    }
+
+    private buildZoomUniform(zoom: Zoom): [number, number, number, number] {
+        const zoomAsUniform = zoom.asUniform();
+        return [zoomAsUniform[0], zoomAsUniform[1], zoomAsUniform[2], this.scaling];
     }
 
     private static findUploadedVBOPart<T extends IVboPart>(partitionedVBO: IPartionedVbo<T>, geometryId: GeometryId): T | null {
@@ -391,11 +399,6 @@ class PlotterWebGL extends PlotterBase {
                 Page.Demopage.setErrorMessage(`${name}-shader-error`, `Failed to build '${name}' shader.`);
             }
         });
-    }
-
-    private static buildZoomUniform(zoom: Zoom): [number, number, number, number] {
-        const zoomAsUniform = zoom.asUniform();
-        return [zoomAsUniform[0], zoomAsUniform[1], zoomAsUniform[2], Parameters.scale];
     }
 }
 

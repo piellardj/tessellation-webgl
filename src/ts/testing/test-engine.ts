@@ -109,7 +109,7 @@ class TestEngine {
     }
 
     public draw(plotter: PlotterBase): void {
-        plotter.initialize();
+        plotter.initialize(1);
         plotter.clearCanvas(Color.BLACK);
 
         plotter.drawPolygons(this.batchForPrimitive, 1);

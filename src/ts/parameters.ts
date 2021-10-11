@@ -14,7 +14,7 @@ const controlId = {
     RESET_BUTTON_ID: "reset-button-id",
 
     PLOTTER_TABS_ID: "plotter-tabs-id",
-    VIEWPORT_SCALE_RANGE_ID: "viewport-scale-range-id",
+    SCALING_RANGE_ID: "scaling-range-id",
     COLOR_VARIATION_RANGE_ID: "color-variation-range-id",
     BLENDING_CHECKBOX_ID: "blending-checkbox-id",
     SHOW_INDICATORS_CHECKBOX_ID: "show-indicators-checkbox-id",
@@ -69,9 +69,9 @@ abstract class Parameters {
     public static get isScaleEnabled(): boolean {
         return Parameters.plotter === EPlotter.WEBGL;
     }
-    public static get scale(): number {
+    public static get scaling(): number {
         if (Parameters.isScaleEnabled) {
-            return Page.Range.getValue(controlId.VIEWPORT_SCALE_RANGE_ID);
+            return Page.Range.getValue(controlId.SCALING_RANGE_ID);
         } else {
             return 1;
         }
@@ -137,7 +137,7 @@ Page.Range.addObserver(controlId.COLOR_VARIATION_RANGE_ID, () => {
     callRedraw();
 });
 
-Page.Range.addObserver(controlId.VIEWPORT_SCALE_RANGE_ID, callRedraw);
+Page.Range.addObserver(controlId.SCALING_RANGE_ID, callRedraw);
 Page.Checkbox.addObserver(controlId.DISPLAY_LINES_CHECKBOX_ID, callRedraw);
 Page.Canvas.Observers.canvasResize.push(callRedraw);
 Page.Range.addObserver(controlId.THICKNESS_RANGE_ID, callRedraw);
@@ -145,7 +145,7 @@ Page.ColorPicker.addObserver(controlId.LINES_COLOR_PICKER_ID, callRedraw);
 
 Page.FileControl.addDownloadObserver(controlId.DOWNLOAD_BUTTON, () => { callObservers(Parameters.downloadObservers); });
 
-Page.Controls.setVisibility(controlId.VIEWPORT_SCALE_RANGE_ID, Parameters.isScaleEnabled);
+Page.Controls.setVisibility(controlId.SCALING_RANGE_ID, Parameters.isScaleEnabled);
 Page.Controls.setVisibility(controlId.THICKNESS_RANGE_ID, Parameters.isThicknessEnabled);
 
 function updateIndicatorsVisibility(): void {

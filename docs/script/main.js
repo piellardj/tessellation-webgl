@@ -48,7 +48,7 @@ var Engine = (function () {
         this.maintainanceThrottle.runIfAvailable(maintainance);
         return somethingChanged;
     };
-    Engine.prototype.draw = function (plotter) {
+    Engine.prototype.draw = function (plotter, scaling) {
         if (this.layers.length < 1) {
             return;
         }
@@ -65,7 +65,7 @@ var Engine = (function () {
             }
         }
         var emergingLayer = lastSolidLayer + 1;
-        plotter.initialize();
+        plotter.initialize(scaling);
         plotter.clearCanvas(color_1.Color.BLACK);
         plotter.drawPolygons(this.layers[lastSolidLayer].primitives, 1);
         if (emergingLayer < this.layers.length) {
@@ -951,7 +951,7 @@ function main() {
     parameters_1.Parameters.recomputeColorsObservers.push(function () { engine.recomputeColors(); });
     parameters_1.Parameters.downloadObservers.push(function () {
         var svgPlotter = new plotter_svg_1.PlotterSVG();
-        engine.draw(svgPlotter);
+        engine.draw(svgPlotter, parameters_1.Parameters.scaling);
         var fileName = "subdivisions.svg";
         var svgString = svgPlotter.output();
         web_1.downloadTextFile(fileName, svgString);
@@ -996,7 +996,7 @@ function main() {
         }
         if (needToRedraw && plotter.isReady) {
             plotter.resizeCanvas();
-            engine.draw(plotter);
+            engine.draw(plotter, parameters_1.Parameters.scaling);
             needToRedraw = false;
         }
         requestAnimationFrame(mainLoop);
@@ -1510,7 +1510,7 @@ var controlId = {
     ZOOMING_SPEED_RANGE_ID: "zooming-speed-range-id",
     RESET_BUTTON_ID: "reset-button-id",
     PLOTTER_TABS_ID: "plotter-tabs-id",
-    VIEWPORT_SCALE_RANGE_ID: "viewport-scale-range-id",
+    SCALING_RANGE_ID: "scaling-range-id",
     COLOR_VARIATION_RANGE_ID: "color-variation-range-id",
     BLENDING_CHECKBOX_ID: "blending-checkbox-id",
     SHOW_INDICATORS_CHECKBOX_ID: "show-indicators-checkbox-id",
@@ -1571,10 +1571,10 @@ var Parameters = (function () {
         enumerable: false,
         configurable: true
     });
-    Object.defineProperty(Parameters, "scale", {
+    Object.defineProperty(Parameters, "scaling", {
         get: function () {
             if (Parameters.isScaleEnabled) {
-                return Page.Range.getValue(controlId.VIEWPORT_SCALE_RANGE_ID);
+                return Page.Range.getValue(controlId.SCALING_RANGE_ID);
             }
             else {
                 return 1;
@@ -1672,13 +1672,13 @@ Page.Range.addObserver(controlId.COLOR_VARIATION_RANGE_ID, function () {
     callObservers(Parameters.recomputeColorsObservers);
     callRedraw();
 });
-Page.Range.addObserver(controlId.VIEWPORT_SCALE_RANGE_ID, callRedraw);
+Page.Range.addObserver(controlId.SCALING_RANGE_ID, callRedraw);
 Page.Checkbox.addObserver(controlId.DISPLAY_LINES_CHECKBOX_ID, callRedraw);
 Page.Canvas.Observers.canvasResize.push(callRedraw);
 Page.Range.addObserver(controlId.THICKNESS_RANGE_ID, callRedraw);
 Page.ColorPicker.addObserver(controlId.LINES_COLOR_PICKER_ID, callRedraw);
 Page.FileControl.addDownloadObserver(controlId.DOWNLOAD_BUTTON, function () { callObservers(Parameters.downloadObservers); });
-Page.Controls.setVisibility(controlId.VIEWPORT_SCALE_RANGE_ID, Parameters.isScaleEnabled);
+Page.Controls.setVisibility(controlId.SCALING_RANGE_ID, Parameters.isScaleEnabled);
 Page.Controls.setVisibility(controlId.THICKNESS_RANGE_ID, Parameters.isThicknessEnabled);
 function updateIndicatorsVisibility() {
     Page.Canvas.setIndicatorsVisibility(Page.Checkbox.isChecked(controlId.SHOW_INDICATORS_CHECKBOX_ID));
@@ -1903,7 +1903,6 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.PlotterSVG = void 0;
-var parameters_1 = __webpack_require__(/*! ../parameters */ "./src/ts/parameters.ts");
 var plotter_base_1 = __webpack_require__(/*! ./plotter-base */ "./src/ts/plotter/plotter-base.ts");
 var PlotterSVG = (function (_super) {
     __extends(PlotterSVG, _super);
@@ -1920,9 +1919,9 @@ var PlotterSVG = (function (_super) {
         enumerable: false,
         configurable: true
     });
-    PlotterSVG.prototype.initialize = function () {
+    PlotterSVG.prototype.initialize = function (scaling) {
         this.lines = [];
-        this.scaling = parameters_1.Parameters.scale;
+        this.scaling = scaling;
         this.lines.push("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>");
         this.lines.push("<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" viewBox=\"0 0 " + this.width + " " + this.height + "\">");
         if (this.scaling !== 1) {
@@ -2040,7 +2039,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.PlotterWebGL = void 0;
 var Loader = __importStar(__webpack_require__(/*! ../misc/loader */ "./src/ts/misc/loader.ts"));
-var parameters_1 = __webpack_require__(/*! ../parameters */ "./src/ts/parameters.ts");
 var plotter_base_1 = __webpack_require__(/*! ./plotter-base */ "./src/ts/plotter/plotter-base.ts");
 var GLCanvas = __importStar(__webpack_require__(/*! ../gl-utils/gl-canvas */ "./src/ts/gl-utils/gl-canvas.ts"));
 var gl_canvas_1 = __webpack_require__(/*! ../gl-utils/gl-canvas */ "./src/ts/gl-utils/gl-canvas.ts");
@@ -2053,6 +2051,7 @@ var PlotterWebGL = (function (_super) {
         var _this = _super.call(this) || this;
         _this.pendingLinesList = [];
         _this.pendingPolygonsList = [];
+        _this.scaling = 1;
         var webglFlags = {
             alpha: false,
             antialias: true,
@@ -2091,7 +2090,8 @@ var PlotterWebGL = (function (_super) {
         enumerable: false,
         configurable: true
     });
-    PlotterWebGL.prototype.initialize = function () {
+    PlotterWebGL.prototype.initialize = function (scaling) {
+        this.scaling = scaling;
         for (var _i = 0, _a = this.linesVbo.vboParts; _i < _a.length; _i++) {
             var vboPart = _a[_i];
             vboPart.scheduledForDrawing = false;
@@ -2211,7 +2211,7 @@ var PlotterWebGL = (function (_super) {
             gl_canvas_1.gl.enableVertexAttribArray(aVertexLocation);
             gl_canvas_1.gl.bindBuffer(gl_canvas_1.gl.ARRAY_BUFFER, this.linesVbo.id);
             gl_canvas_1.gl.vertexAttribPointer(aVertexLocation, 2, gl_canvas_1.gl.FLOAT, false, 0, 0);
-            this.shaderLines.u["uZoom"].value = PlotterWebGL.buildZoomUniform(zoom);
+            this.shaderLines.u["uZoom"].value = this.buildZoomUniform(zoom);
             this.shaderLines.u["uScreenSize"].value = [0.5 * this.width, -0.5 * this.height];
             var currentVboPartId = 0;
             while (currentVboPartId < vbpPartsScheduledForDrawing.length) {
@@ -2304,7 +2304,7 @@ var PlotterWebGL = (function (_super) {
             gl_canvas_1.gl.vertexAttribPointer(aPositionLoc, 2, gl_canvas_1.gl.FLOAT, false, BYTES_PER_FLOAT * 6, 0);
             gl_canvas_1.gl.enableVertexAttribArray(aColorLoc);
             gl_canvas_1.gl.vertexAttribPointer(aColorLoc, 4, gl_canvas_1.gl.FLOAT, false, BYTES_PER_FLOAT * 6, BYTES_PER_FLOAT * 2);
-            this.shaderPolygons.u["uZoom"].value = PlotterWebGL.buildZoomUniform(zoom);
+            this.shaderPolygons.u["uZoom"].value = this.buildZoomUniform(zoom);
             this.shaderPolygons.u["uScreenSize"].value = [0.5 * this.width, -0.5 * this.height];
             for (var _i = 0, vbpPartsScheduledForDrawing_1 = vbpPartsScheduledForDrawing; _i < vbpPartsScheduledForDrawing_1.length; _i++) {
                 var vboPart = vbpPartsScheduledForDrawing_1[_i];
@@ -2313,6 +2313,10 @@ var PlotterWebGL = (function (_super) {
                 gl_canvas_1.gl.drawArrays(gl_canvas_1.gl.TRIANGLES, vboPart.indexOfFirstVertice, vboPart.verticesCount);
             }
         }
+    };
+    PlotterWebGL.prototype.buildZoomUniform = function (zoom) {
+        var zoomAsUniform = zoom.asUniform();
+        return [zoomAsUniform[0], zoomAsUniform[1], zoomAsUniform[2], this.scaling];
     };
     PlotterWebGL.findUploadedVBOPart = function (partitionedVBO, geometryId) {
         for (var _i = 0, _a = partitionedVBO.vboParts; _i < _a.length; _i++) {
@@ -2349,10 +2353,6 @@ var PlotterWebGL = (function (_super) {
                 Page.Demopage.setErrorMessage(name + "-shader-error", "Failed to build '" + name + "' shader.");
             }
         });
-    };
-    PlotterWebGL.buildZoomUniform = function (zoom) {
-        var zoomAsUniform = zoom.asUniform();
-        return [zoomAsUniform[0], zoomAsUniform[1], zoomAsUniform[2], parameters_1.Parameters.scale];
     };
     return PlotterWebGL;
 }(plotter_base_1.PlotterBase));
@@ -2968,7 +2968,7 @@ var TestEngine = (function () {
         return true;
     };
     TestEngine.prototype.draw = function (plotter) {
-        plotter.initialize();
+        plotter.initialize(1);
         plotter.clearCanvas(color_1.Color.BLACK);
         plotter.drawPolygons(this.batchForPrimitive, 1);
         plotter.drawLines(this.batchForLine, 1, color_1.Color.GREEN, 1);
