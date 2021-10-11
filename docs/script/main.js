@@ -65,7 +65,7 @@ var Engine = (function () {
             }
         }
         var emergingLayer = lastSolidLayer + 1;
-        plotter.initialize(color_1.Color.BLACK, scaling);
+        plotter.initialize(color_1.Color.BLACK, this.cumulatedZoom, scaling);
         plotter.drawPolygons(this.layers[lastSolidLayer].primitives, 1);
         if (emergingLayer < this.layers.length) {
             plotter.drawPolygons(this.layers[emergingLayer].primitives, emergingLayerAlpha);
@@ -77,7 +77,7 @@ var Engine = (function () {
                 plotter.drawLines(this.layers[iLayer].outlines, thickness, parameters_1.Parameters.linesColor, alpha);
             }
         }
-        plotter.finalize(this.cumulatedZoom);
+        plotter.finalize();
     };
     Engine.prototype.reset = function (viewport) {
         var primitiveType = parameters_1.Parameters.primitive;
@@ -1469,9 +1469,20 @@ var Zoom = (function () {
         this.b = newB;
         this.c = newC;
     };
-    Zoom.prototype.asUniform = function () {
-        return [this.a, this.b, this.c];
-    };
+    Object.defineProperty(Zoom.prototype, "scale", {
+        get: function () {
+            return this.a;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(Zoom.prototype, "translate", {
+        get: function () {
+            return { x: this.b, y: this.c };
+        },
+        enumerable: false,
+        configurable: true
+    });
     return Zoom;
 }());
 exports.Zoom = Zoom;
@@ -1811,12 +1822,18 @@ var PlotterCanvas2D = (function (_super) {
         enumerable: false,
         configurable: true
     });
-    PlotterCanvas2D.prototype.initialize = function (backgroundColor, scaling) {
+    PlotterCanvas2D.prototype.initialize = function (backgroundColor, zoom, scaling) {
         this.context.setTransform(1, 0, 0, 1, 0, 0);
         this.context.fillStyle = backgroundColor.toHexaString();
         this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
         this.context.translate(+0.5 * this.width, +0.5 * this.height);
         this.context.scale(scaling, scaling);
+        this.context.translate(-0.5 * this.width, -0.5 * this.height);
+        var zoomScale = zoom.scale;
+        var zoomTranslate = zoom.translate;
+        this.context.translate(zoomTranslate.x, zoomTranslate.y);
+        this.context.translate(+0.5 * this.width, +0.5 * this.height);
+        this.context.scale(zoomScale, zoomScale);
         this.context.translate(-0.5 * this.width, -0.5 * this.height);
     };
     PlotterCanvas2D.prototype.finalize = function () { };
@@ -1907,20 +1924,25 @@ var PlotterSVG = (function (_super) {
         enumerable: false,
         configurable: true
     });
-    PlotterSVG.prototype.initialize = function (backgroundColor, scaling) {
+    PlotterSVG.prototype.initialize = function (backgroundColor, zoom, scaling) {
         this.lines = [];
         this.lines.push("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>");
         this.lines.push("<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" viewBox=\"0 0 " + this.width + " " + this.height + "\">");
         this.lines.push("<rect fill=\"" + backgroundColor.toHexaString() + "\" stroke=\"none\" x=\"0\" y=\"0\" width=\"" + this.width + "\" height=\"" + this.height + "\"/>");
         this.lines.push("\t<g transform=\"scale(" + scaling + ")\" transform-origin=\"" + 0.5 * this.width + " " + 0.5 * this.height + "\">");
+        var zoomTranslate = zoom.translate;
+        this.lines.push("\t\t<g transform=\"translate(" + zoomTranslate.x + ", " + zoomTranslate.y + ")\">");
+        this.lines.push("\t\t\t<g transform=\"scale(" + zoom.scale + ")\" transform-origin=\"" + 0.5 * this.width + " " + 0.5 * this.height + "\">");
     };
     PlotterSVG.prototype.finalize = function () {
+        this.lines.push("\t\t\t</g>");
+        this.lines.push("\t\t</g>");
         this.lines.push("\t</g>");
         this.lines.push("</svg>");
     };
     PlotterSVG.prototype.drawLines = function (batchOfLines, thickness, color, alpha) {
         if (alpha > 0 && batchOfLines) {
-            this.lines.push("\t\t<g stroke=\"" + color.toHexaString() + "\" fill=\"none\" opacity=\"" + alpha + "\">");
+            this.lines.push("\t\t\t\t<g stroke=\"" + color.toHexaString() + "\" fill=\"none\" opacity=\"" + alpha + "\">");
             var halfWidth = 0.5 * this.width;
             var halfHeight = 0.5 * this.height;
             for (var _i = 0, _a = batchOfLines.items; _i < _a.length; _i++) {
@@ -1933,15 +1955,15 @@ var PlotterSVG = (function (_super) {
                     }
                 }
                 if (path.length > 0) {
-                    this.lines.push("\t\t\t<path stroke-width=\"" + thickness + "\" d=\"" + path.join() + "\"/>");
+                    this.lines.push("\t\t\t\t\t<path stroke-width=\"" + thickness + "\" d=\"" + path.join() + "\"/>");
                 }
             }
-            this.lines.push("\t\t</g>");
+            this.lines.push("\t\t\t\t</g>");
         }
     };
     PlotterSVG.prototype.drawPolygons = function (batchOfPolygons, alpha) {
         if (alpha > 0 && batchOfPolygons) {
-            this.lines.push("\t\t<g stroke=\"none\" opacity=\"" + alpha + "\">");
+            this.lines.push("\t\t\t\t<g stroke=\"none\" opacity=\"" + alpha + "\">");
             var halfWidth = 0.5 * this.width;
             var halfHeight = 0.5 * this.height;
             for (var _i = 0, _a = batchOfPolygons.items; _i < _a.length; _i++) {
@@ -1955,11 +1977,11 @@ var PlotterSVG = (function (_super) {
                         }
                     }
                     if (path.length > 0) {
-                        this.lines.push("\t\t\t<path fill=\"" + polygon.color.toHexaString() + "\" d=\"" + path.join() + "\"/>");
+                        this.lines.push("\t\t\t\t\t<path fill=\"" + polygon.color.toHexaString() + "\" d=\"" + path.join() + "\"/>");
                     }
                 }
             }
-            this.lines.push("\t\t</g>");
+            this.lines.push("\t\t\t\t</g>");
         }
     };
     PlotterSVG.prototype.output = function () {
@@ -2028,7 +2050,6 @@ var PlotterWebGL = (function (_super) {
         var _this = _super.call(this) || this;
         _this.pendingLinesList = [];
         _this.pendingPolygonsList = [];
-        _this.scaling = 1;
         var webglFlags = {
             alpha: false,
             antialias: true,
@@ -2067,8 +2088,7 @@ var PlotterWebGL = (function (_super) {
         enumerable: false,
         configurable: true
     });
-    PlotterWebGL.prototype.initialize = function (backgroundColor, scaling) {
-        this.scaling = scaling;
+    PlotterWebGL.prototype.initialize = function (backgroundColor, zoom, scaling) {
         for (var _i = 0, _a = this.linesVbo.vboParts; _i < _a.length; _i++) {
             var vboPart = _a[_i];
             vboPart.scheduledForDrawing = false;
@@ -2080,8 +2100,12 @@ var PlotterWebGL = (function (_super) {
         viewport_1.Viewport.setFullCanvas(gl_canvas_1.gl);
         gl_canvas_1.gl.clearColor(backgroundColor.r / 255, backgroundColor.g / 255, backgroundColor.b / 255, 1);
         gl_canvas_1.gl.clear(gl_canvas_1.gl.COLOR_BUFFER_BIT);
+        var zoomTranslate = zoom.translate;
+        var zoomAndScalingAsUniform = [zoom.scale, zoomTranslate.x, zoomTranslate.y, scaling];
+        this.shaderLines.u["uZoom"].value = zoomAndScalingAsUniform;
+        this.shaderPolygons.u["uZoom"].value = zoomAndScalingAsUniform;
     };
-    PlotterWebGL.prototype.finalize = function (zoom) {
+    PlotterWebGL.prototype.finalize = function () {
         if (this.pendingPolygonsList.length > 0) {
             var needToRebuildVBO = false;
             for (var _i = 0, _a = this.pendingPolygonsList; _i < _a.length; _i++) {
@@ -2119,8 +2143,8 @@ var PlotterWebGL = (function (_super) {
             }
             this.pendingLinesList = [];
         }
-        this.drawPolygonsVBO(zoom);
-        this.drawLinesVBO(zoom);
+        this.drawPolygonsVBO();
+        this.drawLinesVBO();
     };
     PlotterWebGL.prototype.drawLines = function (batchOfLines, _thickness, color, alpha) {
         this.pendingLinesList.push({ batchOfLines: batchOfLines, color: color, alpha: alpha });
@@ -2178,7 +2202,7 @@ var PlotterWebGL = (function (_super) {
         gl_canvas_1.gl.bindBuffer(gl_canvas_1.gl.ARRAY_BUFFER, this.linesVbo.id);
         gl_canvas_1.gl.bufferData(gl_canvas_1.gl.ARRAY_BUFFER, bufferData, gl_canvas_1.gl.DYNAMIC_DRAW);
     };
-    PlotterWebGL.prototype.drawLinesVBO = function (zoom) {
+    PlotterWebGL.prototype.drawLinesVBO = function () {
         var vbpPartsScheduledForDrawing = PlotterWebGL.selectVBOPartsScheduledForDrawing(this.linesVbo);
         if (this.shaderLines && vbpPartsScheduledForDrawing.length > 0) {
             this.shaderLines.use();
@@ -2186,7 +2210,6 @@ var PlotterWebGL = (function (_super) {
             gl_canvas_1.gl.enableVertexAttribArray(aVertexLocation);
             gl_canvas_1.gl.bindBuffer(gl_canvas_1.gl.ARRAY_BUFFER, this.linesVbo.id);
             gl_canvas_1.gl.vertexAttribPointer(aVertexLocation, 2, gl_canvas_1.gl.FLOAT, false, 0, 0);
-            this.shaderLines.u["uZoom"].value = this.buildZoomUniform(zoom);
             this.shaderLines.u["uScreenSize"].value = [0.5 * this.width, -0.5 * this.height];
             var currentVboPartId = 0;
             while (currentVboPartId < vbpPartsScheduledForDrawing.length) {
@@ -2267,7 +2290,7 @@ var PlotterWebGL = (function (_super) {
         gl_canvas_1.gl.bindBuffer(gl_canvas_1.gl.ARRAY_BUFFER, this.polygonsVbo.id);
         gl_canvas_1.gl.bufferData(gl_canvas_1.gl.ARRAY_BUFFER, bufferData, gl_canvas_1.gl.DYNAMIC_DRAW);
     };
-    PlotterWebGL.prototype.drawPolygonsVBO = function (zoom) {
+    PlotterWebGL.prototype.drawPolygonsVBO = function () {
         var vbpPartsScheduledForDrawing = PlotterWebGL.selectVBOPartsScheduledForDrawing(this.polygonsVbo);
         if (this.shaderPolygons && vbpPartsScheduledForDrawing.length > 0) {
             this.shaderPolygons.use();
@@ -2279,7 +2302,6 @@ var PlotterWebGL = (function (_super) {
             gl_canvas_1.gl.vertexAttribPointer(aPositionLoc, 2, gl_canvas_1.gl.FLOAT, false, BYTES_PER_FLOAT * 6, 0);
             gl_canvas_1.gl.enableVertexAttribArray(aColorLoc);
             gl_canvas_1.gl.vertexAttribPointer(aColorLoc, 4, gl_canvas_1.gl.FLOAT, false, BYTES_PER_FLOAT * 6, BYTES_PER_FLOAT * 2);
-            this.shaderPolygons.u["uZoom"].value = this.buildZoomUniform(zoom);
             this.shaderPolygons.u["uScreenSize"].value = [0.5 * this.width, -0.5 * this.height];
             for (var _i = 0, vbpPartsScheduledForDrawing_1 = vbpPartsScheduledForDrawing; _i < vbpPartsScheduledForDrawing_1.length; _i++) {
                 var vboPart = vbpPartsScheduledForDrawing_1[_i];
@@ -2288,10 +2310,6 @@ var PlotterWebGL = (function (_super) {
                 gl_canvas_1.gl.drawArrays(gl_canvas_1.gl.TRIANGLES, vboPart.indexOfFirstVertice, vboPart.verticesCount);
             }
         }
-    };
-    PlotterWebGL.prototype.buildZoomUniform = function (zoom) {
-        var zoomAsUniform = zoom.asUniform();
-        return [zoomAsUniform[0], zoomAsUniform[1], zoomAsUniform[2], this.scaling];
     };
     PlotterWebGL.findUploadedVBOPart = function (partitionedVBO, geometryId) {
         for (var _i = 0, _a = partitionedVBO.vboParts; _i < _a.length; _i++) {
@@ -2943,11 +2961,11 @@ var TestEngine = (function () {
         return true;
     };
     TestEngine.prototype.draw = function (plotter) {
-        plotter.initialize(color_1.Color.BLACK, 1);
+        plotter.initialize(color_1.Color.BLACK, zoom_1.Zoom.noZoom(), 1);
         plotter.drawPolygons(this.batchForPrimitive, 1);
         plotter.drawLines(this.batchForLine, 1, color_1.Color.GREEN, 1);
         this.drawTestWindow(plotter);
-        plotter.finalize(zoom_1.Zoom.noZoom());
+        plotter.finalize();
     };
     TestEngine.prototype.drawTestWindow = function (plotter) {
         plotter.drawLines(this.batchForWindow, 1, color_1.Color.WHITE, 1);

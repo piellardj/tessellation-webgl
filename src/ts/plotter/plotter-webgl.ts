@@ -58,8 +58,6 @@ class PlotterWebGL extends PlotterBase {
     private pendingLinesList: IPendingLines[] = [];
     private pendingPolygonsList: IPendingPolygons[] = [];
 
-    private scaling: number = 1;
-
     public constructor() {
         super();
 
@@ -102,9 +100,7 @@ class PlotterWebGL extends PlotterBase {
         return !!this.shaderLines && !!this.shaderPolygons;
     }
 
-    public initialize(backgroundColor: Color, scaling: number): void {
-        this.scaling = scaling;
-
+    public initialize(backgroundColor: Color, zoom: Zoom, scaling: number): void {
         for (const vboPart of this.linesVbo.vboParts) {
             vboPart.scheduledForDrawing = false;
         }
@@ -116,9 +112,14 @@ class PlotterWebGL extends PlotterBase {
         Viewport.setFullCanvas(gl);
         gl.clearColor(backgroundColor.r / 255, backgroundColor.g / 255, backgroundColor.b / 255, 1);
         gl.clear(gl.COLOR_BUFFER_BIT);
+
+        const zoomTranslate = zoom.translate;
+        const zoomAndScalingAsUniform = [zoom.scale, zoomTranslate.x, zoomTranslate.y, scaling];
+        this.shaderLines.u["uZoom"].value = zoomAndScalingAsUniform;
+        this.shaderPolygons.u["uZoom"].value = zoomAndScalingAsUniform;
     }
 
-    public finalize(zoom: Zoom): void {
+    public finalize(): void {
         if (this.pendingPolygonsList.length > 0) {
             let needToRebuildVBO = false;
             for (const pendingPolygons of this.pendingPolygonsList) {
@@ -158,8 +159,8 @@ class PlotterWebGL extends PlotterBase {
             this.pendingLinesList = [];
         }
 
-        this.drawPolygonsVBO(zoom);
-        this.drawLinesVBO(zoom);
+        this.drawPolygonsVBO();
+        this.drawLinesVBO();
     }
 
     public drawLines(batchOfLines: BatchOfLines, _thickness: number, color: Color, alpha: number): void {
@@ -225,7 +226,7 @@ class PlotterWebGL extends PlotterBase {
         gl.bufferData(gl.ARRAY_BUFFER, bufferData, gl.DYNAMIC_DRAW);
     }
 
-    private drawLinesVBO(zoom: Zoom): void {
+    private drawLinesVBO(): void {
         const vbpPartsScheduledForDrawing = PlotterWebGL.selectVBOPartsScheduledForDrawing(this.linesVbo);
 
         if (this.shaderLines && vbpPartsScheduledForDrawing.length > 0) {
@@ -236,7 +237,6 @@ class PlotterWebGL extends PlotterBase {
             gl.bindBuffer(gl.ARRAY_BUFFER, this.linesVbo.id);
             gl.vertexAttribPointer(aVertexLocation, 2, gl.FLOAT, false, 0, 0);
 
-            this.shaderLines.u["uZoom"].value = this.buildZoomUniform(zoom);
             this.shaderLines.u["uScreenSize"].value = [0.5 * this.width, -0.5 * this.height];
 
             let currentVboPartId = 0;
@@ -327,7 +327,7 @@ class PlotterWebGL extends PlotterBase {
         gl.bufferData(gl.ARRAY_BUFFER, bufferData, gl.DYNAMIC_DRAW);
     }
 
-    private drawPolygonsVBO(zoom: Zoom): void {
+    private drawPolygonsVBO(): void {
         const vbpPartsScheduledForDrawing = PlotterWebGL.selectVBOPartsScheduledForDrawing(this.polygonsVbo);
 
         if (this.shaderPolygons && vbpPartsScheduledForDrawing.length > 0) {
@@ -342,7 +342,6 @@ class PlotterWebGL extends PlotterBase {
             gl.enableVertexAttribArray(aColorLoc);
             gl.vertexAttribPointer(aColorLoc, 4, gl.FLOAT, false, BYTES_PER_FLOAT * 6, BYTES_PER_FLOAT * 2);
 
-            this.shaderPolygons.u["uZoom"].value = this.buildZoomUniform(zoom);
             this.shaderPolygons.u["uScreenSize"].value = [0.5 * this.width, -0.5 * this.height];
 
             for (const vboPart of vbpPartsScheduledForDrawing) {
@@ -351,11 +350,6 @@ class PlotterWebGL extends PlotterBase {
                 gl.drawArrays(gl.TRIANGLES, vboPart.indexOfFirstVertice, vboPart.verticesCount);
             }
         }
-    }
-
-    private buildZoomUniform(zoom: Zoom): [number, number, number, number] {
-        const zoomAsUniform = zoom.asUniform();
-        return [zoomAsUniform[0], zoomAsUniform[1], zoomAsUniform[2], this.scaling];
     }
 
     private static findUploadedVBOPart<T extends IVboPart>(partitionedVBO: IPartionedVbo<T>, geometryId: GeometryId): T | null {

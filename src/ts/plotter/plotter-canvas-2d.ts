@@ -1,4 +1,5 @@
 import { Color } from "../misc/color";
+import { Zoom } from "../misc/zoom";
 import { BatchOfLines, BatchOfPolygons, PlotterBase } from "./plotter-base";
 
 import "../page-interface-generated";
@@ -16,7 +17,7 @@ class PlotterCanvas2D extends PlotterBase {
         return true;
     }
 
-    public initialize(backgroundColor: Color, scaling: number): void {
+    public initialize(backgroundColor: Color, zoom: Zoom, scaling: number): void {
         // reset all transforms
         this.context.setTransform(1, 0, 0, 1, 0, 0);
 
@@ -27,6 +28,15 @@ class PlotterCanvas2D extends PlotterBase {
         // apply scaling
         this.context.translate(+0.5 * this.width, +0.5 * this.height);
         this.context.scale(scaling, scaling);
+        this.context.translate(-0.5 * this.width, -0.5 * this.height);
+
+        // apply zoom
+        const zoomTranslate = zoom.translate;
+        this.context.translate(zoomTranslate.x, zoomTranslate.y);
+        
+        const zoomScale = zoom.scale;
+        this.context.translate(+0.5 * this.width, +0.5 * this.height);
+        this.context.scale(zoomScale, zoomScale);
         this.context.translate(-0.5 * this.width, -0.5 * this.height);
     }
 
@@ -83,3 +93,4 @@ class PlotterCanvas2D extends PlotterBase {
 export {
     PlotterCanvas2D,
 };
+

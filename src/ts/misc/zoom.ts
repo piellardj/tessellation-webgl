@@ -54,8 +54,12 @@ class Zoom {
         this.c = newC;
     }
 
-    public asUniform(): [number, number, number] {
-        return [this.a, this.b, this.c];
+    public get scale(): number {
+        return this.a;
+    }
+
+    public get translate(): IPoint {
+        return { x: this.b, y: this.c };
     }
 }
 

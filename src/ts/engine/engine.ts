@@ -81,7 +81,7 @@ class Engine {
         }
         const emergingLayer = lastSolidLayer + 1;
 
-        plotter.initialize(Color.BLACK, scaling);
+        plotter.initialize(Color.BLACK, this.cumulatedZoom, scaling);
 
         plotter.drawPolygons(this.layers[lastSolidLayer].primitives, 1);
         if (emergingLayer < this.layers.length) {
@@ -96,7 +96,7 @@ class Engine {
             }
         }
 
-        plotter.finalize(this.cumulatedZoom);
+        plotter.finalize();
     }
 
     public reset(viewport: Rectangle): void {

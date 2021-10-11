@@ -109,14 +109,14 @@ class TestEngine {
     }
 
     public draw(plotter: PlotterBase): void {
-        plotter.initialize(Color.BLACK, 1);
+        plotter.initialize(Color.BLACK, Zoom.noZoom(), 1);
 
         plotter.drawPolygons(this.batchForPrimitive, 1);
 
         plotter.drawLines(this.batchForLine, 1, Color.GREEN, 1);
         this.drawTestWindow(plotter);
 
-        plotter.finalize(Zoom.noZoom());
+        plotter.finalize();
     }
 
     private drawTestWindow(plotter: PlotterBase): void {
