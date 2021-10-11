@@ -51,7 +51,7 @@ function main(): void {
 
     function reset(): void {
         plotter.resizeCanvas();
-        engine.reset(plotter.viewport);
+        engine.reset(plotter.viewport, Parameters.primitiveType);
         lastZoomCenter = { x: 0, y: 0 };
     }
     Parameters.resetObservers.push(reset);

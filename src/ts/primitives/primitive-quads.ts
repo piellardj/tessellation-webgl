@@ -4,9 +4,12 @@ import { IPoint } from "../misc/point";
 import { Rectangle } from "../misc/rectangle";
 import { Zoom } from "../misc/zoom";
 import { EVisibility, PrimitiveBase } from "./primitive-base";
+import { EPrimitiveType } from "./primitive-type-enum";
 
 
 class PrimitiveQuads extends PrimitiveBase {
+    public readonly primitiveType: EPrimitiveType = EPrimitiveType.QUADS;
+
     public constructor(
         private readonly topLeft: IPoint,
         private readonly topRight: IPoint,

@@ -18,13 +18,14 @@ var zoom_1 = __webpack_require__(/*! ../misc/zoom */ "./src/ts/misc/zoom.ts");
 var parameters_1 = __webpack_require__(/*! ../parameters */ "./src/ts/parameters.ts");
 var geometry_id_1 = __webpack_require__(/*! ../plotter/geometry-id */ "./src/ts/plotter/geometry-id.ts");
 var primitive_base_1 = __webpack_require__(/*! ../primitives/primitive-base */ "./src/ts/primitives/primitive-base.ts");
+var primitive_type_enum_1 = __webpack_require__(/*! ../primitives/primitive-type-enum */ "./src/ts/primitives/primitive-type-enum.ts");
 var primitive_quads_1 = __webpack_require__(/*! ../primitives/primitive-quads */ "./src/ts/primitives/primitive-quads.ts");
 var primitive_triangles_1 = __webpack_require__(/*! ../primitives/primitive-triangles */ "./src/ts/primitives/primitive-triangles.ts");
 var primitive_triangles_nested_1 = __webpack_require__(/*! ../primitives/primitive-triangles-nested */ "./src/ts/primitives/primitive-triangles-nested.ts");
 __webpack_require__(/*! ../page-interface-generated */ "./src/ts/page-interface-generated.ts");
 var Engine = (function () {
     function Engine() {
-        this.reset(new rectangle_1.Rectangle(0, 512, 0, 512));
+        this.reset(new rectangle_1.Rectangle(0, 512, 0, 512), primitive_type_enum_1.EPrimitiveType.TRIANGLES);
         this.cumulatedZoom = zoom_1.Zoom.noZoom();
         this.maintainanceThrottle = new throttle_1.Throttle(100);
     }
@@ -79,12 +80,11 @@ var Engine = (function () {
         }
         plotter.finalize();
     };
-    Engine.prototype.reset = function (viewport) {
-        var primitiveType = parameters_1.Parameters.primitive;
-        if (primitiveType === parameters_1.EPrimitive.QUADS) {
+    Engine.prototype.reset = function (viewport, primitiveType) {
+        if (primitiveType === primitive_type_enum_1.EPrimitiveType.QUADS) {
             this.rootPrimitive = new primitive_quads_1.PrimitiveQuads({ x: viewport.left, y: viewport.top }, { x: viewport.right, y: viewport.top }, { x: viewport.left, y: viewport.bottom }, { x: viewport.right, y: viewport.bottom }, this.computeRootPrimitiveColor());
         }
-        else if (primitiveType === parameters_1.EPrimitive.TRIANGLES) {
+        else if (primitiveType === primitive_type_enum_1.EPrimitiveType.TRIANGLES) {
             this.rootPrimitive = new primitive_triangles_1.PrimitiveTriangles({ x: viewport.left, y: viewport.bottom }, { x: viewport.right, y: viewport.bottom }, { x: 0, y: viewport.top }, this.computeRootPrimitiveColor());
         }
         else {
@@ -137,7 +137,7 @@ var Engine = (function () {
     };
     Engine.prototype.handleRecycling = function (viewport) {
         if (this.rootPrimitive.computeVisibility(viewport) === primitive_base_1.EVisibility.OUT_OF_VIEW) {
-            this.reset(viewport);
+            this.reset(viewport, this.primitiveType);
             return true;
         }
         else {
@@ -275,6 +275,13 @@ var Engine = (function () {
         Page.Canvas.setIndicatorText("tree-nodes-count", totalPrimitivesCount.toString());
         Page.Canvas.setIndicatorText("segments-count", segmentsCount.toString());
     };
+    Object.defineProperty(Engine.prototype, "primitiveType", {
+        get: function () {
+            return this.rootPrimitive.primitiveType;
+        },
+        enumerable: false,
+        configurable: true
+    });
     return Engine;
 }());
 exports.Engine = Engine;
@@ -970,7 +977,7 @@ function main() {
     }
     function reset() {
         plotter.resizeCanvas();
-        engine.reset(plotter.viewport);
+        engine.reset(plotter.viewport, parameters_1.Parameters.primitiveType);
         lastZoomCenter = { x: 0, y: 0 };
     }
     parameters_1.Parameters.resetObservers.push(reset);
@@ -1507,7 +1514,7 @@ exports.Zoom = Zoom;
 
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.Parameters = exports.EPrimitive = exports.EPlotter = void 0;
+exports.Parameters = exports.EPlotter = void 0;
 var color_1 = __webpack_require__(/*! ./misc/color */ "./src/ts/misc/color.ts");
 var web_1 = __webpack_require__(/*! ./misc/web */ "./src/ts/misc/web.ts");
 __webpack_require__(/*! ./page-interface-generated */ "./src/ts/page-interface-generated.ts");
@@ -1527,13 +1534,6 @@ var controlId = {
     LINES_COLOR_PICKER_ID: "lines-color-picker-id",
     DOWNLOAD_BUTTON: "result-download-id",
 };
-var EPrimitive;
-(function (EPrimitive) {
-    EPrimitive["QUADS"] = "quads";
-    EPrimitive["TRIANGLES"] = "triangles";
-    EPrimitive["NESTED_TRIANGLES"] = "triangles-nested";
-})(EPrimitive || (EPrimitive = {}));
-exports.EPrimitive = EPrimitive;
 var EPlotter;
 (function (EPlotter) {
     EPlotter["WEBGL"] = "webgl";
@@ -1544,7 +1544,7 @@ var plotterQueryStringParamName = "plotter";
 var Parameters = (function () {
     function Parameters() {
     }
-    Object.defineProperty(Parameters, "primitive", {
+    Object.defineProperty(Parameters, "primitiveType", {
         get: function () {
             return Page.Tabs.getValues(controlId.PRIMITIVE_TABS_ID)[0];
         },
@@ -2477,6 +2477,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.PrimitiveQuads = void 0;
 var Arithmetics = __importStar(__webpack_require__(/*! ../misc/arithmetics */ "./src/ts/misc/arithmetics.ts"));
 var primitive_base_1 = __webpack_require__(/*! ./primitive-base */ "./src/ts/primitives/primitive-base.ts");
+var primitive_type_enum_1 = __webpack_require__(/*! ./primitive-type-enum */ "./src/ts/primitives/primitive-type-enum.ts");
 var PrimitiveQuads = (function (_super) {
     __extends(PrimitiveQuads, _super);
     function PrimitiveQuads(topLeft, topRight, bottomLeft, bottomRight, color) {
@@ -2485,6 +2486,7 @@ var PrimitiveQuads = (function (_super) {
         _this.topRight = topRight;
         _this.bottomLeft = bottomLeft;
         _this.bottomRight = bottomRight;
+        _this.primitiveType = primitive_type_enum_1.EPrimitiveType.QUADS;
         return _this;
     }
     Object.defineProperty(PrimitiveQuads.prototype, "subdivisionFactor", {
@@ -2631,10 +2633,13 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.PrimitiveTrianglesNested = void 0;
 var Arithmetics = __importStar(__webpack_require__(/*! ../misc/arithmetics */ "./src/ts/misc/arithmetics.ts"));
 var primitive_triangles_1 = __webpack_require__(/*! ./primitive-triangles */ "./src/ts/primitives/primitive-triangles.ts");
+var primitive_type_enum_1 = __webpack_require__(/*! ./primitive-type-enum */ "./src/ts/primitives/primitive-type-enum.ts");
 var PrimitiveTrianglesNested = (function (_super) {
     __extends(PrimitiveTrianglesNested, _super);
     function PrimitiveTrianglesNested(p1, p2, p3, color) {
-        return _super.call(this, p1, p2, p3, color) || this;
+        var _this = _super.call(this, p1, p2, p3, color) || this;
+        _this.primitiveType = primitive_type_enum_1.EPrimitiveType.NESTED_TRIANGLES;
+        return _this;
     }
     Object.defineProperty(PrimitiveTrianglesNested.prototype, "subdivisionFactor", {
         get: function () {
@@ -2727,6 +2732,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.PrimitiveTriangles = void 0;
 var Arithmetics = __importStar(__webpack_require__(/*! ../misc/arithmetics */ "./src/ts/misc/arithmetics.ts"));
 var primitive_base_1 = __webpack_require__(/*! ./primitive-base */ "./src/ts/primitives/primitive-base.ts");
+var primitive_type_enum_1 = __webpack_require__(/*! ./primitive-type-enum */ "./src/ts/primitives/primitive-type-enum.ts");
 var PrimitiveTriangles = (function (_super) {
     __extends(PrimitiveTriangles, _super);
     function PrimitiveTriangles(p1, p2, p3, color) {
@@ -2734,6 +2740,7 @@ var PrimitiveTriangles = (function (_super) {
         _this.p1 = p1;
         _this.p2 = p2;
         _this.p3 = p3;
+        _this.primitiveType = primitive_type_enum_1.EPrimitiveType.TRIANGLES;
         return _this;
     }
     Object.defineProperty(PrimitiveTriangles.prototype, "subdivisionFactor", {
@@ -2824,6 +2831,26 @@ exports.PrimitiveTriangles = PrimitiveTriangles;
 
 /***/ }),
 
+/***/ "./src/ts/primitives/primitive-type-enum.ts":
+/*!**************************************************!*\
+  !*** ./src/ts/primitives/primitive-type-enum.ts ***!
+  \**************************************************/
+/***/ (function(__unused_webpack_module, exports) {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.EPrimitiveType = void 0;
+var EPrimitiveType;
+(function (EPrimitiveType) {
+    EPrimitiveType["QUADS"] = "quads";
+    EPrimitiveType["TRIANGLES"] = "triangles";
+    EPrimitiveType["NESTED_TRIANGLES"] = "triangles-nested";
+})(EPrimitiveType || (EPrimitiveType = {}));
+exports.EPrimitiveType = EPrimitiveType;
+
+
+/***/ }),
+
 /***/ "./src/ts/testing/main-testing.ts":
 /*!****************************************!*\
   !*** ./src/ts/testing/main-testing.ts ***!
@@ -2884,6 +2911,7 @@ var geometry_id_1 = __webpack_require__(/*! ../plotter/geometry-id */ "./src/ts/
 var primitive_base_1 = __webpack_require__(/*! ../primitives/primitive-base */ "./src/ts/primitives/primitive-base.ts");
 var primitive_quads_1 = __webpack_require__(/*! ../primitives/primitive-quads */ "./src/ts/primitives/primitive-quads.ts");
 var primitive_triangles_1 = __webpack_require__(/*! ../primitives/primitive-triangles */ "./src/ts/primitives/primitive-triangles.ts");
+var primitive_type_enum_1 = __webpack_require__(/*! ../primitives/primitive-type-enum */ "./src/ts/primitives/primitive-type-enum.ts");
 __webpack_require__(/*! ../page-interface-generated */ "./src/ts/page-interface-generated.ts");
 var TestEngine = (function () {
     function TestEngine() {
@@ -2920,8 +2948,8 @@ var TestEngine = (function () {
     }
     TestEngine.prototype.reset = function () {
         var color = color_1.Color.RED;
-        var primitiveType = parameters_1.Parameters.primitive;
-        if (primitiveType === parameters_1.EPrimitive.QUADS) {
+        var primitiveType = parameters_1.Parameters.primitiveType;
+        if (primitiveType === primitive_type_enum_1.EPrimitiveType.QUADS) {
             this.primitive = new primitive_quads_1.PrimitiveQuads({ x: -150 * Math.random(), y: -150 * Math.random() }, { x: +150 * Math.random(), y: -150 * Math.random() }, { x: -150 * Math.random(), y: +150 * Math.random() }, { x: +150 * Math.random(), y: +150 * Math.random() }, color);
         }
         else {

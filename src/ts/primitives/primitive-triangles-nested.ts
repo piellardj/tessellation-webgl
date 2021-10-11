@@ -3,9 +3,12 @@ import { Color } from "../misc/color";
 import { IPoint } from "../misc/point";
 import { Zoom } from "../misc/zoom";
 import { PrimitiveTriangles } from "./primitive-triangles";
+import { EPrimitiveType } from "./primitive-type-enum";
 
 
 class PrimitiveTrianglesNested extends PrimitiveTriangles {
+    public readonly primitiveType: EPrimitiveType = EPrimitiveType.NESTED_TRIANGLES;
+
     protected midPoint1: IPoint;
     protected midPoint2: IPoint;
     protected midPoint3: IPoint;

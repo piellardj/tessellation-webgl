@@ -1,12 +1,13 @@
 import { Color } from "../misc/color";
 import { Rectangle } from "../misc/rectangle";
 import { Zoom } from "../misc/zoom";
-import { EPrimitive, Parameters } from "../parameters";
+import { Parameters } from "../parameters";
 import { GeometryId } from "../plotter/geometry-id";
 import { BatchOfLines, BatchOfPolygons, Line, PlotterBase } from "../plotter/plotter-base";
 import { EVisibility, PrimitiveBase } from "../primitives/primitive-base";
 import { PrimitiveQuads } from "../primitives/primitive-quads";
 import { PrimitiveTriangles } from "../primitives/primitive-triangles";
+import { EPrimitiveType } from "../primitives/primitive-type-enum";
 
 import "../page-interface-generated";
 
@@ -61,8 +62,8 @@ class TestEngine {
     public reset(): void {
         const color = Color.RED;
 
-        const primitiveType = Parameters.primitive;
-        if (primitiveType === EPrimitive.QUADS) {
+        const primitiveType = Parameters.primitiveType;
+        if (primitiveType === EPrimitiveType.QUADS) {
             this.primitive = new PrimitiveQuads(
                 { x: -150 * Math.random(), y: -150 * Math.random() }, // top left
                 { x: +150 * Math.random(), y: -150 * Math.random() }, // top right

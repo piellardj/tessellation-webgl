@@ -4,6 +4,7 @@ import { IPoint } from "../misc/point";
 import { Rectangle } from "../misc/rectangle";
 import { Zoom } from "../misc/zoom";
 import { IPolygon } from "../plotter/plotter-base";
+import { EPrimitiveType } from "./primitive-type-enum";
 
 
 type Line = IPoint[];
@@ -15,6 +16,8 @@ enum EVisibility {
 }
 
 abstract class PrimitiveBase extends TreeNode implements IPolygon {
+    public abstract readonly primitiveType: EPrimitiveType;
+
     public subdivision: Line | null = null;
     protected _color: Color;
 

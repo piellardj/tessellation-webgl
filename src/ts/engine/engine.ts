@@ -2,10 +2,11 @@ import { Color } from "../misc/color";
 import { Rectangle } from "../misc/rectangle";
 import { Throttle } from "../misc/throttle";
 import { Zoom } from "../misc/zoom";
-import { EPrimitive, Parameters } from "../parameters";
+import { Parameters } from "../parameters";
 import { GeometryId } from "../plotter/geometry-id";
 import { BatchOfLines, IBatch, PlotterBase } from "../plotter/plotter-base";
 import { EVisibility, PrimitiveBase } from "../primitives/primitive-base";
+import { EPrimitiveType } from "../primitives/primitive-type-enum";
 import { PrimitiveQuads } from "../primitives/primitive-quads";
 import { PrimitiveTriangles } from "../primitives/primitive-triangles";
 import { PrimitiveTrianglesNested } from "../primitives/primitive-triangles-nested";
@@ -30,7 +31,7 @@ class Engine {
     private readonly maintainanceThrottle: Throttle;
 
     public constructor() {
-        this.reset(new Rectangle(0, 512, 0, 512));
+        this.reset(new Rectangle(0, 512, 0, 512), EPrimitiveType.TRIANGLES);
         this.cumulatedZoom = Zoom.noZoom();
         this.maintainanceThrottle = new Throttle(100);
     }
@@ -99,9 +100,8 @@ class Engine {
         plotter.finalize();
     }
 
-    public reset(viewport: Rectangle): void {
-        const primitiveType = Parameters.primitive;
-        if (primitiveType === EPrimitive.QUADS) {
+    public reset(viewport: Rectangle, primitiveType: EPrimitiveType): void {
+        if (primitiveType === EPrimitiveType.QUADS) {
             this.rootPrimitive = new PrimitiveQuads(
                 { x: viewport.left, y: viewport.top },
                 { x: viewport.right, y: viewport.top },
@@ -109,7 +109,7 @@ class Engine {
                 { x: viewport.right, y: viewport.bottom },
                 this.computeRootPrimitiveColor(),
             );
-        } else if (primitiveType === EPrimitive.TRIANGLES) {
+        } else if (primitiveType === EPrimitiveType.TRIANGLES) {
             this.rootPrimitive = new PrimitiveTriangles(
                 { x: viewport.left, y: viewport.bottom },
                 { x: viewport.right, y: viewport.bottom },
@@ -181,7 +181,7 @@ class Engine {
 
     private handleRecycling(viewport: Rectangle): boolean {
         if (this.rootPrimitive.computeVisibility(viewport) === EVisibility.OUT_OF_VIEW) {
-            this.reset(viewport);
+            this.reset(viewport, this.primitiveType);
             return true;
         } else {
             const lastLayer = this.layers[this.layers.length - 1];
@@ -334,6 +334,10 @@ class Engine {
         }
         Page.Canvas.setIndicatorText("tree-nodes-count", totalPrimitivesCount.toString());
         Page.Canvas.setIndicatorText("segments-count", segmentsCount.toString());
+    }
+
+    private get primitiveType(): EPrimitiveType {
+        return this.rootPrimitive.primitiveType;
     }
 }
 

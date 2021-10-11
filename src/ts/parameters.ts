@@ -1,6 +1,7 @@
 import { Color } from "./misc/color";
 import { IPoint } from "./misc/point";
 import { getQueryStringValue, setQueryStringValue } from "./misc/web";
+import { EPrimitiveType } from "./primitives/primitive-type-enum";
 
 import "./page-interface-generated";
 
@@ -26,12 +27,6 @@ const controlId = {
     DOWNLOAD_BUTTON: "result-download-id",
 };
 
-enum EPrimitive {
-    QUADS = "quads",
-    TRIANGLES = "triangles",
-    NESTED_TRIANGLES = "triangles-nested",
-}
-
 enum EPlotter {
     WEBGL = "webgl",
     CANVAS2D = "canvas2d",
@@ -50,8 +45,8 @@ abstract class Parameters {
     public static readonly verbose: boolean = (getQueryStringValue("verbose") === "1");
     public static readonly plotter: EPlotter = (getQueryStringValue(plotterQueryStringParamName) === EPlotter.CANVAS2D) ? EPlotter.CANVAS2D : EPlotter.WEBGL;
 
-    public static get primitive(): EPrimitive {
-        return Page.Tabs.getValues(controlId.PRIMITIVE_TABS_ID)[0] as EPrimitive;
+    public static get primitiveType(): EPrimitiveType {
+        return Page.Tabs.getValues(controlId.PRIMITIVE_TABS_ID)[0] as EPrimitiveType;
     }
 
     public static get depth(): number {
@@ -155,6 +150,6 @@ Page.Tabs.addObserver(controlId.PLOTTER_TABS_ID, (values: string[]) => {
 
 export {
     EPlotter,
-    EPrimitive,
     Parameters,
 };
+
