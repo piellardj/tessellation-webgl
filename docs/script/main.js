@@ -65,8 +65,7 @@ var Engine = (function () {
             }
         }
         var emergingLayer = lastSolidLayer + 1;
-        plotter.initialize(scaling);
-        plotter.clearCanvas(color_1.Color.BLACK);
+        plotter.initialize(color_1.Color.BLACK, scaling);
         plotter.drawPolygons(this.layers[lastSolidLayer].primitives, 1);
         if (emergingLayer < this.layers.length) {
             plotter.drawPolygons(this.layers[emergingLayer].primitives, emergingLayerAlpha);
@@ -1825,12 +1824,11 @@ var PlotterCanvas2D = (function (_super) {
         enumerable: false,
         configurable: true
     });
-    PlotterCanvas2D.prototype.initialize = function () { };
-    PlotterCanvas2D.prototype.finalize = function () { };
-    PlotterCanvas2D.prototype.clearCanvas = function (color) {
-        this.context.fillStyle = color.toHexaString();
+    PlotterCanvas2D.prototype.initialize = function (backgroundColor) {
+        this.context.fillStyle = backgroundColor.toHexaString();
         this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
     };
+    PlotterCanvas2D.prototype.finalize = function () { };
     PlotterCanvas2D.prototype.drawLines = function (batchOfLines, thickness, color, alpha) {
         if (alpha > 0 && batchOfLines) {
             this.context.fillStyle = "none";
@@ -1909,7 +1907,6 @@ var PlotterSVG = (function (_super) {
     function PlotterSVG() {
         var _this = _super.call(this) || this;
         _this.lines = [];
-        _this.scaling = 1;
         return _this;
     }
     Object.defineProperty(PlotterSVG.prototype, "isReady", {
@@ -1919,27 +1916,16 @@ var PlotterSVG = (function (_super) {
         enumerable: false,
         configurable: true
     });
-    PlotterSVG.prototype.initialize = function (scaling) {
+    PlotterSVG.prototype.initialize = function (backgroundColor, scaling) {
         this.lines = [];
-        this.scaling = scaling;
         this.lines.push("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>");
         this.lines.push("<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" viewBox=\"0 0 " + this.width + " " + this.height + "\">");
-        if (this.scaling !== 1) {
-            this.lines.push("\t<g transform=\"scale(" + this.scaling + ")\" transform-origin=\"" + 0.5 * this.width + " " + 0.5 * this.height + "\">");
-        }
+        this.lines.push("<rect fill=\"" + backgroundColor.toHexaString() + "\" stroke=\"none\" x=\"0\" y=\"0\" width=\"" + this.width + "\" height=\"" + this.height + "\"/>");
+        this.lines.push("\t<g transform=\"scale(" + scaling + ")\" transform-origin=\"" + 0.5 * this.width + " " + 0.5 * this.height + "\">");
     };
     PlotterSVG.prototype.finalize = function () {
-        if (this.scaling !== 1) {
-            this.lines.push("\t</g>");
-        }
+        this.lines.push("\t</g>");
         this.lines.push("</svg>");
-    };
-    PlotterSVG.prototype.clearCanvas = function (color) {
-        var revertTransform = "";
-        if (this.scaling !== 1) {
-            revertTransform = " transform=\"scale(" + 1 / this.scaling + ")\" transform-origin=\"" + 0.5 * this.width + " " + 0.5 * this.height + "\"";
-        }
-        this.lines.push("\t<rect fill=\"" + color.toHexaString() + "\" stroke=\"none\" x=\"0\" y=\"0\" width=\"" + this.width + "\" height=\"" + this.height + "\"" + revertTransform + "/>");
     };
     PlotterSVG.prototype.drawLines = function (batchOfLines, thickness, color, alpha) {
         if (alpha > 0 && batchOfLines) {
@@ -2090,7 +2076,7 @@ var PlotterWebGL = (function (_super) {
         enumerable: false,
         configurable: true
     });
-    PlotterWebGL.prototype.initialize = function (scaling) {
+    PlotterWebGL.prototype.initialize = function (backgroundColor, scaling) {
         this.scaling = scaling;
         for (var _i = 0, _a = this.linesVbo.vboParts; _i < _a.length; _i++) {
             var vboPart = _a[_i];
@@ -2100,6 +2086,9 @@ var PlotterWebGL = (function (_super) {
             var vboPart = _c[_b];
             vboPart.scheduledForDrawing = false;
         }
+        viewport_1.Viewport.setFullCanvas(gl_canvas_1.gl);
+        gl_canvas_1.gl.clearColor(backgroundColor.r / 255, backgroundColor.g / 255, backgroundColor.b / 255, 1);
+        gl_canvas_1.gl.clear(gl_canvas_1.gl.COLOR_BUFFER_BIT);
     };
     PlotterWebGL.prototype.finalize = function (zoom) {
         if (this.pendingPolygonsList.length > 0) {
@@ -2141,11 +2130,6 @@ var PlotterWebGL = (function (_super) {
         }
         this.drawPolygonsVBO(zoom);
         this.drawLinesVBO(zoom);
-    };
-    PlotterWebGL.prototype.clearCanvas = function (color) {
-        viewport_1.Viewport.setFullCanvas(gl_canvas_1.gl);
-        gl_canvas_1.gl.clearColor(color.r / 255, color.g / 255, color.b / 255, 1);
-        gl_canvas_1.gl.clear(gl_canvas_1.gl.COLOR_BUFFER_BIT);
     };
     PlotterWebGL.prototype.drawLines = function (batchOfLines, _thickness, color, alpha) {
         this.pendingLinesList.push({ batchOfLines: batchOfLines, color: color, alpha: alpha });
@@ -2968,8 +2952,7 @@ var TestEngine = (function () {
         return true;
     };
     TestEngine.prototype.draw = function (plotter) {
-        plotter.initialize(1);
-        plotter.clearCanvas(color_1.Color.BLACK);
+        plotter.initialize(color_1.Color.BLACK, 1);
         plotter.drawPolygons(this.batchForPrimitive, 1);
         plotter.drawLines(this.batchForLine, 1, color_1.Color.GREEN, 1);
         this.drawTestWindow(plotter);

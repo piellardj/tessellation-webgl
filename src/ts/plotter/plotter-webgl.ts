@@ -102,7 +102,7 @@ class PlotterWebGL extends PlotterBase {
         return !!this.shaderLines && !!this.shaderPolygons;
     }
 
-    public initialize(scaling: number): void {
+    public initialize(backgroundColor: Color, scaling: number): void {
         this.scaling = scaling;
 
         for (const vboPart of this.linesVbo.vboParts) {
@@ -112,6 +112,10 @@ class PlotterWebGL extends PlotterBase {
         for (const vboPart of this.polygonsVbo.vboParts) {
             vboPart.scheduledForDrawing = false;
         }
+
+        Viewport.setFullCanvas(gl);
+        gl.clearColor(backgroundColor.r / 255, backgroundColor.g / 255, backgroundColor.b / 255, 1);
+        gl.clear(gl.COLOR_BUFFER_BIT);
     }
 
     public finalize(zoom: Zoom): void {
@@ -156,12 +160,6 @@ class PlotterWebGL extends PlotterBase {
 
         this.drawPolygonsVBO(zoom);
         this.drawLinesVBO(zoom);
-    }
-
-    public clearCanvas(color: Color): void {
-        Viewport.setFullCanvas(gl);
-        gl.clearColor(color.r / 255, color.g / 255, color.b / 255, 1);
-        gl.clear(gl.COLOR_BUFFER_BIT);
     }
 
     public drawLines(batchOfLines: BatchOfLines, _thickness: number, color: Color, alpha: number): void {

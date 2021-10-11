@@ -81,8 +81,7 @@ class Engine {
         }
         const emergingLayer = lastSolidLayer + 1;
 
-        plotter.initialize(scaling);
-        plotter.clearCanvas(Color.BLACK);
+        plotter.initialize(Color.BLACK, scaling);
 
         plotter.drawPolygons(this.layers[lastSolidLayer].primitives, 1);
         if (emergingLayer < this.layers.length) {

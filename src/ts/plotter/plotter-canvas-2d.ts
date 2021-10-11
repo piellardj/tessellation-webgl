@@ -16,15 +16,13 @@ class PlotterCanvas2D extends PlotterBase {
         return true;
     }
 
-    // tslint:disable-next-line:no-empty
-    public initialize(): void { }
-    // tslint:disable-next-line:no-empty
-    public finalize(): void { }
-
-    public clearCanvas(color: Color): void {
-        this.context.fillStyle = color.toHexaString();
+    public initialize(backgroundColor: Color): void {
+        this.context.fillStyle = backgroundColor.toHexaString();
         this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
     }
+
+    // tslint:disable-next-line:no-empty
+    public finalize(): void { }
 
     public drawLines(batchOfLines: BatchOfLines, thickness: number, color: Color, alpha: number): void {
         if (alpha > 0 && batchOfLines) {

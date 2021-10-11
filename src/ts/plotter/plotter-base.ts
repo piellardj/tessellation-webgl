@@ -60,10 +60,9 @@ abstract class PlotterBase {
 
     public abstract get isReady(): boolean;
 
-    public abstract initialize(scaling: number): void;
+    public abstract initialize(backgroundColor: Color, scaling: number): void;
     public abstract finalize(zoom: Zoom): void;
 
-    public abstract clearCanvas(color: Color): void;
     public abstract drawLines(batchOfLines: BatchOfLines, thickness: number, color: Color, alpha: number): void;
     public abstract drawPolygons(batchOfPolygons: BatchOfPolygons, alpha: number): void;
 }
