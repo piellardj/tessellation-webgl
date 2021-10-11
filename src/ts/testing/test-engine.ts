@@ -6,7 +6,7 @@ import { GeometryId } from "../plotter/geometry-id";
 import { BatchOfLines, BatchOfPolygons, Line, PlotterBase } from "../plotter/plotter-base";
 import { EVisibility, PrimitiveBase } from "../primitives/primitive-base";
 import { PrimitiveQuads } from "../primitives/primitive-quads";
-import { PrimitiveTriangles } from "../primitives/primitives-triangles";
+import { PrimitiveTriangles } from "../primitives/primitive-triangles";
 
 import "../page-interface-generated";
 

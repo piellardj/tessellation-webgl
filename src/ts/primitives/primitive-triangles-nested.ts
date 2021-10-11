@@ -2,7 +2,7 @@ import * as Arithmetics from "../misc/arithmetics";
 import { Color } from "../misc/color";
 import { IPoint } from "../misc/point";
 import { Zoom } from "../misc/zoom";
-import { PrimitiveTriangles } from "./primitives-triangles";
+import { PrimitiveTriangles } from "./primitive-triangles";
 
 
 class PrimitiveTrianglesNested extends PrimitiveTriangles {

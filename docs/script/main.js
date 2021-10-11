@@ -19,8 +19,8 @@ var parameters_1 = __webpack_require__(/*! ../parameters */ "./src/ts/parameters
 var geometry_id_1 = __webpack_require__(/*! ../plotter/geometry-id */ "./src/ts/plotter/geometry-id.ts");
 var primitive_base_1 = __webpack_require__(/*! ../primitives/primitive-base */ "./src/ts/primitives/primitive-base.ts");
 var primitive_quads_1 = __webpack_require__(/*! ../primitives/primitive-quads */ "./src/ts/primitives/primitive-quads.ts");
-var primitives_triangles_1 = __webpack_require__(/*! ../primitives/primitives-triangles */ "./src/ts/primitives/primitives-triangles.ts");
-var primitives_triangles_nested_1 = __webpack_require__(/*! ../primitives/primitives-triangles-nested */ "./src/ts/primitives/primitives-triangles-nested.ts");
+var primitive_triangles_1 = __webpack_require__(/*! ../primitives/primitive-triangles */ "./src/ts/primitives/primitive-triangles.ts");
+var primitive_triangles_nested_1 = __webpack_require__(/*! ../primitives/primitive-triangles-nested */ "./src/ts/primitives/primitive-triangles-nested.ts");
 __webpack_require__(/*! ../page-interface-generated */ "./src/ts/page-interface-generated.ts");
 var Engine = (function () {
     function Engine() {
@@ -85,10 +85,10 @@ var Engine = (function () {
             this.rootPrimitive = new primitive_quads_1.PrimitiveQuads({ x: viewport.left, y: viewport.top }, { x: viewport.right, y: viewport.top }, { x: viewport.left, y: viewport.bottom }, { x: viewport.right, y: viewport.bottom }, this.computeRootPrimitiveColor());
         }
         else if (primitiveType === parameters_1.EPrimitive.TRIANGLES) {
-            this.rootPrimitive = new primitives_triangles_1.PrimitiveTriangles({ x: viewport.left, y: viewport.bottom }, { x: viewport.right, y: viewport.bottom }, { x: 0, y: viewport.top }, this.computeRootPrimitiveColor());
+            this.rootPrimitive = new primitive_triangles_1.PrimitiveTriangles({ x: viewport.left, y: viewport.bottom }, { x: viewport.right, y: viewport.bottom }, { x: 0, y: viewport.top }, this.computeRootPrimitiveColor());
         }
         else {
-            this.rootPrimitive = new primitives_triangles_nested_1.PrimitiveTrianglesNested({ x: viewport.left, y: viewport.bottom }, { x: viewport.right, y: viewport.bottom }, { x: 0, y: viewport.top }, this.computeRootPrimitiveColor());
+            this.rootPrimitive = new primitive_triangles_nested_1.PrimitiveTrianglesNested({ x: viewport.left, y: viewport.bottom }, { x: viewport.right, y: viewport.bottom }, { x: 0, y: viewport.top }, this.computeRootPrimitiveColor());
         }
         this.rebuildLayersCollections();
         this.updateIndicators();
@@ -2586,10 +2586,10 @@ exports.PrimitiveQuads = PrimitiveQuads;
 
 /***/ }),
 
-/***/ "./src/ts/primitives/primitives-triangles-nested.ts":
-/*!**********************************************************!*\
-  !*** ./src/ts/primitives/primitives-triangles-nested.ts ***!
-  \**********************************************************/
+/***/ "./src/ts/primitives/primitive-triangles-nested.ts":
+/*!*********************************************************!*\
+  !*** ./src/ts/primitives/primitive-triangles-nested.ts ***!
+  \*********************************************************/
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -2630,7 +2630,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.PrimitiveTrianglesNested = void 0;
 var Arithmetics = __importStar(__webpack_require__(/*! ../misc/arithmetics */ "./src/ts/misc/arithmetics.ts"));
-var primitives_triangles_1 = __webpack_require__(/*! ./primitives-triangles */ "./src/ts/primitives/primitives-triangles.ts");
+var primitive_triangles_1 = __webpack_require__(/*! ./primitive-triangles */ "./src/ts/primitives/primitive-triangles.ts");
 var PrimitiveTrianglesNested = (function (_super) {
     __extends(PrimitiveTrianglesNested, _super);
     function PrimitiveTrianglesNested(p1, p2, p3, color) {
@@ -2676,16 +2676,16 @@ var PrimitiveTrianglesNested = (function (_super) {
         };
     };
     return PrimitiveTrianglesNested;
-}(primitives_triangles_1.PrimitiveTriangles));
+}(primitive_triangles_1.PrimitiveTriangles));
 exports.PrimitiveTrianglesNested = PrimitiveTrianglesNested;
 
 
 /***/ }),
 
-/***/ "./src/ts/primitives/primitives-triangles.ts":
-/*!***************************************************!*\
-  !*** ./src/ts/primitives/primitives-triangles.ts ***!
-  \***************************************************/
+/***/ "./src/ts/primitives/primitive-triangles.ts":
+/*!**************************************************!*\
+  !*** ./src/ts/primitives/primitive-triangles.ts ***!
+  \**************************************************/
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -2883,7 +2883,7 @@ var parameters_1 = __webpack_require__(/*! ../parameters */ "./src/ts/parameters
 var geometry_id_1 = __webpack_require__(/*! ../plotter/geometry-id */ "./src/ts/plotter/geometry-id.ts");
 var primitive_base_1 = __webpack_require__(/*! ../primitives/primitive-base */ "./src/ts/primitives/primitive-base.ts");
 var primitive_quads_1 = __webpack_require__(/*! ../primitives/primitive-quads */ "./src/ts/primitives/primitive-quads.ts");
-var primitives_triangles_1 = __webpack_require__(/*! ../primitives/primitives-triangles */ "./src/ts/primitives/primitives-triangles.ts");
+var primitive_triangles_1 = __webpack_require__(/*! ../primitives/primitive-triangles */ "./src/ts/primitives/primitive-triangles.ts");
 __webpack_require__(/*! ../page-interface-generated */ "./src/ts/page-interface-generated.ts");
 var TestEngine = (function () {
     function TestEngine() {
@@ -2925,7 +2925,7 @@ var TestEngine = (function () {
             this.primitive = new primitive_quads_1.PrimitiveQuads({ x: -150 * Math.random(), y: -150 * Math.random() }, { x: +150 * Math.random(), y: -150 * Math.random() }, { x: -150 * Math.random(), y: +150 * Math.random() }, { x: +150 * Math.random(), y: +150 * Math.random() }, color);
         }
         else {
-            this.primitive = new primitives_triangles_1.PrimitiveTriangles({ x: -100 - 50 * Math.random(), y: -100 - 50 * Math.random() }, { x: +100 + 50 * Math.random(), y: -100 - 50 * Math.random() }, { x: +100 + 50 * (Math.random() - 0.5), y: +100 + 50 * Math.random() }, color);
+            this.primitive = new primitive_triangles_1.PrimitiveTriangles({ x: -100 - 50 * Math.random(), y: -100 - 50 * Math.random() }, { x: +100 + 50 * Math.random(), y: -100 - 50 * Math.random() }, { x: +100 + 50 * (Math.random() - 0.5), y: +100 + 50 * Math.random() }, color);
         }
         this.batchForPrimitive.items.length = 0;
         this.batchForPrimitive.items.push(this.primitive);

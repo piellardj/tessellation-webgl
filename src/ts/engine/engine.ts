@@ -7,8 +7,8 @@ import { GeometryId } from "../plotter/geometry-id";
 import { BatchOfLines, IBatch, PlotterBase } from "../plotter/plotter-base";
 import { EVisibility, PrimitiveBase } from "../primitives/primitive-base";
 import { PrimitiveQuads } from "../primitives/primitive-quads";
-import { PrimitiveTriangles } from "../primitives/primitives-triangles";
-import { PrimitiveTrianglesNested } from "../primitives/primitives-triangles-nested";
+import { PrimitiveTriangles } from "../primitives/primitive-triangles";
+import { PrimitiveTrianglesNested } from "../primitives/primitive-triangles-nested";
 
 import "../page-interface-generated";
 
