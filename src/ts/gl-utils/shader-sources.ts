@@ -1,3 +1,6 @@
+import "../page-interface-generated";
+
+
 type LoadCallback = (success: boolean) => void;
 
 interface ICachedSource {

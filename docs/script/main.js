@@ -617,11 +617,12 @@ exports.deleteShader = deleteShader;
 /*!*******************************************!*\
   !*** ./src/ts/gl-utils/shader-sources.ts ***!
   \*******************************************/
-/***/ (function(__unused_webpack_module, exports) {
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.loadSource = exports.getSource = void 0;
+__webpack_require__(/*! ../page-interface-generated */ "./src/ts/page-interface-generated.ts");
 var cachedSources = {};
 function loadSource(filename, callback) {
     function callAndClearCallbacks(cached) {
