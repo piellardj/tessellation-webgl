@@ -221,7 +221,7 @@ class Engine {
             };
 
             for (const primitive of lastLayer.primitives.items) {
-                primitive.subdivide(Parameters.colorVariation);
+                primitive.subdivide(Parameters.balance, Parameters.colorVariation);
                 Array.prototype.push.apply(primitivesOfNewLayer.items, primitive.getDirectChildren() as PrimitiveBase[]);
                 outlinesOfNewLayer.items.push(primitive.subdivision);
             }

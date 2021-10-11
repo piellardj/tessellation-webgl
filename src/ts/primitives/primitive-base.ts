@@ -60,7 +60,7 @@ abstract class PrimitiveBase extends TreeNode implements IPolygon {
         }
     }
 
-    public abstract subdivide(childrenColorVariation: number): void;
+    public abstract subdivide(subdivisionBalance: number, childrenColorVariation: number): void;
     public abstract get vertices(): IPoint[];
 
     protected abstract applyZoom(zoom: Zoom, isRoot: boolean): void;

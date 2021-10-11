@@ -171,7 +171,7 @@ var Engine = (function () {
             };
             for (var _i = 0, _a = lastLayer.primitives.items; _i < _a.length; _i++) {
                 var primitive = _a[_i];
-                primitive.subdivide(parameters_1.Parameters.colorVariation);
+                primitive.subdivide(parameters_1.Parameters.balance, parameters_1.Parameters.colorVariation);
                 Array.prototype.push.apply(primitivesOfNewLayer.items, primitive.getDirectChildren());
                 outlinesOfNewLayer.items.push(primitive.subdivision);
             }
@@ -2476,7 +2476,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.PrimitiveQuads = void 0;
 var Arithmetics = __importStar(__webpack_require__(/*! ../misc/arithmetics */ "./src/ts/misc/arithmetics.ts"));
-var parameters_1 = __webpack_require__(/*! ../parameters */ "./src/ts/parameters.ts");
 var primitive_base_1 = __webpack_require__(/*! ./primitive-base */ "./src/ts/primitives/primitive-base.ts");
 var PrimitiveQuads = (function (_super) {
     __extends(PrimitiveQuads, _super);
@@ -2495,9 +2494,9 @@ var PrimitiveQuads = (function (_super) {
         enumerable: false,
         configurable: true
     });
-    PrimitiveQuads.prototype.subdivide = function (childrenColorVariation) {
+    PrimitiveQuads.prototype.subdivide = function (subdivisionBalance, childrenColorVariation) {
         this.removeChildren();
-        var minRand = 0.5 * parameters_1.Parameters.balance;
+        var minRand = 0.5 * subdivisionBalance;
         var maxRand = 1 - minRand;
         var rand1 = Arithmetics.random(minRand, maxRand);
         var rand2 = Arithmetics.random(minRand, maxRand);
@@ -2631,7 +2630,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.PrimitiveTrianglesNested = void 0;
 var Arithmetics = __importStar(__webpack_require__(/*! ../misc/arithmetics */ "./src/ts/misc/arithmetics.ts"));
-var parameters_1 = __webpack_require__(/*! ../parameters */ "./src/ts/parameters.ts");
 var primitives_triangles_1 = __webpack_require__(/*! ./primitives-triangles */ "./src/ts/primitives/primitives-triangles.ts");
 var PrimitiveTrianglesNested = (function (_super) {
     __extends(PrimitiveTrianglesNested, _super);
@@ -2645,11 +2643,11 @@ var PrimitiveTrianglesNested = (function (_super) {
         enumerable: false,
         configurable: true
     });
-    PrimitiveTrianglesNested.prototype.subdivide = function (childrenColorVariation) {
+    PrimitiveTrianglesNested.prototype.subdivide = function (subdivisionBalance, childrenColorVariation) {
         this.removeChildren();
-        this.midPoint1 = this.randomNewPoint(this.p1, this.p2);
-        this.midPoint2 = this.randomNewPoint(this.p2, this.p3);
-        this.midPoint3 = this.randomNewPoint(this.p3, this.p1);
+        this.midPoint1 = this.randomNewPoint(this.p1, this.p2, subdivisionBalance);
+        this.midPoint2 = this.randomNewPoint(this.p2, this.p3, subdivisionBalance);
+        this.midPoint3 = this.randomNewPoint(this.p3, this.p1, subdivisionBalance);
         this.subdivision = [
             this.midPoint1,
             this.midPoint2,
@@ -2670,8 +2668,7 @@ var PrimitiveTrianglesNested = (function (_super) {
             zoom.applyToPoint(this.midPoint3);
         }
     };
-    PrimitiveTrianglesNested.prototype.randomNewPoint = function (p1, p2) {
-        var range = parameters_1.Parameters.balance;
+    PrimitiveTrianglesNested.prototype.randomNewPoint = function (p1, p2, range) {
         var r = Arithmetics.random(0.5 - 0.5 * range, 0.5 + 0.5 * range);
         return {
             x: p1.x * (1 - r) + p2.x * r,
@@ -2729,7 +2726,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.PrimitiveTriangles = void 0;
 var Arithmetics = __importStar(__webpack_require__(/*! ../misc/arithmetics */ "./src/ts/misc/arithmetics.ts"));
-var parameters_1 = __webpack_require__(/*! ../parameters */ "./src/ts/parameters.ts");
 var primitive_base_1 = __webpack_require__(/*! ./primitive-base */ "./src/ts/primitives/primitive-base.ts");
 var PrimitiveTriangles = (function (_super) {
     __extends(PrimitiveTriangles, _super);
@@ -2747,11 +2743,11 @@ var PrimitiveTriangles = (function (_super) {
         enumerable: false,
         configurable: true
     });
-    PrimitiveTriangles.prototype.subdivide = function (childrenColorVariation) {
+    PrimitiveTriangles.prototype.subdivide = function (subdivisionBalance, childrenColorVariation) {
         var _this = this;
         this.removeChildren();
         var subdivideInternal = function (sourcePoint, otherPoint1, otherPoint2) {
-            var minRand = 0.5 * parameters_1.Parameters.balance;
+            var minRand = 0.5 * subdivisionBalance;
             var maxRand = 1 - minRand;
             var rand = Arithmetics.random(minRand, maxRand);
             _this.subdivision = [

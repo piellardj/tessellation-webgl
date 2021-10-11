@@ -3,7 +3,6 @@ import { Color } from "../misc/color";
 import { IPoint } from "../misc/point";
 import { Rectangle } from "../misc/rectangle";
 import { Zoom } from "../misc/zoom";
-import { Parameters } from "../parameters";
 import { EVisibility, PrimitiveBase } from "./primitive-base";
 
 
@@ -20,11 +19,11 @@ class PrimitiveTriangles extends PrimitiveBase {
         return 2;
     }
 
-    public subdivide(childrenColorVariation: number): void {
+    public subdivide(subdivisionBalance: number, childrenColorVariation: number): void {
         this.removeChildren();
 
         const subdivideInternal = (sourcePoint: IPoint, otherPoint1: IPoint, otherPoint2: IPoint) => {
-            const minRand = 0.5 * Parameters.balance;
+            const minRand = 0.5 * subdivisionBalance;
             const maxRand = 1 - minRand;
             const rand = Arithmetics.random(minRand, maxRand);
 

@@ -2,7 +2,6 @@ import * as Arithmetics from "../misc/arithmetics";
 import { Color } from "../misc/color";
 import { IPoint } from "../misc/point";
 import { Zoom } from "../misc/zoom";
-import { Parameters } from "../parameters";
 import { PrimitiveTriangles } from "./primitives-triangles";
 
 
@@ -19,12 +18,12 @@ class PrimitiveTrianglesNested extends PrimitiveTriangles {
         return 4;
     }
 
-    public subdivide(childrenColorVariation: number): void {
+    public subdivide(subdivisionBalance: number, childrenColorVariation: number): void {
         this.removeChildren();
 
-        this.midPoint1 = this.randomNewPoint(this.p1, this.p2);
-        this.midPoint2 = this.randomNewPoint(this.p2, this.p3);
-        this.midPoint3 = this.randomNewPoint(this.p3, this.p1);
+        this.midPoint1 = this.randomNewPoint(this.p1, this.p2, subdivisionBalance);
+        this.midPoint2 = this.randomNewPoint(this.p2, this.p3, subdivisionBalance);
+        this.midPoint3 = this.randomNewPoint(this.p3, this.p1, subdivisionBalance);
 
         this.subdivision = [
             this.midPoint1,
@@ -55,8 +54,7 @@ class PrimitiveTrianglesNested extends PrimitiveTriangles {
         }
     }
 
-    private randomNewPoint(p1: IPoint, p2: IPoint): IPoint {
-        const range = Parameters.balance;
+    private randomNewPoint(p1: IPoint, p2: IPoint, range: number): IPoint {
         const r = Arithmetics.random(0.5 - 0.5 * range, 0.5 + 0.5 * range);
         return {
             x: p1.x * (1 - r) + p2.x * r,
