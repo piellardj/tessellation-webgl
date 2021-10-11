@@ -28,7 +28,7 @@ class Engine implements IEngine {
 
     private lastLayerBirthTimestamp: number;
 
-    public readonly cumulatedZoom: Zoom;
+    private readonly cumulatedZoom: Zoom;
     private readonly maintainanceThrottle: Throttle;
 
     public constructor() {
