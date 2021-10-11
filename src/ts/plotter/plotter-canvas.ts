@@ -1,7 +1,6 @@
 import { Color } from "../misc/color";
 import { IPoint } from "../misc/point";
 import { Rectangle } from "../misc/rectangle";
-import { Zoom } from "../misc/zoom";
 import { GeometryId } from "./geometry-id";
 
 import "../page-interface-generated";
@@ -21,7 +20,7 @@ type BatchOfPolygons = IBatch<IPolygon>;
 type Line = IPoint[];
 type BatchOfLines = IBatch<Line>;
 
-abstract class PlotterBase {
+abstract class PlotterCanvas {
     protected readonly canvas: HTMLCanvasElement;
     protected readonly cssPixel: number;
 
@@ -57,14 +56,6 @@ abstract class PlotterBase {
         this._width = this.canvas.width;
         this._height = this.canvas.height;
     }
-
-    public abstract get isReady(): boolean;
-
-    public abstract initialize(backgroundColor: Color, zoom: Zoom, scaling: number): void;
-    public abstract finalize(): void;
-
-    public abstract drawLines(batchOfLines: BatchOfLines, thickness: number, color: Color, alpha: number): void;
-    public abstract drawPolygons(batchOfPolygons: BatchOfPolygons, alpha: number): void;
 }
 
 export {
@@ -73,6 +64,6 @@ export {
     Line,
     IBatch,
     IPolygon,
-    PlotterBase,
+    PlotterCanvas,
 };
 

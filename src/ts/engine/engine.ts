@@ -3,7 +3,7 @@ import { Rectangle } from "../misc/rectangle";
 import { Throttle } from "../misc/throttle";
 import { Zoom } from "../misc/zoom";
 import { GeometryId } from "../plotter/geometry-id";
-import { BatchOfLines, IBatch } from "../plotter/plotter-base";
+import { BatchOfLines, IBatch } from "../plotter/plotter-canvas";
 import { EVisibility, PrimitiveBase } from "../primitives/primitive-base";
 import { PrimitiveQuads } from "../primitives/primitive-quads";
 import { PrimitiveTriangles } from "../primitives/primitive-triangles";

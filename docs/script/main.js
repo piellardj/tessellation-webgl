@@ -1763,62 +1763,6 @@ exports.GeometryId = GeometryId;
 
 /***/ }),
 
-/***/ "./src/ts/plotter/plotter-base.ts":
-/*!****************************************!*\
-  !*** ./src/ts/plotter/plotter-base.ts ***!
-  \****************************************/
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.PlotterBase = void 0;
-var rectangle_1 = __webpack_require__(/*! ../misc/rectangle */ "./src/ts/misc/rectangle.ts");
-__webpack_require__(/*! ../page-interface-generated */ "./src/ts/page-interface-generated.ts");
-var PlotterBase = (function () {
-    function PlotterBase() {
-        var _a;
-        this.canvas = Page.Canvas.getCanvas();
-        this.cssPixel = (_a = window.devicePixelRatio) !== null && _a !== void 0 ? _a : 1;
-        this.resizeCanvas();
-    }
-    Object.defineProperty(PlotterBase.prototype, "viewport", {
-        get: function () {
-            return new rectangle_1.Rectangle(-0.5 * this._width, 0.5 * this._width, -0.5 * this._height, 0.5 * this._height);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(PlotterBase.prototype, "width", {
-        get: function () {
-            return this._width;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(PlotterBase.prototype, "height", {
-        get: function () {
-            return this._height;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    PlotterBase.prototype.resizeCanvas = function () {
-        var actualWidth = Math.floor(this.cssPixel * this.canvas.clientWidth);
-        var actualHeight = Math.floor(this.cssPixel * this.canvas.clientHeight);
-        if (this.canvas.width !== actualWidth || this.canvas.height !== actualHeight) {
-            this.canvas.width = actualWidth;
-            this.canvas.height = actualHeight;
-        }
-        this._width = this.canvas.width;
-        this._height = this.canvas.height;
-    };
-    return PlotterBase;
-}());
-exports.PlotterBase = PlotterBase;
-
-
-/***/ }),
-
 /***/ "./src/ts/plotter/plotter-canvas-2d.ts":
 /*!*********************************************!*\
   !*** ./src/ts/plotter/plotter-canvas-2d.ts ***!
@@ -1843,7 +1787,7 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.PlotterCanvas2D = void 0;
-var plotter_base_1 = __webpack_require__(/*! ./plotter-base */ "./src/ts/plotter/plotter-base.ts");
+var plotter_canvas_1 = __webpack_require__(/*! ./plotter-canvas */ "./src/ts/plotter/plotter-canvas.ts");
 __webpack_require__(/*! ../page-interface-generated */ "./src/ts/page-interface-generated.ts");
 var PlotterCanvas2D = (function (_super) {
     __extends(PlotterCanvas2D, _super);
@@ -1916,8 +1860,64 @@ var PlotterCanvas2D = (function (_super) {
         }
     };
     return PlotterCanvas2D;
-}(plotter_base_1.PlotterBase));
+}(plotter_canvas_1.PlotterCanvas));
 exports.PlotterCanvas2D = PlotterCanvas2D;
+
+
+/***/ }),
+
+/***/ "./src/ts/plotter/plotter-canvas.ts":
+/*!******************************************!*\
+  !*** ./src/ts/plotter/plotter-canvas.ts ***!
+  \******************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.PlotterCanvas = void 0;
+var rectangle_1 = __webpack_require__(/*! ../misc/rectangle */ "./src/ts/misc/rectangle.ts");
+__webpack_require__(/*! ../page-interface-generated */ "./src/ts/page-interface-generated.ts");
+var PlotterCanvas = (function () {
+    function PlotterCanvas() {
+        var _a;
+        this.canvas = Page.Canvas.getCanvas();
+        this.cssPixel = (_a = window.devicePixelRatio) !== null && _a !== void 0 ? _a : 1;
+        this.resizeCanvas();
+    }
+    Object.defineProperty(PlotterCanvas.prototype, "viewport", {
+        get: function () {
+            return new rectangle_1.Rectangle(-0.5 * this._width, 0.5 * this._width, -0.5 * this._height, 0.5 * this._height);
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(PlotterCanvas.prototype, "width", {
+        get: function () {
+            return this._width;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(PlotterCanvas.prototype, "height", {
+        get: function () {
+            return this._height;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    PlotterCanvas.prototype.resizeCanvas = function () {
+        var actualWidth = Math.floor(this.cssPixel * this.canvas.clientWidth);
+        var actualHeight = Math.floor(this.cssPixel * this.canvas.clientHeight);
+        if (this.canvas.width !== actualWidth || this.canvas.height !== actualHeight) {
+            this.canvas.width = actualWidth;
+            this.canvas.height = actualHeight;
+        }
+        this._width = this.canvas.width;
+        this._height = this.canvas.height;
+    };
+    return PlotterCanvas;
+}());
+exports.PlotterCanvas = PlotterCanvas;
 
 
 /***/ }),
@@ -2058,7 +2058,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.PlotterWebGL = void 0;
 var Loader = __importStar(__webpack_require__(/*! ../misc/loader */ "./src/ts/misc/loader.ts"));
-var plotter_base_1 = __webpack_require__(/*! ./plotter-base */ "./src/ts/plotter/plotter-base.ts");
+var plotter_canvas_1 = __webpack_require__(/*! ./plotter-canvas */ "./src/ts/plotter/plotter-canvas.ts");
 var GLCanvas = __importStar(__webpack_require__(/*! ../gl-utils/gl-canvas */ "./src/ts/gl-utils/gl-canvas.ts"));
 var gl_canvas_1 = __webpack_require__(/*! ../gl-utils/gl-canvas */ "./src/ts/gl-utils/gl-canvas.ts");
 var ShaderManager = __importStar(__webpack_require__(/*! ../gl-utils/shader-manager */ "./src/ts/gl-utils/shader-manager.ts"));
@@ -2368,7 +2368,7 @@ var PlotterWebGL = (function (_super) {
         });
     };
     return PlotterWebGL;
-}(plotter_base_1.PlotterBase));
+}(plotter_canvas_1.PlotterCanvas));
 exports.PlotterWebGL = PlotterWebGL;
 
 
@@ -3009,11 +3009,8 @@ var TestEngine = (function () {
         plotter.initialize(color_1.Color.BLACK, zoom_1.Zoom.noZoom(), 1);
         plotter.drawPolygons(this.batchForPrimitive, 1);
         plotter.drawLines(this.batchForLine, 1, color_1.Color.GREEN, 1);
-        this.drawTestWindow(plotter);
-        plotter.finalize();
-    };
-    TestEngine.prototype.drawTestWindow = function (plotter) {
         plotter.drawLines(this.batchForWindow, 1, color_1.Color.WHITE, 1);
+        plotter.finalize();
     };
     TestEngine.prototype.updateTestWindow = function () {
         var canvasSize = Page.Canvas.getSize();

@@ -3,7 +3,8 @@ import { Rectangle } from "../misc/rectangle";
 import { Zoom } from "../misc/zoom";
 import { Parameters } from "../parameters";
 import { GeometryId } from "../plotter/geometry-id";
-import { BatchOfLines, BatchOfPolygons, Line, PlotterBase } from "../plotter/plotter-base";
+import { BatchOfLines, BatchOfPolygons, Line } from "../plotter/plotter-canvas";
+import { IPlotter } from "../plotter/plotter-interface";
 import { EVisibility, PrimitiveBase } from "../primitives/primitive-base";
 import { PrimitiveQuads } from "../primitives/primitive-quads";
 import { PrimitiveTriangles } from "../primitives/primitive-triangles";
@@ -109,19 +110,15 @@ class TestEngine {
         return true;
     }
 
-    public draw(plotter: PlotterBase): void {
+    public draw(plotter: IPlotter): void {
         plotter.initialize(Color.BLACK, Zoom.noZoom(), 1);
 
         plotter.drawPolygons(this.batchForPrimitive, 1);
 
         plotter.drawLines(this.batchForLine, 1, Color.GREEN, 1);
-        this.drawTestWindow(plotter);
+        plotter.drawLines(this.batchForWindow, 1, Color.WHITE, 1);
 
         plotter.finalize();
-    }
-
-    private drawTestWindow(plotter: PlotterBase): void {
-        plotter.drawLines(this.batchForWindow, 1, Color.WHITE, 1);
     }
 
     private updateTestWindow(): void {

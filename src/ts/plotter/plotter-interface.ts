@@ -1,6 +1,6 @@
 import { Color } from "../misc/color";
 import { Zoom } from "../misc/zoom";
-import { BatchOfLines, BatchOfPolygons } from "./plotter-base";
+import { BatchOfLines, BatchOfPolygons } from "./plotter-canvas";
 
 
 interface IPlotter {

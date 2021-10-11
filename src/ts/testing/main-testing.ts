@@ -1,11 +1,12 @@
 import { EPlotter, Parameters } from "../parameters";
-import { PlotterBase } from "../plotter/plotter-base";
+import { PlotterCanvas } from "../plotter/plotter-canvas";
 import { PlotterCanvas2D } from "../plotter/plotter-canvas-2d";
+import { IPlotter } from "../plotter/plotter-interface";
 import { PlotterWebGL } from "../plotter/plotter-webgl";
 import { TestEngine } from "./test-engine";
 
 
-function createPlotter(): PlotterBase {
+function createPlotter(): PlotterCanvas & IPlotter {
     if (Parameters.plotter === EPlotter.CANVAS2D) {
         return new PlotterCanvas2D();
     } else {

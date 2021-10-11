@@ -5,8 +5,9 @@ import { IPoint } from "./misc/point";
 import { downloadTextFile } from "./misc/web";
 import { Zoom } from "./misc/zoom";
 import { EPlotter, Parameters } from "./parameters";
-import { PlotterBase } from "./plotter/plotter-base";
+import { PlotterCanvas } from "./plotter/plotter-canvas";
 import { PlotterCanvas2D } from "./plotter/plotter-canvas-2d";
+import { IPlotter } from "./plotter/plotter-interface";
 import { PlotterSVG } from "./plotter/plotter-svg";
 import { PlotterWebGL } from "./plotter/plotter-webgl";
 import * as Testing from "./testing/main-testing";
@@ -14,7 +15,7 @@ import * as Testing from "./testing/main-testing";
 import "./page-interface-generated";
 
 
-function createPlotter(): PlotterBase {
+function createPlotter(): PlotterCanvas & IPlotter {
     if (Parameters.plotter === EPlotter.CANVAS2D) {
         return new PlotterCanvas2D();
     } else {
