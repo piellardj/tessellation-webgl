@@ -2,15 +2,13 @@ import { Color } from "../misc/color";
 import { Rectangle } from "../misc/rectangle";
 import { Throttle } from "../misc/throttle";
 import { Zoom } from "../misc/zoom";
-import { Parameters } from "../parameters";
 import { GeometryId } from "../plotter/geometry-id";
-import { BatchOfLines, IBatch, PlotterBase } from "../plotter/plotter-base";
+import { BatchOfLines, IBatch } from "../plotter/plotter-base";
 import { EVisibility, PrimitiveBase } from "../primitives/primitive-base";
 import { PrimitiveQuads } from "../primitives/primitive-quads";
 import { PrimitiveTriangles } from "../primitives/primitive-triangles";
 import { PrimitiveTrianglesNested } from "../primitives/primitive-triangles-nested";
 import { EPrimitiveType } from "../primitives/primitive-type-enum";
-import { IEngine } from "./engine-interface";
 
 import "../page-interface-generated";
 
@@ -23,11 +21,11 @@ interface ILayer {
     readonly birthTimestamp: number;
 }
 
-class Engine implements IEngine {
+class Engine {
     private rootPrimitive: PrimitiveBase;
-    private layers: ILayer[];
+    protected layers: ILayer[];
 
-    private readonly cumulatedZoom: Zoom;
+    protected readonly cumulatedZoom: Zoom;
     private readonly maintainanceThrottle: Throttle;
 
     public constructor() {
@@ -60,45 +58,6 @@ class Engine implements IEngine {
         this.maintainanceThrottle.runIfAvailable(maintainance);
 
         return somethingChanged;
-    }
-
-    public draw(plotter: PlotterBase, scaling: number): void {
-        if (this.layers.length < 1) {
-            return;
-        }
-
-        let lastSolidLayer = this.layers.length - 1;
-        let emergingLayerAlpha = 0;
-        if (Parameters.blending && this.layers.length > 1) {
-            if (Parameters.zoomingSpeed > 0) {
-                const emergingTimeOfLastLayer = 1000 / Math.pow((1 + Parameters.zoomingSpeed), 2);
-                const lastLayer = this.layers[this.layers.length - 1];
-                const ageOfLastLayer = performance.now() - lastLayer.birthTimestamp;
-                if (ageOfLastLayer < emergingTimeOfLastLayer) {
-                    // last layer is still blending in
-                    lastSolidLayer--;
-                    emergingLayerAlpha = ageOfLastLayer / emergingTimeOfLastLayer;
-                }
-            }
-        }
-        const emergingLayer = lastSolidLayer + 1;
-
-        plotter.initialize(Color.BLACK, this.cumulatedZoom, scaling);
-
-        plotter.drawPolygons(this.layers[lastSolidLayer].primitives, 1);
-        if (emergingLayer < this.layers.length) {
-            plotter.drawPolygons(this.layers[emergingLayer].primitives, emergingLayerAlpha);
-        }
-
-        if (Parameters.displayLines) {
-            for (let iLayer = 0; iLayer < this.layers.length; iLayer++) {
-                const thickness = Engine.getLineThicknessForLayer(iLayer, this.layers.length);
-                const alpha = (iLayer === emergingLayer) ? emergingLayerAlpha : 1;
-                plotter.drawLines(this.layers[iLayer].outlines, thickness, Parameters.linesColor, alpha);
-            }
-        }
-
-        plotter.finalize();
     }
 
     public reset(viewport: Rectangle, primitiveType: EPrimitiveType): void {
@@ -246,14 +205,6 @@ class Engine implements IEngine {
         }
 
         return true;
-    }
-
-    private static getLineThicknessForLayer(layerId: number, totalLayersCount: number): number {
-        let variablePart = 0;
-        if (layerId > 0) {
-            variablePart = Parameters.thickness * (totalLayersCount - 1 - layerId) / (totalLayersCount - 1);
-        }
-        return 1 + variablePart;
     }
 
     private changeRootPrimitiveInNeeded(): boolean {

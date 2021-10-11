@@ -2,6 +2,84 @@
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
+/***/ "./src/ts/engine/engine-synchronous.ts":
+/*!*********************************************!*\
+  !*** ./src/ts/engine/engine-synchronous.ts ***!
+  \*********************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.EngineSynchonous = void 0;
+var color_1 = __webpack_require__(/*! ../misc/color */ "./src/ts/misc/color.ts");
+var parameters_1 = __webpack_require__(/*! ../parameters */ "./src/ts/parameters.ts");
+var engine_1 = __webpack_require__(/*! ./engine */ "./src/ts/engine/engine.ts");
+var EngineSynchonous = (function (_super) {
+    __extends(EngineSynchonous, _super);
+    function EngineSynchonous() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    EngineSynchonous.prototype.draw = function (plotter, scaling) {
+        if (this.layers.length < 1) {
+            return;
+        }
+        var lastSolidLayer = this.layers.length - 1;
+        var emergingLayerAlpha = 0;
+        if (parameters_1.Parameters.blending && this.layers.length > 1) {
+            if (parameters_1.Parameters.zoomingSpeed > 0) {
+                var emergingTimeOfLastLayer = 1000 / Math.pow((1 + parameters_1.Parameters.zoomingSpeed), 2);
+                var lastLayer = this.layers[this.layers.length - 1];
+                var ageOfLastLayer = performance.now() - lastLayer.birthTimestamp;
+                if (ageOfLastLayer < emergingTimeOfLastLayer) {
+                    lastSolidLayer--;
+                    emergingLayerAlpha = ageOfLastLayer / emergingTimeOfLastLayer;
+                }
+            }
+        }
+        var emergingLayer = lastSolidLayer + 1;
+        plotter.initialize(color_1.Color.BLACK, this.cumulatedZoom, scaling);
+        plotter.drawPolygons(this.layers[lastSolidLayer].primitives, 1);
+        if (emergingLayer < this.layers.length) {
+            plotter.drawPolygons(this.layers[emergingLayer].primitives, emergingLayerAlpha);
+        }
+        if (parameters_1.Parameters.displayLines) {
+            for (var iLayer = 0; iLayer < this.layers.length; iLayer++) {
+                var thickness = EngineSynchonous.getLineThicknessForLayer(iLayer, this.layers.length);
+                var alpha = (iLayer === emergingLayer) ? emergingLayerAlpha : 1;
+                plotter.drawLines(this.layers[iLayer].outlines, thickness, parameters_1.Parameters.linesColor, alpha);
+            }
+        }
+        plotter.finalize();
+    };
+    EngineSynchonous.getLineThicknessForLayer = function (layerId, totalLayersCount) {
+        var variablePart = 0;
+        if (layerId > 0) {
+            variablePart = parameters_1.Parameters.thickness * (totalLayersCount - 1 - layerId) / (totalLayersCount - 1);
+        }
+        return 1 + variablePart;
+    };
+    return EngineSynchonous;
+}(engine_1.Engine));
+exports.EngineSynchonous = EngineSynchonous;
+
+
+/***/ }),
+
 /***/ "./src/ts/engine/engine.ts":
 /*!*********************************!*\
   !*** ./src/ts/engine/engine.ts ***!
@@ -15,13 +93,12 @@ var color_1 = __webpack_require__(/*! ../misc/color */ "./src/ts/misc/color.ts")
 var rectangle_1 = __webpack_require__(/*! ../misc/rectangle */ "./src/ts/misc/rectangle.ts");
 var throttle_1 = __webpack_require__(/*! ../misc/throttle */ "./src/ts/misc/throttle.ts");
 var zoom_1 = __webpack_require__(/*! ../misc/zoom */ "./src/ts/misc/zoom.ts");
-var parameters_1 = __webpack_require__(/*! ../parameters */ "./src/ts/parameters.ts");
 var geometry_id_1 = __webpack_require__(/*! ../plotter/geometry-id */ "./src/ts/plotter/geometry-id.ts");
 var primitive_base_1 = __webpack_require__(/*! ../primitives/primitive-base */ "./src/ts/primitives/primitive-base.ts");
-var primitive_type_enum_1 = __webpack_require__(/*! ../primitives/primitive-type-enum */ "./src/ts/primitives/primitive-type-enum.ts");
 var primitive_quads_1 = __webpack_require__(/*! ../primitives/primitive-quads */ "./src/ts/primitives/primitive-quads.ts");
 var primitive_triangles_1 = __webpack_require__(/*! ../primitives/primitive-triangles */ "./src/ts/primitives/primitive-triangles.ts");
 var primitive_triangles_nested_1 = __webpack_require__(/*! ../primitives/primitive-triangles-nested */ "./src/ts/primitives/primitive-triangles-nested.ts");
+var primitive_type_enum_1 = __webpack_require__(/*! ../primitives/primitive-type-enum */ "./src/ts/primitives/primitive-type-enum.ts");
 __webpack_require__(/*! ../page-interface-generated */ "./src/ts/page-interface-generated.ts");
 var Engine = (function () {
     function Engine() {
@@ -49,37 +126,6 @@ var Engine = (function () {
         this.maintainanceThrottle.runIfAvailable(maintainance);
         return somethingChanged;
     };
-    Engine.prototype.draw = function (plotter, scaling) {
-        if (this.layers.length < 1) {
-            return;
-        }
-        var lastSolidLayer = this.layers.length - 1;
-        var emergingLayerAlpha = 0;
-        if (parameters_1.Parameters.blending && this.layers.length > 1) {
-            if (parameters_1.Parameters.zoomingSpeed > 0) {
-                var emergingTimeOfLastLayer = 1000 / Math.pow((1 + parameters_1.Parameters.zoomingSpeed), 2);
-                var ageOfLastLayer = performance.now() - this.lastLayerBirthTimestamp;
-                if (ageOfLastLayer < emergingTimeOfLastLayer) {
-                    lastSolidLayer--;
-                    emergingLayerAlpha = ageOfLastLayer / emergingTimeOfLastLayer;
-                }
-            }
-        }
-        var emergingLayer = lastSolidLayer + 1;
-        plotter.initialize(color_1.Color.BLACK, this.cumulatedZoom, scaling);
-        plotter.drawPolygons(this.layers[lastSolidLayer].primitives, 1);
-        if (emergingLayer < this.layers.length) {
-            plotter.drawPolygons(this.layers[emergingLayer].primitives, emergingLayerAlpha);
-        }
-        if (parameters_1.Parameters.displayLines) {
-            for (var iLayer = 0; iLayer < this.layers.length; iLayer++) {
-                var thickness = Engine.getLineThicknessForLayer(iLayer, this.layers.length);
-                var alpha = (iLayer === emergingLayer) ? emergingLayerAlpha : 1;
-                plotter.drawLines(this.layers[iLayer].outlines, thickness, parameters_1.Parameters.linesColor, alpha);
-            }
-        }
-        plotter.finalize();
-    };
     Engine.prototype.reset = function (viewport, primitiveType) {
         if (primitiveType === primitive_type_enum_1.EPrimitiveType.QUADS) {
             this.rootPrimitive = new primitive_quads_1.PrimitiveQuads({ x: viewport.left, y: viewport.top }, { x: viewport.right, y: viewport.top }, { x: viewport.left, y: viewport.bottom }, { x: viewport.right, y: viewport.bottom }, this.computeRootPrimitiveColor());
@@ -90,7 +136,17 @@ var Engine = (function () {
         else {
             this.rootPrimitive = new primitive_triangles_nested_1.PrimitiveTrianglesNested({ x: viewport.left, y: viewport.bottom }, { x: viewport.right, y: viewport.bottom }, { x: 0, y: viewport.top }, this.computeRootPrimitiveColor());
         }
-        this.rebuildLayersCollections();
+        this.layers = [{
+                primitives: {
+                    items: [this.rootPrimitive],
+                    geometryId: geometry_id_1.GeometryId.new(),
+                },
+                outlines: {
+                    items: [this.rootPrimitive.getOutline()],
+                    geometryId: geometry_id_1.GeometryId.new(),
+                },
+                birthTimestamp: performance.now(),
+            }];
         this.updateIndicators();
     };
     Engine.prototype.recomputeColors = function (colorVariation) {
@@ -170,10 +226,10 @@ var Engine = (function () {
                 Array.prototype.push.apply(primitivesOfNewLayer.items, primitive.getDirectChildren());
                 outlinesOfNewLayer.items.push(primitive.subdivision);
             }
-            this.lastLayerBirthTimestamp = performance.now();
             this.layers.push({
                 primitives: primitivesOfNewLayer,
                 outlines: outlinesOfNewLayer,
+                birthTimestamp: performance.now()
             });
         }
         else if (currentPrimitivesCountForLastLayer >= subdivisionFactor * idealPrimitivesCountForLastLayer) {
@@ -187,13 +243,6 @@ var Engine = (function () {
             return false;
         }
         return true;
-    };
-    Engine.getLineThicknessForLayer = function (layerId, totalLayersCount) {
-        var variablePart = 0;
-        if (layerId > 0) {
-            variablePart = parameters_1.Parameters.thickness * (totalLayersCount - 1 - layerId) / (totalLayersCount - 1);
-        }
-        return 1 + variablePart;
     };
     Engine.prototype.changeRootPrimitiveInNeeded = function () {
         var directChildrenOfRoot = this.rootPrimitive.getDirectChildren();
@@ -223,31 +272,27 @@ var Engine = (function () {
         return changedSomething;
     };
     Engine.prototype.rebuildLayersCollections = function () {
-        var treeDepth = this.rootPrimitive.treeDepth();
-        this.layers = [];
-        for (var iDepth = 0; iDepth < treeDepth; iDepth++) {
+        for (var iLayer = 0; iLayer < this.layers.length; iLayer++) {
             var primitives = {
-                items: this.rootPrimitive.getChildrenOfDepth(iDepth),
+                items: this.rootPrimitive.getChildrenOfDepth(iLayer),
                 geometryId: geometry_id_1.GeometryId.new(),
             };
             var outlines = {
                 items: [],
                 geometryId: geometry_id_1.GeometryId.new(),
             };
-            if (iDepth === 0) {
+            if (iLayer === 0) {
                 outlines.items.push(this.rootPrimitive.getOutline());
             }
             else {
-                var primitivesOfParentLayer = this.layers[iDepth - 1].primitives;
+                var primitivesOfParentLayer = this.layers[iLayer - 1].primitives;
                 for (var _i = 0, _a = primitivesOfParentLayer.items; _i < _a.length; _i++) {
                     var primitive = _a[_i];
                     outlines.items.push(primitive.subdivision);
                 }
             }
-            this.layers.push({
-                primitives: primitives,
-                outlines: outlines,
-            });
+            this.layers[iLayer].primitives = primitives;
+            this.layers[iLayer].outlines = outlines;
         }
     };
     Engine.prototype.updateIndicators = function () {
@@ -925,7 +970,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-var engine_1 = __webpack_require__(/*! ./engine/engine */ "./src/ts/engine/engine.ts");
+var engine_synchronous_1 = __webpack_require__(/*! ./engine/engine-synchronous */ "./src/ts/engine/engine-synchronous.ts");
 var frame_time_monitor_1 = __webpack_require__(/*! ./misc/frame-time-monitor */ "./src/ts/misc/frame-time-monitor.ts");
 var web_1 = __webpack_require__(/*! ./misc/web */ "./src/ts/misc/web.ts");
 var zoom_1 = __webpack_require__(/*! ./misc/zoom */ "./src/ts/misc/zoom.ts");
@@ -945,7 +990,7 @@ function createPlotter() {
 }
 function main() {
     var plotter = createPlotter();
-    var engine = new engine_1.Engine();
+    var engine = new engine_synchronous_1.EngineSynchonous();
     parameters_1.Parameters.recomputeColorsObservers.push(function () {
         engine.recomputeColors(parameters_1.Parameters.colorVariation);
     });
