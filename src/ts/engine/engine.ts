@@ -36,14 +36,14 @@ class Engine {
         this.maintainanceThrottle = new Throttle(100);
     }
 
-    public update(viewport: Rectangle, instantZoom: Zoom): boolean {
+    public update(viewport: Rectangle, instantZoom: Zoom, wantedDepth: number, subdivisionBalance: number, colorVariation: number): boolean {
         let somethingChanged = false;
 
         this.cumulatedZoom.combineWith(instantZoom);
 
         const maintainance = () => {
             somethingChanged = this.applyCumulatedZoom() || somethingChanged;
-            somethingChanged = this.adjustLayersCount() || somethingChanged;
+            somethingChanged = this.adjustLayersCount(wantedDepth, subdivisionBalance, colorVariation) || somethingChanged;
             somethingChanged = this.handleRecycling(viewport) || somethingChanged;
 
             if (somethingChanged) {
@@ -129,9 +129,9 @@ class Engine {
         this.updateIndicators();
     }
 
-    public recomputeColors(): void {
+    public recomputeColors(colorVariation: number): void {
         const newColor = this.computeRootPrimitiveColor();
-        this.rootPrimitive.setColor(newColor, Parameters.colorVariation);
+        this.rootPrimitive.setColor(newColor, colorVariation);
 
         // The colors of the primitive in the VBO so we need to reupload it.
         for (const layer of this.layers) {
@@ -196,9 +196,9 @@ class Engine {
         }
     }
 
-    private adjustLayersCount(): boolean {
+    private adjustLayersCount(wantedDepth: number, subdivisionBalance: number, colorVariation: number): boolean {
         const lastLayer = this.layers[this.layers.length - 1];
-        const idealPrimitivesCountForLastLayer = Math.pow(2, Parameters.depth - 1);
+        const idealPrimitivesCountForLastLayer = Math.pow(2, wantedDepth - 1);
         const currentPrimitivesCountForLastLayer = lastLayer.primitives.items.length;
 
         const subdivisionFactor = this.rootPrimitive.subdivisionFactor;
@@ -214,7 +214,7 @@ class Engine {
             };
 
             for (const primitive of lastLayer.primitives.items) {
-                primitive.subdivide(Parameters.balance, Parameters.colorVariation);
+                primitive.subdivide(subdivisionBalance, colorVariation);
                 Array.prototype.push.apply(primitivesOfNewLayer.items, primitive.getDirectChildren() as PrimitiveBase[]);
                 outlinesOfNewLayer.items.push(primitive.subdivision);
             }

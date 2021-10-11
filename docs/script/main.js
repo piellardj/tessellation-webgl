@@ -29,13 +29,13 @@ var Engine = (function () {
         this.cumulatedZoom = zoom_1.Zoom.noZoom();
         this.maintainanceThrottle = new throttle_1.Throttle(100);
     }
-    Engine.prototype.update = function (viewport, instantZoom) {
+    Engine.prototype.update = function (viewport, instantZoom, wantedDepth, subdivisionBalance, colorVariation) {
         var _this = this;
         var somethingChanged = false;
         this.cumulatedZoom.combineWith(instantZoom);
         var maintainance = function () {
             somethingChanged = _this.applyCumulatedZoom() || somethingChanged;
-            somethingChanged = _this.adjustLayersCount() || somethingChanged;
+            somethingChanged = _this.adjustLayersCount(wantedDepth, subdivisionBalance, colorVariation) || somethingChanged;
             somethingChanged = _this.handleRecycling(viewport) || somethingChanged;
             if (somethingChanged) {
                 for (var _i = 0, _a = _this.layers; _i < _a.length; _i++) {
@@ -93,9 +93,9 @@ var Engine = (function () {
         this.rebuildLayersCollections();
         this.updateIndicators();
     };
-    Engine.prototype.recomputeColors = function () {
+    Engine.prototype.recomputeColors = function (colorVariation) {
         var newColor = this.computeRootPrimitiveColor();
-        this.rootPrimitive.setColor(newColor, parameters_1.Parameters.colorVariation);
+        this.rootPrimitive.setColor(newColor, colorVariation);
         for (var _i = 0, _a = this.layers; _i < _a.length; _i++) {
             var layer = _a[_i];
             layer.primitives.geometryId.registerChange();
@@ -141,23 +141,18 @@ var Engine = (function () {
             return true;
         }
         else {
-            var lastLayer = this.layers[this.layers.length - 1];
-            var nbPrimitivesLastLayer = lastLayer.primitives.items.length;
             var prunedPrimitives = this.prunePrimitivesOutOfView(this.rootPrimitive, viewport);
             var changedRootPrimitive = this.changeRootPrimitiveInNeeded();
             if (prunedPrimitives) {
                 this.rebuildLayersCollections();
-                if (parameters_1.Parameters.verbose) {
-                    console.log("went from " + nbPrimitivesLastLayer + " to " + lastLayer.primitives.items.length);
-                }
                 return true;
             }
             return changedRootPrimitive || prunedPrimitives;
         }
     };
-    Engine.prototype.adjustLayersCount = function () {
+    Engine.prototype.adjustLayersCount = function (wantedDepth, subdivisionBalance, colorVariation) {
         var lastLayer = this.layers[this.layers.length - 1];
-        var idealPrimitivesCountForLastLayer = Math.pow(2, parameters_1.Parameters.depth - 1);
+        var idealPrimitivesCountForLastLayer = Math.pow(2, wantedDepth - 1);
         var currentPrimitivesCountForLastLayer = lastLayer.primitives.items.length;
         var subdivisionFactor = this.rootPrimitive.subdivisionFactor;
         if (currentPrimitivesCountForLastLayer <= idealPrimitivesCountForLastLayer / subdivisionFactor) {
@@ -171,7 +166,7 @@ var Engine = (function () {
             };
             for (var _i = 0, _a = lastLayer.primitives.items; _i < _a.length; _i++) {
                 var primitive = _a[_i];
-                primitive.subdivide(parameters_1.Parameters.balance, parameters_1.Parameters.colorVariation);
+                primitive.subdivide(subdivisionBalance, colorVariation);
                 Array.prototype.push.apply(primitivesOfNewLayer.items, primitive.getDirectChildren());
                 outlinesOfNewLayer.items.push(primitive.subdivision);
             }
@@ -205,9 +200,6 @@ var Engine = (function () {
         if (directChildrenOfRoot.length === 1) {
             this.rootPrimitive = directChildrenOfRoot[0];
             this.layers.shift();
-            if (parameters_1.Parameters.verbose) {
-                console.log("root changed");
-            }
             return true;
         }
         return false;
@@ -954,7 +946,9 @@ function createPlotter() {
 function main() {
     var plotter = createPlotter();
     var engine = new engine_1.Engine();
-    parameters_1.Parameters.recomputeColorsObservers.push(function () { engine.recomputeColors(); });
+    parameters_1.Parameters.recomputeColorsObservers.push(function () {
+        engine.recomputeColors(parameters_1.Parameters.colorVariation);
+    });
     parameters_1.Parameters.downloadObservers.push(function () {
         var svgPlotter = new plotter_svg_1.PlotterSVG();
         engine.draw(svgPlotter, parameters_1.Parameters.scaling);
@@ -997,7 +991,8 @@ function main() {
         frametimeMonitor.registerFrameTime(millisecondsSinceLastFrame);
         var dt = Math.min(MAX_DT, 0.001 * millisecondsSinceLastFrame);
         var instantZoom = buildInstantZoom(dt);
-        if (engine.update(plotter.viewport, instantZoom) || instantZoom.isNotNull()) {
+        var updatedChangedSomething = engine.update(plotter.viewport, instantZoom, parameters_1.Parameters.depth, parameters_1.Parameters.balance, parameters_1.Parameters.colorVariation);
+        if (updatedChangedSomething || instantZoom.isNotNull()) {
             needToRedraw = true;
         }
         if (needToRedraw && plotter.isReady) {
@@ -1644,7 +1639,6 @@ var Parameters = (function () {
     Parameters.redrawObservers = [];
     Parameters.downloadObservers = [];
     Parameters.debugMode = (web_1.getQueryStringValue("debug") === "1");
-    Parameters.verbose = (web_1.getQueryStringValue("verbose") === "1");
     Parameters.plotter = (web_1.getQueryStringValue(plotterQueryStringParamName) === EPlotter.CANVAS2D) ? EPlotter.CANVAS2D : EPlotter.WEBGL;
     return Parameters;
 }());

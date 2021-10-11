@@ -25,7 +25,9 @@ function main(): void {
     const plotter = createPlotter();
     const engine = new Engine();
 
-    Parameters.recomputeColorsObservers.push(() => { engine.recomputeColors(); });
+    Parameters.recomputeColorsObservers.push(() => {
+        engine.recomputeColors(Parameters.colorVariation);
+    });
 
     Parameters.downloadObservers.push(() => {
         const svgPlotter = new PlotterSVG();
@@ -78,7 +80,8 @@ function main(): void {
         const dt = Math.min(MAX_DT, 0.001 * millisecondsSinceLastFrame);
         const instantZoom = buildInstantZoom(dt);
 
-        if (engine.update(plotter.viewport, instantZoom) || instantZoom.isNotNull()) {
+        const updatedChangedSomething = engine.update(plotter.viewport, instantZoom, Parameters.depth, Parameters.balance, Parameters.colorVariation);
+        if (updatedChangedSomething || instantZoom.isNotNull()) {
             needToRedraw = true;
         }
 
