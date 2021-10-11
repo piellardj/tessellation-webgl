@@ -184,18 +184,11 @@ class Engine {
             this.reset(viewport, this.primitiveType);
             return true;
         } else {
-            const lastLayer = this.layers[this.layers.length - 1];
-            const nbPrimitivesLastLayer = lastLayer.primitives.items.length;
-
             const prunedPrimitives = this.prunePrimitivesOutOfView(this.rootPrimitive, viewport);
             const changedRootPrimitive = this.changeRootPrimitiveInNeeded();
 
             if (prunedPrimitives) {
                 this.rebuildLayersCollections();
-
-                if (Parameters.verbose) {
-                    console.log(`went from ${nbPrimitivesLastLayer} to ${lastLayer.primitives.items.length}`);
-                }
                 return true;
             }
 
@@ -257,10 +250,6 @@ class Engine {
         if (directChildrenOfRoot.length === 1) {
             this.rootPrimitive = directChildrenOfRoot[0] as PrimitiveBase;
             this.layers.shift();
-
-            if (Parameters.verbose) {
-                console.log("root changed");
-            }
             return true;
         }
         return false;

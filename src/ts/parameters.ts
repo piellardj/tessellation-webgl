@@ -42,7 +42,6 @@ abstract class Parameters {
     public static readonly downloadObservers: Observer[] = [];
 
     public static readonly debugMode: boolean = (getQueryStringValue("debug") === "1");
-    public static readonly verbose: boolean = (getQueryStringValue("verbose") === "1");
     public static readonly plotter: EPlotter = (getQueryStringValue(plotterQueryStringParamName) === EPlotter.CANVAS2D) ? EPlotter.CANVAS2D : EPlotter.WEBGL;
 
     public static get primitiveType(): EPrimitiveType {
