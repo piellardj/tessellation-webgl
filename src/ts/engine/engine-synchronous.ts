@@ -1,12 +1,12 @@
 import { Color } from "../misc/color";
 import { Parameters } from "../parameters";
-import { PlotterBase } from "../plotter/plotter-base";
+import { IPlotter } from "../plotter/plotter-interface";
 import { Engine } from "./engine";
 import { IEngine } from "./engine-interface";
 
 
 class EngineSynchonous extends Engine implements IEngine {
-    public draw(plotter: PlotterBase, scaling: number): void {
+    public draw(plotter: IPlotter, scaling: number): void {
         if (this.layers.length < 1) {
             return;
         }

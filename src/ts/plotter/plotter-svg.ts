@@ -1,13 +1,15 @@
 import { Color } from "../misc/color";
 import { Zoom } from "../misc/zoom";
-import { BatchOfLines, BatchOfPolygons, PlotterBase } from "./plotter-base";
+import { BatchOfLines, BatchOfPolygons } from "./plotter-base";
+import { IPlotter } from "./plotter-interface";
 
 
-class PlotterSVG extends PlotterBase {
+class PlotterSVG implements IPlotter {
     private lines: string[] = [];
 
-    public constructor() {
-        super();
+    public constructor(
+        private readonly width: number,
+        private readonly height: number) {
     }
 
     public get isReady(): boolean {
@@ -93,3 +95,4 @@ class PlotterSVG extends PlotterBase {
 export {
     PlotterSVG,
 };
+

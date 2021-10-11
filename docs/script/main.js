@@ -995,7 +995,7 @@ function main() {
         engine.recomputeColors(parameters_1.Parameters.colorVariation);
     });
     parameters_1.Parameters.downloadObservers.push(function () {
-        var svgPlotter = new plotter_svg_1.PlotterSVG();
+        var svgPlotter = new plotter_svg_1.PlotterSVG(plotter.width, plotter.height);
         engine.draw(svgPlotter, parameters_1.Parameters.scaling);
         var fileName = "subdivisions.svg";
         var svgString = svgPlotter.output();
@@ -1926,33 +1926,16 @@ exports.PlotterCanvas2D = PlotterCanvas2D;
 /*!***************************************!*\
   !*** ./src/ts/plotter/plotter-svg.ts ***!
   \***************************************/
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+/***/ (function(__unused_webpack_module, exports) {
 
 
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.PlotterSVG = void 0;
-var plotter_base_1 = __webpack_require__(/*! ./plotter-base */ "./src/ts/plotter/plotter-base.ts");
-var PlotterSVG = (function (_super) {
-    __extends(PlotterSVG, _super);
-    function PlotterSVG() {
-        var _this = _super.call(this) || this;
-        _this.lines = [];
-        return _this;
+var PlotterSVG = (function () {
+    function PlotterSVG(width, height) {
+        this.width = width;
+        this.height = height;
+        this.lines = [];
     }
     Object.defineProperty(PlotterSVG.prototype, "isReady", {
         get: function () {
@@ -2025,7 +2008,7 @@ var PlotterSVG = (function (_super) {
         return this.lines.join("\n");
     };
     return PlotterSVG;
-}(plotter_base_1.PlotterBase));
+}());
 exports.PlotterSVG = PlotterSVG;
 
 

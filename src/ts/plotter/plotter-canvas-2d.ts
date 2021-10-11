@@ -1,11 +1,12 @@
 import { Color } from "../misc/color";
 import { Zoom } from "../misc/zoom";
 import { BatchOfLines, BatchOfPolygons, PlotterBase } from "./plotter-base";
+import { IPlotter } from "./plotter-interface";
 
 import "../page-interface-generated";
 
 
-class PlotterCanvas2D extends PlotterBase {
+class PlotterCanvas2D extends PlotterBase implements IPlotter {
     private readonly context: CanvasRenderingContext2D;
 
     public constructor() {

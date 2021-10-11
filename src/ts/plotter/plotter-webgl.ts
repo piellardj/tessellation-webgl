@@ -3,6 +3,7 @@ import * as Loader from "../misc/loader";
 import { Zoom } from "../misc/zoom";
 import { GeometryId } from "./geometry-id";
 import { BatchOfLines, BatchOfPolygons, PlotterBase } from "./plotter-base";
+import { IPlotter } from "./plotter-interface";
 
 import * as GLCanvas from "../gl-utils/gl-canvas";
 import { gl } from "../gl-utils/gl-canvas";
@@ -48,7 +49,7 @@ interface IPolygonsVboPart extends IVboPart {
 }
 
 
-class PlotterWebGL extends PlotterBase {
+class PlotterWebGL extends PlotterBase implements IPlotter {
     private shaderLines: Shader;
     private shaderPolygons: Shader;
 

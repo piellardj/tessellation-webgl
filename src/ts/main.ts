@@ -31,7 +31,7 @@ function main(): void {
     });
 
     Parameters.downloadObservers.push(() => {
-        const svgPlotter = new PlotterSVG();
+        const svgPlotter = new PlotterSVG(plotter.width, plotter.height);
         engine.draw(svgPlotter, Parameters.scaling);
         const fileName = "subdivisions.svg";
         const svgString = svgPlotter.output();
