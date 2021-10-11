@@ -1,7 +1,7 @@
 import * as Arithmetics from "../misc/arithmetics";
 import { Color } from "../misc/color";
 import { IPoint } from "../misc/point";
-import { Zooming } from "../misc/zooming";
+import { Zoom } from "../misc/zoom";
 import { Parameters } from "../parameters";
 import { PrimitiveTriangles } from "./primitives-triangles";
 
@@ -41,17 +41,17 @@ class PrimitiveTrianglesNested extends PrimitiveTriangles {
         );
     }
 
-    protected applyZoom(zooming: Zooming, isRoot: boolean): void {
+    protected applyZoom(zoom: Zoom, isRoot: boolean): void {
         if (isRoot) {
-            zooming.applyToPoint(this.p1);
-            zooming.applyToPoint(this.p2);
-            zooming.applyToPoint(this.p3);
+            zoom.applyToPoint(this.p1);
+            zoom.applyToPoint(this.p2);
+            zoom.applyToPoint(this.p3);
         }
 
         if (this.subdivision) {
-            zooming.applyToPoint(this.midPoint1);
-            zooming.applyToPoint(this.midPoint2);
-            zooming.applyToPoint(this.midPoint3);
+            zoom.applyToPoint(this.midPoint1);
+            zoom.applyToPoint(this.midPoint2);
+            zoom.applyToPoint(this.midPoint3);
         }
     }
 
@@ -66,3 +66,4 @@ class PrimitiveTrianglesNested extends PrimitiveTriangles {
 }
 
 export { PrimitiveTrianglesNested };
+

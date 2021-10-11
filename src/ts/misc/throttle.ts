@@ -16,12 +16,6 @@ class Throttle {
             this.lastRunTimestamp = now;
         }
     }
-
-    public forceRun(operation: () => unknown): void {
-        const now = performance.now();
-        operation();
-        this.lastRunTimestamp = now;
-    }
 }
 
 export {

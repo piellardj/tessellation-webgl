@@ -14,7 +14,7 @@ exports.Engine = void 0;
 var color_1 = __webpack_require__(/*! ../misc/color */ "./src/ts/misc/color.ts");
 var rectangle_1 = __webpack_require__(/*! ../misc/rectangle */ "./src/ts/misc/rectangle.ts");
 var throttle_1 = __webpack_require__(/*! ../misc/throttle */ "./src/ts/misc/throttle.ts");
-var zooming_1 = __webpack_require__(/*! ../misc/zooming */ "./src/ts/misc/zooming.ts");
+var zoom_1 = __webpack_require__(/*! ../misc/zoom */ "./src/ts/misc/zoom.ts");
 var parameters_1 = __webpack_require__(/*! ../parameters */ "./src/ts/parameters.ts");
 var geometry_id_1 = __webpack_require__(/*! ../plotter/geometry-id */ "./src/ts/plotter/geometry-id.ts");
 var primitive_base_1 = __webpack_require__(/*! ../primitives/primitive-base */ "./src/ts/primitives/primitive-base.ts");
@@ -25,15 +25,15 @@ __webpack_require__(/*! ../page-interface-generated */ "./src/ts/page-interface-
 var Engine = (function () {
     function Engine() {
         this.reset(new rectangle_1.Rectangle(0, 512, 0, 512));
-        this.currentCumulatedZooming = new zooming_1.Zooming({ x: 0, y: 0 }, 0);
+        this.cumulatedZoom = zoom_1.Zoom.noZoom();
         this.maintainanceThrottle = new throttle_1.Throttle(100);
     }
-    Engine.prototype.update = function (viewport, zooming) {
+    Engine.prototype.update = function (viewport, instantZoom) {
         var _this = this;
         var somethingChanged = false;
-        this.currentCumulatedZooming.dt += zooming.dt;
+        this.cumulatedZoom.combineWith(instantZoom);
         var maintainance = function () {
-            somethingChanged = _this.applyCumulatedZooming(zooming) || somethingChanged;
+            somethingChanged = _this.applyCumulatedZoom() || somethingChanged;
             somethingChanged = _this.adjustLayersCount() || somethingChanged;
             somethingChanged = _this.handleRecycling(viewport) || somethingChanged;
             if (somethingChanged) {
@@ -45,15 +45,7 @@ var Engine = (function () {
             }
             _this.updateIndicators();
         };
-        var zoomingHasChanged = (this.currentCumulatedZooming.center.x !== zooming.center.x) ||
-            (this.currentCumulatedZooming.center.y !== zooming.center.y) ||
-            (this.currentCumulatedZooming.speed !== zooming.speed);
-        if (zoomingHasChanged) {
-            this.maintainanceThrottle.forceRun(maintainance);
-        }
-        else {
-            this.maintainanceThrottle.runIfAvailable(maintainance);
-        }
+        this.maintainanceThrottle.runIfAvailable(maintainance);
         return somethingChanged;
     };
     Engine.prototype.draw = function (plotter) {
@@ -86,7 +78,7 @@ var Engine = (function () {
                 plotter.drawLines(this.layers[iLayer].outlines, thickness, parameters_1.Parameters.linesColor, alpha);
             }
         }
-        plotter.finalize(this.currentCumulatedZooming);
+        plotter.finalize(this.cumulatedZoom);
     };
     Engine.prototype.reset = function (viewport) {
         var primitiveType = parameters_1.Parameters.primitive;
@@ -134,16 +126,13 @@ var Engine = (function () {
         }
         return bestColor;
     };
-    Engine.prototype.applyCumulatedZooming = function (newZoom) {
+    Engine.prototype.applyCumulatedZoom = function () {
         var appliedZoom = false;
-        if (this.currentCumulatedZooming.speed !== 0) {
-            this.rootPrimitive.zoom(this.currentCumulatedZooming, true);
+        if (this.cumulatedZoom.isNotNull()) {
+            this.rootPrimitive.zoom(this.cumulatedZoom, true);
             appliedZoom = true;
         }
-        this.currentCumulatedZooming.center.x = newZoom.center.x;
-        this.currentCumulatedZooming.center.y = newZoom.center.y;
-        this.currentCumulatedZooming.speed = newZoom.speed;
-        this.currentCumulatedZooming.dt = 0;
+        this.cumulatedZoom.reset();
         return appliedZoom;
     };
     Engine.prototype.handleRecycling = function (viewport) {
@@ -941,7 +930,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 var engine_1 = __webpack_require__(/*! ./engine/engine */ "./src/ts/engine/engine.ts");
 var frame_time_monitor_1 = __webpack_require__(/*! ./misc/frame-time-monitor */ "./src/ts/misc/frame-time-monitor.ts");
 var web_1 = __webpack_require__(/*! ./misc/web */ "./src/ts/misc/web.ts");
-var zooming_1 = __webpack_require__(/*! ./misc/zooming */ "./src/ts/misc/zooming.ts");
+var zoom_1 = __webpack_require__(/*! ./misc/zoom */ "./src/ts/misc/zoom.ts");
 var parameters_1 = __webpack_require__(/*! ./parameters */ "./src/ts/parameters.ts");
 var plotter_canvas_2d_1 = __webpack_require__(/*! ./plotter/plotter-canvas-2d */ "./src/ts/plotter/plotter-canvas-2d.ts");
 var plotter_svg_1 = __webpack_require__(/*! ./plotter/plotter-svg */ "./src/ts/plotter/plotter-svg.ts");
@@ -959,7 +948,6 @@ function createPlotter() {
 function main() {
     var plotter = createPlotter();
     var engine = new engine_1.Engine();
-    var zooming = new zooming_1.Zooming({ x: 0, y: 0 }, 0.2);
     parameters_1.Parameters.recomputeColorsObservers.push(function () { engine.recomputeColors(); });
     parameters_1.Parameters.downloadObservers.push(function () {
         var svgPlotter = new plotter_svg_1.PlotterSVG();
@@ -968,11 +956,23 @@ function main() {
         var svgString = svgPlotter.output();
         web_1.downloadTextFile(fileName, svgString);
     });
+    function getCurrentMousePosition() {
+        var mousePosition = parameters_1.Parameters.mousePositionInPixels;
+        mousePosition.x -= 0.5 * plotter.width;
+        mousePosition.y -= 0.5 * plotter.height;
+        return mousePosition;
+    }
+    var lastZoomCenter;
+    function buildInstantZoom(dt) {
+        if (Page.Canvas.isMouseDown()) {
+            lastZoomCenter = getCurrentMousePosition();
+        }
+        return new zoom_1.Zoom(lastZoomCenter, 1 + dt * parameters_1.Parameters.zoomingSpeed);
+    }
     function reset() {
         plotter.resizeCanvas();
         engine.reset(plotter.viewport);
-        zooming.center.x = 0;
-        zooming.center.y = 0;
+        lastZoomCenter = { x: 0, y: 0 };
     }
     parameters_1.Parameters.resetObservers.push(reset);
     reset();
@@ -986,20 +986,12 @@ function main() {
     var lastFrameTimestamp = performance.now();
     function mainLoop() {
         var now = performance.now();
-        var timeSinceLastFrame = now - lastFrameTimestamp;
-        frametimeMonitor.registerFrameTime(timeSinceLastFrame);
-        zooming.speed = parameters_1.Parameters.zoomingSpeed;
-        zooming.dt = 0.001 * timeSinceLastFrame;
-        if (zooming.dt > MAX_DT) {
-            zooming.dt = MAX_DT;
-        }
+        var millisecondsSinceLastFrame = now - lastFrameTimestamp;
         lastFrameTimestamp = now;
-        if (Page.Canvas.isMouseDown()) {
-            var mousePosition = parameters_1.Parameters.mousePositionInPixels;
-            zooming.center.x = mousePosition.x - 0.5 * plotter.width;
-            zooming.center.y = mousePosition.y - 0.5 * plotter.height;
-        }
-        if (engine.update(plotter.viewport, zooming) || zooming.speed > 0) {
+        frametimeMonitor.registerFrameTime(millisecondsSinceLastFrame);
+        var dt = Math.min(MAX_DT, 0.001 * millisecondsSinceLastFrame);
+        var instantZoom = buildInstantZoom(dt);
+        if (engine.update(plotter.viewport, instantZoom) || instantZoom.isNotNull()) {
             needToRedraw = true;
         }
         if (needToRedraw && plotter.isReady) {
@@ -1364,11 +1356,6 @@ var Throttle = (function () {
             this.lastRunTimestamp = now;
         }
     };
-    Throttle.prototype.forceRun = function (operation) {
-        var now = performance.now();
-        operation();
-        this.lastRunTimestamp = now;
-    };
     return Throttle;
 }());
 exports.Throttle = Throttle;
@@ -1444,36 +1431,51 @@ exports.setQueryStringValue = setQueryStringValue;
 
 /***/ }),
 
-/***/ "./src/ts/misc/zooming.ts":
-/*!********************************!*\
-  !*** ./src/ts/misc/zooming.ts ***!
-  \********************************/
+/***/ "./src/ts/misc/zoom.ts":
+/*!*****************************!*\
+  !*** ./src/ts/misc/zoom.ts ***!
+  \*****************************/
 /***/ (function(__unused_webpack_module, exports) {
 
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.Zooming = void 0;
-var Zooming = (function () {
-    function Zooming(center, speed) {
-        this.center = center;
-        this.speed = speed;
-        this.dt = 0;
+exports.Zoom = void 0;
+var Zoom = (function () {
+    function Zoom(center, scaling) {
+        this.a = scaling;
+        this.b = center.x * (1 - scaling);
+        this.c = center.y * (1 - scaling);
     }
-    Object.defineProperty(Zooming.prototype, "currentZoomFactor", {
-        get: function () {
-            return 1 + this.dt * this.speed;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Zooming.prototype.applyToPoint = function (point) {
-        point.x = this.center.x + (point.x - this.center.x) * this.currentZoomFactor;
-        point.y = this.center.y + (point.y - this.center.y) * this.currentZoomFactor;
+    Zoom.noZoom = function () {
+        return new Zoom({ x: 0, y: 0 }, 1);
     };
-    Zooming.NO_ZOOMING = new Zooming({ x: 0, y: 0 }, 0);
-    return Zooming;
+    Zoom.prototype.reset = function () {
+        this.a = 1;
+        this.b = 0;
+        this.c = 0;
+    };
+    Zoom.prototype.isNotNull = function () {
+        var isIdentity = (this.a === 1) && (this.b === 0) && (this.c === 0);
+        return !isIdentity;
+    };
+    Zoom.prototype.applyToPoint = function (point) {
+        point.x = this.a * point.x + this.b;
+        point.y = this.a * point.y + this.c;
+    };
+    Zoom.prototype.combineWith = function (other) {
+        var newA = other.a * this.a;
+        var newB = other.a * this.b + other.b;
+        var newC = other.a * this.c + other.c;
+        this.a = newA;
+        this.b = newB;
+        this.c = newC;
+    };
+    Zoom.prototype.asUniform = function () {
+        return [this.a, this.b, this.c];
+    };
+    return Zoom;
 }());
-exports.Zooming = Zooming;
+exports.Zoom = Zoom;
 
 
 /***/ }),
@@ -2099,7 +2101,7 @@ var PlotterWebGL = (function (_super) {
             vboPart.scheduledForDrawing = false;
         }
     };
-    PlotterWebGL.prototype.finalize = function (zooming) {
+    PlotterWebGL.prototype.finalize = function (zoom) {
         if (this.pendingPolygonsList.length > 0) {
             var needToRebuildVBO = false;
             for (var _i = 0, _a = this.pendingPolygonsList; _i < _a.length; _i++) {
@@ -2137,8 +2139,8 @@ var PlotterWebGL = (function (_super) {
             }
             this.pendingLinesList = [];
         }
-        this.drawPolygonsVBO(zooming);
-        this.drawLinesVBO(zooming);
+        this.drawPolygonsVBO(zoom);
+        this.drawLinesVBO(zoom);
     };
     PlotterWebGL.prototype.clearCanvas = function (color) {
         viewport_1.Viewport.setFullCanvas(gl_canvas_1.gl);
@@ -2201,7 +2203,7 @@ var PlotterWebGL = (function (_super) {
         gl_canvas_1.gl.bindBuffer(gl_canvas_1.gl.ARRAY_BUFFER, this.linesVbo.id);
         gl_canvas_1.gl.bufferData(gl_canvas_1.gl.ARRAY_BUFFER, bufferData, gl_canvas_1.gl.DYNAMIC_DRAW);
     };
-    PlotterWebGL.prototype.drawLinesVBO = function (zooming) {
+    PlotterWebGL.prototype.drawLinesVBO = function (zoom) {
         var vbpPartsScheduledForDrawing = PlotterWebGL.selectVBOPartsScheduledForDrawing(this.linesVbo);
         if (this.shaderLines && vbpPartsScheduledForDrawing.length > 0) {
             this.shaderLines.use();
@@ -2209,7 +2211,7 @@ var PlotterWebGL = (function (_super) {
             gl_canvas_1.gl.enableVertexAttribArray(aVertexLocation);
             gl_canvas_1.gl.bindBuffer(gl_canvas_1.gl.ARRAY_BUFFER, this.linesVbo.id);
             gl_canvas_1.gl.vertexAttribPointer(aVertexLocation, 2, gl_canvas_1.gl.FLOAT, false, 0, 0);
-            this.shaderLines.u["uZoom"].value = PlotterWebGL.buildZoom(zooming);
+            this.shaderLines.u["uZoom"].value = PlotterWebGL.buildZoomUniform(zoom);
             this.shaderLines.u["uScreenSize"].value = [0.5 * this.width, -0.5 * this.height];
             var currentVboPartId = 0;
             while (currentVboPartId < vbpPartsScheduledForDrawing.length) {
@@ -2290,7 +2292,7 @@ var PlotterWebGL = (function (_super) {
         gl_canvas_1.gl.bindBuffer(gl_canvas_1.gl.ARRAY_BUFFER, this.polygonsVbo.id);
         gl_canvas_1.gl.bufferData(gl_canvas_1.gl.ARRAY_BUFFER, bufferData, gl_canvas_1.gl.DYNAMIC_DRAW);
     };
-    PlotterWebGL.prototype.drawPolygonsVBO = function (zooming) {
+    PlotterWebGL.prototype.drawPolygonsVBO = function (zoom) {
         var vbpPartsScheduledForDrawing = PlotterWebGL.selectVBOPartsScheduledForDrawing(this.polygonsVbo);
         if (this.shaderPolygons && vbpPartsScheduledForDrawing.length > 0) {
             this.shaderPolygons.use();
@@ -2302,7 +2304,7 @@ var PlotterWebGL = (function (_super) {
             gl_canvas_1.gl.vertexAttribPointer(aPositionLoc, 2, gl_canvas_1.gl.FLOAT, false, BYTES_PER_FLOAT * 6, 0);
             gl_canvas_1.gl.enableVertexAttribArray(aColorLoc);
             gl_canvas_1.gl.vertexAttribPointer(aColorLoc, 4, gl_canvas_1.gl.FLOAT, false, BYTES_PER_FLOAT * 6, BYTES_PER_FLOAT * 2);
-            this.shaderPolygons.u["uZoom"].value = PlotterWebGL.buildZoom(zooming);
+            this.shaderPolygons.u["uZoom"].value = PlotterWebGL.buildZoomUniform(zoom);
             this.shaderPolygons.u["uScreenSize"].value = [0.5 * this.width, -0.5 * this.height];
             for (var _i = 0, vbpPartsScheduledForDrawing_1 = vbpPartsScheduledForDrawing; _i < vbpPartsScheduledForDrawing_1.length; _i++) {
                 var vboPart = vbpPartsScheduledForDrawing_1[_i];
@@ -2348,8 +2350,9 @@ var PlotterWebGL = (function (_super) {
             }
         });
     };
-    PlotterWebGL.buildZoom = function (zooming) {
-        return [zooming.center.x, zooming.center.y, zooming.currentZoomFactor, parameters_1.Parameters.scale];
+    PlotterWebGL.buildZoomUniform = function (zoom) {
+        var zoomAsUniform = zoom.asUniform();
+        return [zoomAsUniform[0], zoomAsUniform[1], zoomAsUniform[2], parameters_1.Parameters.scale];
     };
     return PlotterWebGL;
 }(plotter_base_1.PlotterBase));
@@ -2422,12 +2425,12 @@ var PrimitiveBase = (function (_super) {
         result.push(result[0]);
         return result;
     };
-    PrimitiveBase.prototype.zoom = function (zooming, isRoot) {
-        this.applyZoom(zooming, isRoot);
+    PrimitiveBase.prototype.zoom = function (zoom, isRoot) {
+        this.applyZoom(zoom, isRoot);
         var children = this.getDirectChildren();
         for (var _i = 0, children_2 = children; _i < children_2.length; _i++) {
             var child = children_2[_i];
-            child.zoom(zooming, false);
+            child.zoom(zoom, false);
         }
     };
     return PrimitiveBase;
@@ -2530,17 +2533,17 @@ var PrimitiveQuads = (function (_super) {
         enumerable: false,
         configurable: true
     });
-    PrimitiveQuads.prototype.applyZoom = function (zooming, isRoot) {
+    PrimitiveQuads.prototype.applyZoom = function (zoom, isRoot) {
         if (isRoot) {
-            zooming.applyToPoint(this.topLeft);
-            zooming.applyToPoint(this.topRight);
-            zooming.applyToPoint(this.bottomLeft);
-            zooming.applyToPoint(this.bottomRight);
+            zoom.applyToPoint(this.topLeft);
+            zoom.applyToPoint(this.topRight);
+            zoom.applyToPoint(this.bottomLeft);
+            zoom.applyToPoint(this.bottomRight);
         }
         if (this.subdivision) {
             for (var _i = 0, _a = this.subdivision; _i < _a.length; _i++) {
                 var point = _a[_i];
-                zooming.applyToPoint(point);
+                zoom.applyToPoint(point);
             }
         }
     };
@@ -2663,16 +2666,16 @@ var PrimitiveTrianglesNested = (function (_super) {
         ];
         this.addChildren(new PrimitiveTrianglesNested(this.midPoint1, this.midPoint2, this.midPoint3, this.color.computeCloseColor()), new PrimitiveTrianglesNested(this.p1, this.midPoint1, this.midPoint3, this.color.computeCloseColor()), new PrimitiveTrianglesNested(this.p2, this.midPoint2, this.midPoint1, this.color.computeCloseColor()), new PrimitiveTrianglesNested(this.p3, this.midPoint3, this.midPoint2, this.color.computeCloseColor()));
     };
-    PrimitiveTrianglesNested.prototype.applyZoom = function (zooming, isRoot) {
+    PrimitiveTrianglesNested.prototype.applyZoom = function (zoom, isRoot) {
         if (isRoot) {
-            zooming.applyToPoint(this.p1);
-            zooming.applyToPoint(this.p2);
-            zooming.applyToPoint(this.p3);
+            zoom.applyToPoint(this.p1);
+            zoom.applyToPoint(this.p2);
+            zoom.applyToPoint(this.p3);
         }
         if (this.subdivision) {
-            zooming.applyToPoint(this.midPoint1);
-            zooming.applyToPoint(this.midPoint2);
-            zooming.applyToPoint(this.midPoint3);
+            zoom.applyToPoint(this.midPoint1);
+            zoom.applyToPoint(this.midPoint2);
+            zoom.applyToPoint(this.midPoint3);
         }
     };
     PrimitiveTrianglesNested.prototype.randomNewPoint = function (p1, p2) {
@@ -2785,14 +2788,14 @@ var PrimitiveTriangles = (function (_super) {
         enumerable: false,
         configurable: true
     });
-    PrimitiveTriangles.prototype.applyZoom = function (zooming, isRoot) {
+    PrimitiveTriangles.prototype.applyZoom = function (zoom, isRoot) {
         if (isRoot) {
-            zooming.applyToPoint(this.p1);
-            zooming.applyToPoint(this.p2);
-            zooming.applyToPoint(this.p3);
+            zoom.applyToPoint(this.p1);
+            zoom.applyToPoint(this.p2);
+            zoom.applyToPoint(this.p3);
         }
         if (this.subdivision) {
-            zooming.applyToPoint(this.subdivision[1]);
+            zoom.applyToPoint(this.subdivision[1]);
         }
     };
     PrimitiveTriangles.prototype.computeVisibility = function (viewport) {
@@ -2887,7 +2890,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.TestEngine = void 0;
 var color_1 = __webpack_require__(/*! ../misc/color */ "./src/ts/misc/color.ts");
 var rectangle_1 = __webpack_require__(/*! ../misc/rectangle */ "./src/ts/misc/rectangle.ts");
-var zooming_1 = __webpack_require__(/*! ../misc/zooming */ "./src/ts/misc/zooming.ts");
+var zoom_1 = __webpack_require__(/*! ../misc/zoom */ "./src/ts/misc/zoom.ts");
 var parameters_1 = __webpack_require__(/*! ../parameters */ "./src/ts/parameters.ts");
 var geometry_id_1 = __webpack_require__(/*! ../plotter/geometry-id */ "./src/ts/plotter/geometry-id.ts");
 var primitive_base_1 = __webpack_require__(/*! ../primitives/primitive-base */ "./src/ts/primitives/primitive-base.ts");
@@ -2970,7 +2973,7 @@ var TestEngine = (function () {
         plotter.drawPolygons(this.batchForPrimitive, 1);
         plotter.drawLines(this.batchForLine, 1, color_1.Color.GREEN, 1);
         this.drawTestWindow(plotter);
-        plotter.finalize(zooming_1.Zooming.NO_ZOOMING);
+        plotter.finalize(zoom_1.Zoom.noZoom());
     };
     TestEngine.prototype.drawTestWindow = function (plotter) {
         plotter.drawLines(this.batchForWindow, 1, color_1.Color.WHITE, 1);

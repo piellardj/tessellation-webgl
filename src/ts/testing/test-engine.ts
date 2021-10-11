@@ -1,6 +1,6 @@
 import { Color } from "../misc/color";
 import { Rectangle } from "../misc/rectangle";
-import { Zooming } from "../misc/zooming";
+import { Zoom } from "../misc/zoom";
 import { EPrimitive, Parameters } from "../parameters";
 import { GeometryId } from "../plotter/geometry-id";
 import { BatchOfLines, BatchOfPolygons, Line, PlotterBase } from "../plotter/plotter-base";
@@ -117,7 +117,7 @@ class TestEngine {
         plotter.drawLines(this.batchForLine, 1, Color.GREEN, 1);
         this.drawTestWindow(plotter);
 
-        plotter.finalize(Zooming.NO_ZOOMING);
+        plotter.finalize(Zoom.noZoom());
     }
 
     private drawTestWindow(plotter: PlotterBase): void {
@@ -150,3 +150,4 @@ class TestEngine {
 }
 
 export { TestEngine };
+

@@ -1,6 +1,6 @@
 import { Color } from "../misc/color";
 import * as Loader from "../misc/loader";
-import { Zooming } from "../misc/zooming";
+import { Zoom } from "../misc/zoom";
 import { Parameters } from "../parameters";
 import { GeometryId } from "./geometry-id";
 import { BatchOfLines, BatchOfPolygons, PlotterBase } from "./plotter-base";
@@ -111,7 +111,7 @@ class PlotterWebGL extends PlotterBase {
         }
     }
 
-    public finalize(zooming: Zooming): void {
+    public finalize(zoom: Zoom): void {
         if (this.pendingPolygonsList.length > 0) {
             let needToRebuildVBO = false;
             for (const pendingPolygons of this.pendingPolygonsList) {
@@ -151,8 +151,8 @@ class PlotterWebGL extends PlotterBase {
             this.pendingLinesList = [];
         }
 
-        this.drawPolygonsVBO(zooming);
-        this.drawLinesVBO(zooming);
+        this.drawPolygonsVBO(zoom);
+        this.drawLinesVBO(zoom);
     }
 
     public clearCanvas(color: Color): void {
@@ -224,7 +224,7 @@ class PlotterWebGL extends PlotterBase {
         gl.bufferData(gl.ARRAY_BUFFER, bufferData, gl.DYNAMIC_DRAW);
     }
 
-    private drawLinesVBO(zooming: Zooming): void {
+    private drawLinesVBO(zoom: Zoom): void {
         const vbpPartsScheduledForDrawing = PlotterWebGL.selectVBOPartsScheduledForDrawing(this.linesVbo);
 
         if (this.shaderLines && vbpPartsScheduledForDrawing.length > 0) {
@@ -235,7 +235,7 @@ class PlotterWebGL extends PlotterBase {
             gl.bindBuffer(gl.ARRAY_BUFFER, this.linesVbo.id);
             gl.vertexAttribPointer(aVertexLocation, 2, gl.FLOAT, false, 0, 0);
 
-            this.shaderLines.u["uZoom"].value = PlotterWebGL.buildZoom(zooming);
+            this.shaderLines.u["uZoom"].value = PlotterWebGL.buildZoomUniform(zoom);
             this.shaderLines.u["uScreenSize"].value = [0.5 * this.width, -0.5 * this.height];
 
             let currentVboPartId = 0;
@@ -326,7 +326,7 @@ class PlotterWebGL extends PlotterBase {
         gl.bufferData(gl.ARRAY_BUFFER, bufferData, gl.DYNAMIC_DRAW);
     }
 
-    private drawPolygonsVBO(zooming: Zooming): void {
+    private drawPolygonsVBO(zoom: Zoom): void {
         const vbpPartsScheduledForDrawing = PlotterWebGL.selectVBOPartsScheduledForDrawing(this.polygonsVbo);
 
         if (this.shaderPolygons && vbpPartsScheduledForDrawing.length > 0) {
@@ -341,7 +341,7 @@ class PlotterWebGL extends PlotterBase {
             gl.enableVertexAttribArray(aColorLoc);
             gl.vertexAttribPointer(aColorLoc, 4, gl.FLOAT, false, BYTES_PER_FLOAT * 6, BYTES_PER_FLOAT * 2);
 
-            this.shaderPolygons.u["uZoom"].value = PlotterWebGL.buildZoom(zooming);
+            this.shaderPolygons.u["uZoom"].value = PlotterWebGL.buildZoomUniform(zoom);
             this.shaderPolygons.u["uScreenSize"].value = [0.5 * this.width, -0.5 * this.height];
 
             for (const vboPart of vbpPartsScheduledForDrawing) {
@@ -393,11 +393,13 @@ class PlotterWebGL extends PlotterBase {
         });
     }
 
-    private static buildZoom(zooming: Zooming): [number, number, number, number] {
-        return [zooming.center.x, zooming.center.y, zooming.currentZoomFactor, Parameters.scale];
+    private static buildZoomUniform(zoom: Zoom): [number, number, number, number] {
+        const zoomAsUniform = zoom.asUniform();
+        return [zoomAsUniform[0], zoomAsUniform[1], zoomAsUniform[2], Parameters.scale];
     }
 }
 
 export {
     PlotterWebGL,
 };
+

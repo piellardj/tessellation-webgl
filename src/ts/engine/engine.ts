@@ -1,7 +1,7 @@
 import { Color } from "../misc/color";
 import { Rectangle } from "../misc/rectangle";
 import { Throttle } from "../misc/throttle";
-import { Zooming } from "../misc/zooming";
+import { Zoom } from "../misc/zoom";
 import { EPrimitive, Parameters } from "../parameters";
 import { GeometryId } from "../plotter/geometry-id";
 import { BatchOfLines, IBatch, PlotterBase } from "../plotter/plotter-base";
@@ -26,23 +26,22 @@ class Engine {
 
     private lastLayerBirthTimestamp: number;
 
-    public readonly currentCumulatedZooming: Zooming;
+    public readonly cumulatedZoom: Zoom;
     private readonly maintainanceThrottle: Throttle;
 
     public constructor() {
         this.reset(new Rectangle(0, 512, 0, 512));
-        this.currentCumulatedZooming = new Zooming({ x: 0, y: 0 }, 0);
+        this.cumulatedZoom = Zoom.noZoom();
         this.maintainanceThrottle = new Throttle(100);
     }
 
-    public update(viewport: Rectangle, zooming: Zooming): boolean {
+    public update(viewport: Rectangle, instantZoom: Zoom): boolean {
         let somethingChanged = false;
 
-        this.currentCumulatedZooming.dt += zooming.dt;
+        this.cumulatedZoom.combineWith(instantZoom);
 
         const maintainance = () => {
-            // apply the cumulated zooming
-            somethingChanged = this.applyCumulatedZooming(zooming) || somethingChanged;
+            somethingChanged = this.applyCumulatedZoom() || somethingChanged;
             somethingChanged = this.adjustLayersCount() || somethingChanged;
             somethingChanged = this.handleRecycling(viewport) || somethingChanged;
 
@@ -56,20 +55,8 @@ class Engine {
             this.updateIndicators();
         };
 
-        const zoomingHasChanged =
-            (this.currentCumulatedZooming.center.x !== zooming.center.x) ||
-            (this.currentCumulatedZooming.center.y !== zooming.center.y) ||
-            (this.currentCumulatedZooming.speed !== zooming.speed);
-
-        if (zoomingHasChanged) {
-            // zooming has changed, so we cannot easily reconstruct the cumulated zooming
-            // force-apply the cumulated zooming now,
-            // and reset it to the current zooming.
-            this.maintainanceThrottle.forceRun(maintainance);
-        } else {
-            // don't do maintainance too often because it is costly
-            this.maintainanceThrottle.runIfAvailable(maintainance);
-        }
+        // don't do maintainance too often because it is costly
+        this.maintainanceThrottle.runIfAvailable(maintainance);
 
         return somethingChanged;
     }
@@ -110,7 +97,7 @@ class Engine {
             }
         }
 
-        plotter.finalize(this.currentCumulatedZooming);
+        plotter.finalize(this.cumulatedZoom);
     }
 
     public reset(viewport: Rectangle): void {
@@ -177,19 +164,16 @@ class Engine {
         return bestColor;
     }
 
-    private applyCumulatedZooming(newZoom: Zooming): boolean {
+    private applyCumulatedZoom(): boolean {
         let appliedZoom = false;
 
-        if (this.currentCumulatedZooming.speed !== 0) {
-            this.rootPrimitive.zoom(this.currentCumulatedZooming, true);
+        if (this.cumulatedZoom.isNotNull()) {
+            this.rootPrimitive.zoom(this.cumulatedZoom, true);
             appliedZoom = true;
         }
 
         // reset the cumulated zooming
-        this.currentCumulatedZooming.center.x = newZoom.center.x;
-        this.currentCumulatedZooming.center.y = newZoom.center.y;
-        this.currentCumulatedZooming.speed = newZoom.speed;
-        this.currentCumulatedZooming.dt = 0;
+        this.cumulatedZoom.reset();
 
         return appliedZoom;
     }

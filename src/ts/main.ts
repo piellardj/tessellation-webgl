@@ -1,7 +1,8 @@
 import { Engine } from "./engine/engine";
 import { FrametimeMonitor } from "./misc/frame-time-monitor";
+import { IPoint } from "./misc/point";
 import { downloadTextFile } from "./misc/web";
-import { Zooming } from "./misc/zooming";
+import { Zoom } from "./misc/zoom";
 import { EPlotter, Parameters } from "./parameters";
 import { PlotterBase } from "./plotter/plotter-base";
 import { PlotterCanvas2D } from "./plotter/plotter-canvas-2d";
@@ -23,7 +24,6 @@ function createPlotter(): PlotterBase {
 function main(): void {
     const plotter = createPlotter();
     const engine = new Engine();
-    const zooming = new Zooming({ x: 0, y: 0 }, 0.2);
 
     Parameters.recomputeColorsObservers.push(() => { engine.recomputeColors(); });
 
@@ -35,11 +35,24 @@ function main(): void {
         downloadTextFile(fileName, svgString);
     });
 
+    function getCurrentMousePosition(): IPoint {
+        const mousePosition = Parameters.mousePositionInPixels;
+        mousePosition.x -= 0.5 * plotter.width;
+        mousePosition.y -= 0.5 * plotter.height;
+        return mousePosition;
+    }
+    let lastZoomCenter: IPoint;
+    function buildInstantZoom(dt: number): Zoom {
+        if (Page.Canvas.isMouseDown()) {
+            lastZoomCenter = getCurrentMousePosition();
+        }
+        return new Zoom(lastZoomCenter, 1 + dt * Parameters.zoomingSpeed);
+    }
+
     function reset(): void {
         plotter.resizeCanvas();
         engine.reset(plotter.viewport);
-        zooming.center.x = 0;
-        zooming.center.y = 0;
+        lastZoomCenter = { x: 0, y: 0 };
     }
     Parameters.resetObservers.push(reset);
     reset();
@@ -56,25 +69,16 @@ function main(): void {
     let lastFrameTimestamp = performance.now();
     function mainLoop(): void {
         const now = performance.now();
-        const timeSinceLastFrame = now - lastFrameTimestamp;
-        frametimeMonitor.registerFrameTime(timeSinceLastFrame);
-
-        zooming.speed = Parameters.zoomingSpeed;
-        zooming.dt = 0.001 * timeSinceLastFrame;
-        if (zooming.dt > MAX_DT) {
-            // A high dt means a low FPS because of too many computations,
-            // however the higher the dt, the more computation will be needed... Clamp it.
-            zooming.dt = MAX_DT;
-        }
+        const millisecondsSinceLastFrame = now - lastFrameTimestamp;
         lastFrameTimestamp = now;
+        frametimeMonitor.registerFrameTime(millisecondsSinceLastFrame);
 
-        if (Page.Canvas.isMouseDown()) {
-            const mousePosition = Parameters.mousePositionInPixels;
-            zooming.center.x = mousePosition.x - 0.5 * plotter.width;
-            zooming.center.y = mousePosition.y - 0.5 * plotter.height;
-        }
+        // A high dt means a low FPS because of too many computations,
+        // however the higher the dt, the more computation will be needed... Clamp it.
+        const dt = Math.min(MAX_DT, 0.001 * millisecondsSinceLastFrame);
+        const instantZoom = buildInstantZoom(dt);
 
-        if (engine.update(plotter.viewport, zooming) || zooming.speed > 0) {
+        if (engine.update(plotter.viewport, instantZoom) || instantZoom.isNotNull()) {
             needToRedraw = true;
         }
 

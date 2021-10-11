@@ -1,7 +1,7 @@
 import { Color } from "../misc/color";
 import { IPoint } from "../misc/point";
 import { Rectangle } from "../misc/rectangle";
-import { Zooming } from "../misc/zooming";
+import { Zoom } from "../misc/zoom";
 import { GeometryId } from "./geometry-id";
 
 import "../page-interface-generated";
@@ -61,7 +61,7 @@ abstract class PlotterBase {
     public abstract get isReady(): boolean;
 
     public abstract initialize(): void;
-    public abstract finalize(zooming: Zooming): void;
+    public abstract finalize(zoom: Zoom): void;
 
     public abstract clearCanvas(color: Color): void;
     public abstract drawLines(batchOfLines: BatchOfLines, thickness: number, color: Color, alpha: number): void;
@@ -76,3 +76,4 @@ export {
     IPolygon,
     PlotterBase,
 };
+

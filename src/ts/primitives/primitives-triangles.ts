@@ -2,7 +2,7 @@ import * as Arithmetics from "../misc/arithmetics";
 import { Color } from "../misc/color";
 import { IPoint } from "../misc/point";
 import { Rectangle } from "../misc/rectangle";
-import { Zooming } from "../misc/zooming";
+import { Zoom } from "../misc/zoom";
 import { Parameters } from "../parameters";
 import { EVisibility, PrimitiveBase } from "./primitive-base";
 
@@ -56,15 +56,15 @@ class PrimitiveTriangles extends PrimitiveBase {
         return [this.p1, this.p2, this.p3];
     }
 
-    protected applyZoom(zooming: Zooming, isRoot: boolean): void {
+    protected applyZoom(zoom: Zoom, isRoot: boolean): void {
         if (isRoot) {
-            zooming.applyToPoint(this.p1);
-            zooming.applyToPoint(this.p2);
-            zooming.applyToPoint(this.p3);
+            zoom.applyToPoint(this.p1);
+            zoom.applyToPoint(this.p2);
+            zoom.applyToPoint(this.p3);
         }
 
         if (this.subdivision) {
-            zooming.applyToPoint(this.subdivision[1]);
+            zoom.applyToPoint(this.subdivision[1]);
         }
     }
 
@@ -103,3 +103,4 @@ class PrimitiveTriangles extends PrimitiveBase {
 }
 
 export { PrimitiveTriangles };
+

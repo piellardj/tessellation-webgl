@@ -2,7 +2,7 @@ import { TreeNode } from "../engine/tree-node";
 import { Color } from "../misc/color";
 import { IPoint } from "../misc/point";
 import { Rectangle } from "../misc/rectangle";
-import { Zooming } from "../misc/zooming";
+import { Zoom } from "../misc/zoom";
 import { IPolygon } from "../plotter/plotter-base";
 
 
@@ -50,19 +50,19 @@ abstract class PrimitiveBase extends TreeNode implements IPolygon {
         return result;
     }
 
-    public zoom(zooming: Zooming, isRoot: boolean): void {
-        this.applyZoom(zooming, isRoot);
+    public zoom(zoom: Zoom, isRoot: boolean): void {
+        this.applyZoom(zoom, isRoot);
 
         const children = this.getDirectChildren() as PrimitiveBase[];
         for (const child of children) {
-            child.zoom(zooming, false);
+            child.zoom(zoom, false);
         }
     }
 
     public abstract subdivide(): void;
     public abstract get vertices(): IPoint[];
 
-    protected abstract applyZoom(zooming: Zooming, isRoot: boolean): void;
+    protected abstract applyZoom(zoom: Zoom, isRoot: boolean): void;
     public abstract computeVisibility(viewport: Rectangle): EVisibility;
 }
 
@@ -70,3 +70,4 @@ export {
     EVisibility,
     PrimitiveBase,
 };
+
