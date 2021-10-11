@@ -16,7 +16,7 @@ const data = {
     additionalLinks: [],
     styleFiles: [],
     scriptFiles: [
-        "script/main.min.js"
+        "script/main.js"
     ],
     indicators: [
         {
