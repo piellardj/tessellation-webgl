@@ -9,6 +9,7 @@ import { PrimitiveQuads } from "../primitives/primitive-quads";
 import { PrimitiveTriangles } from "../primitives/primitive-triangles";
 import { PrimitiveTrianglesNested } from "../primitives/primitive-triangles-nested";
 import { EPrimitiveType } from "../primitives/primitive-type-enum";
+import { IEngineMetrics } from "./engine-metrics";
 
 import "../page-interface-generated";
 
@@ -21,7 +22,7 @@ interface ILayer {
     readonly birthTimestamp: number;
 }
 
-class Engine {
+abstract class Engine {
     private rootPrimitive: PrimitiveBase;
     protected layers: ILayer[];
 
@@ -263,13 +264,12 @@ class Engine {
         }
     }
 
-    private updateIndicators(): void {
-        Page.Canvas.setIndicatorText("tree-depth", this.rootPrimitive.treeDepth().toString());
-
-        Page.Canvas.setIndicatorText("primitives-count", this.layers[this.layers.length - 1].primitives.items.length.toString());
-
+    protected computeMetrics(): IEngineMetrics {
+        const treeDepth = this.rootPrimitive.treeDepth();
+        const lastLayerPrimitivesCount = this.layers[this.layers.length - 1].primitives.items.length;
         let totalPrimitivesCount = 0;
         let segmentsCount = 0;
+
         for (const layer of this.layers) {
             totalPrimitivesCount += layer.primitives.items.length;
 
@@ -278,9 +278,16 @@ class Engine {
                 segmentsCount += (nbLinePoints > 1) ? (nbLinePoints - 1) : 0;
             }
         }
-        Page.Canvas.setIndicatorText("tree-nodes-count", totalPrimitivesCount.toString());
-        Page.Canvas.setIndicatorText("segments-count", segmentsCount.toString());
+
+        return {
+            treeDepth,
+            lastLayerPrimitivesCount,
+            totalPrimitivesCount,
+            segmentsCount,
+        };
     }
+
+    protected abstract updateIndicators(): void;
 
     private get primitiveType(): EPrimitiveType {
         return this.rootPrimitive.primitiveType;

@@ -5,6 +5,7 @@ import { IPlotter } from "../plotter/plotter-interface";
 import { PlotterSVG } from "../plotter/plotter-svg";
 import { Engine } from "./engine";
 import { IEngine } from "./engine-interface";
+import { updateEngineMetricsIndicators } from "./engine-metrics";
 
 
 class EngineMonothreaded extends Engine implements IEngine<IPlotter> {
@@ -53,6 +54,11 @@ class EngineMonothreaded extends Engine implements IEngine<IPlotter> {
         const fileName = "subdivisions.svg";
         const svgString = svgPlotter.output();
         downloadTextFile(fileName, svgString);
+    }
+
+    protected updateIndicators(): void {
+        const metrics = this.computeMetrics();
+        updateEngineMetricsIndicators(metrics);
     }
 
     private static getLineThicknessForLayer(layerId: number, totalLayersCount: number): number {
