@@ -2015,10 +2015,10 @@ exports.PlotterSVG = PlotterSVG;
 
 /***/ }),
 
-/***/ "./src/ts/plotter/plotter-webgl.ts":
-/*!*****************************************!*\
-  !*** ./src/ts/plotter/plotter-webgl.ts ***!
-  \*****************************************/
+/***/ "./src/ts/plotter/plotter-webgl-basic.ts":
+/*!***********************************************!*\
+  !*** ./src/ts/plotter/plotter-webgl-basic.ts ***!
+  \***********************************************/
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -2057,7 +2057,8 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.PlotterWebGL = void 0;
+exports.PlotterWebGLBasic = void 0;
+var color_1 = __webpack_require__(/*! ../misc/color */ "./src/ts/misc/color.ts");
 var Loader = __importStar(__webpack_require__(/*! ../misc/loader */ "./src/ts/misc/loader.ts"));
 var plotter_canvas_1 = __webpack_require__(/*! ./plotter-canvas */ "./src/ts/plotter/plotter-canvas.ts");
 var GLCanvas = __importStar(__webpack_require__(/*! ../gl-utils/gl-canvas */ "./src/ts/gl-utils/gl-canvas.ts"));
@@ -2065,12 +2066,10 @@ var gl_canvas_1 = __webpack_require__(/*! ../gl-utils/gl-canvas */ "./src/ts/gl-
 var ShaderManager = __importStar(__webpack_require__(/*! ../gl-utils/shader-manager */ "./src/ts/gl-utils/shader-manager.ts"));
 var viewport_1 = __webpack_require__(/*! ../gl-utils/viewport */ "./src/ts/gl-utils/viewport.ts");
 __webpack_require__(/*! ../page-interface-generated */ "./src/ts/page-interface-generated.ts");
-var PlotterWebGL = (function (_super) {
-    __extends(PlotterWebGL, _super);
-    function PlotterWebGL() {
+var PlotterWebGLBasic = (function (_super) {
+    __extends(PlotterWebGLBasic, _super);
+    function PlotterWebGLBasic() {
         var _this = _super.call(this) || this;
-        _this.pendingLinesList = [];
-        _this.pendingPolygonsList = [];
         var webglFlags = {
             alpha: false,
             antialias: true,
@@ -2086,6 +2085,12 @@ var PlotterWebGL = (function (_super) {
         gl_canvas_1.gl.blendFunc(gl_canvas_1.gl.SRC_ALPHA, gl_canvas_1.gl.ONE_MINUS_SRC_ALPHA);
         gl_canvas_1.gl.disable(gl_canvas_1.gl.DEPTH_TEST);
         gl_canvas_1.gl.disable(gl_canvas_1.gl.STENCIL_TEST);
+        PlotterWebGLBasic.asyncLoadShader("shaderLines.vert", "shaderLines.frag", function (shader) {
+            _this.shaderLines = shader;
+        });
+        PlotterWebGLBasic.asyncLoadShader("shaderPolygons.vert", "shaderPolygons.frag", function (shader) {
+            _this.shaderPolygons = shader;
+        });
         _this.linesVbo = {
             id: gl_canvas_1.gl.createBuffer(),
             vboParts: [],
@@ -2094,22 +2099,124 @@ var PlotterWebGL = (function (_super) {
             id: gl_canvas_1.gl.createBuffer(),
             vboParts: [],
         };
-        PlotterWebGL.asyncLoadShader("shaderLines.vert", "shaderLines.frag", function (shader) {
-            _this.shaderLines = shader;
-        });
-        PlotterWebGL.asyncLoadShader("shaderPolygons.vert", "shaderPolygons.frag", function (shader) {
-            _this.shaderPolygons = shader;
-        });
         return _this;
     }
-    Object.defineProperty(PlotterWebGL.prototype, "isReady", {
+    PlotterWebGLBasic.buildLinesVboBuffer = function (batchesOfLines) {
+        var bufferParts = [];
+        var totalNbVertices = 0;
+        for (var _i = 0, batchesOfLines_1 = batchesOfLines; _i < batchesOfLines_1.length; _i++) {
+            var batchOfLines = batchesOfLines_1[_i];
+            var indexOfFirstVertice = totalNbVertices;
+            var batchVerticesCount = 0;
+            for (var _a = 0, _b = batchOfLines.items; _a < _b.length; _a++) {
+                var line = _b[_a];
+                if (line.length >= 2) {
+                    batchVerticesCount += 2 + 2 * (line.length - 2);
+                }
+            }
+            totalNbVertices += batchVerticesCount;
+            bufferParts.push({
+                indexOfFirstVertice: indexOfFirstVertice,
+                verticesCount: batchVerticesCount,
+                geometryId: batchOfLines.geometryId.copy(),
+            });
+        }
+        var FLOATS_PER_VERTICE = 2;
+        var buffer = new Float32Array(FLOATS_PER_VERTICE * totalNbVertices);
+        var i = 0;
+        for (var _c = 0, batchesOfLines_2 = batchesOfLines; _c < batchesOfLines_2.length; _c++) {
+            var batchOfLines = batchesOfLines_2[_c];
+            for (var _d = 0, _e = batchOfLines.items; _d < _e.length; _d++) {
+                var line = _e[_d];
+                if (line.length >= 2) {
+                    buffer[i++] = line[0].x;
+                    buffer[i++] = line[0].y;
+                    for (var iP = 1; iP < line.length - 1; iP++) {
+                        buffer[i++] = line[iP].x;
+                        buffer[i++] = line[iP].y;
+                        buffer[i++] = line[iP].x;
+                        buffer[i++] = line[iP].y;
+                    }
+                    buffer[i++] = line[line.length - 1].x;
+                    buffer[i++] = line[line.length - 1].y;
+                }
+            }
+        }
+        if (i !== buffer.length) {
+            console.log("ALERT LINES");
+        }
+        return {
+            buffer: buffer,
+            bufferParts: bufferParts,
+        };
+    };
+    PlotterWebGLBasic.buildPolygonsVboBuffer = function (batchesOfPolygons) {
+        var bufferParts = [];
+        var totalNbVertices = 0;
+        for (var _i = 0, batchesOfPolygons_1 = batchesOfPolygons; _i < batchesOfPolygons_1.length; _i++) {
+            var batchOfPolygons = batchesOfPolygons_1[_i];
+            var indexOfFirstVertice = totalNbVertices;
+            var batchVerticesCount = 0;
+            for (var _a = 0, _b = batchOfPolygons.items; _a < _b.length; _a++) {
+                var polygon = _b[_a];
+                if (polygon.vertices.length >= 3) {
+                    batchVerticesCount += 3 * (polygon.vertices.length - 2);
+                }
+            }
+            totalNbVertices += batchVerticesCount;
+            bufferParts.push({
+                indexOfFirstVertice: indexOfFirstVertice,
+                verticesCount: batchVerticesCount,
+                geometryId: batchOfPolygons.geometryId.copy(),
+            });
+        }
+        var FLOATS_PER_VERTICE = 6;
+        var buffer = new Float32Array(FLOATS_PER_VERTICE * totalNbVertices);
+        var i = 0;
+        for (var _c = 0, batchesOfPolygons_2 = batchesOfPolygons; _c < batchesOfPolygons_2.length; _c++) {
+            var batchOfPolygons = batchesOfPolygons_2[_c];
+            for (var _d = 0, _e = batchOfPolygons.items; _d < _e.length; _d++) {
+                var polygon = _e[_d];
+                if (polygon.vertices.length >= 3) {
+                    var red = polygon.color.r / 255;
+                    var green = polygon.color.g / 255;
+                    var blue = polygon.color.b / 255;
+                    for (var iP = 1; iP < polygon.vertices.length - 1; iP++) {
+                        buffer[i++] = polygon.vertices[0].x;
+                        buffer[i++] = polygon.vertices[0].y;
+                        buffer[i++] = red;
+                        buffer[i++] = green;
+                        buffer[i++] = blue;
+                        i++;
+                        buffer[i++] = polygon.vertices[iP].x;
+                        buffer[i++] = polygon.vertices[iP].y;
+                        buffer[i++] = red;
+                        buffer[i++] = green;
+                        buffer[i++] = blue;
+                        i++;
+                        buffer[i++] = polygon.vertices[iP + 1].x;
+                        buffer[i++] = polygon.vertices[iP + 1].y;
+                        buffer[i++] = red;
+                        buffer[i++] = green;
+                        buffer[i++] = blue;
+                        i++;
+                    }
+                }
+            }
+        }
+        return {
+            buffer: buffer,
+            bufferParts: bufferParts,
+        };
+    };
+    Object.defineProperty(PlotterWebGLBasic.prototype, "isReady", {
         get: function () {
             return !!this.shaderLines && !!this.shaderPolygons;
         },
         enumerable: false,
         configurable: true
     });
-    PlotterWebGL.prototype.initialize = function (backgroundColor, zoom, scaling) {
+    PlotterWebGLBasic.prototype.initialize = function (backgroundColor, zoom, scaling) {
         for (var _i = 0, _a = this.linesVbo.vboParts; _i < _a.length; _i++) {
             var vboPart = _a[_i];
             vboPart.scheduledForDrawing = false;
@@ -2126,105 +2233,62 @@ var PlotterWebGL = (function (_super) {
         this.shaderLines.u["uZoom"].value = zoomAndScalingAsUniform;
         this.shaderPolygons.u["uZoom"].value = zoomAndScalingAsUniform;
     };
-    PlotterWebGL.prototype.finalize = function () {
-        if (this.pendingPolygonsList.length > 0) {
-            var needToRebuildVBO = false;
-            for (var _i = 0, _a = this.pendingPolygonsList; _i < _a.length; _i++) {
-                var pendingPolygons = _a[_i];
-                var existingVboPart = PlotterWebGL.findUploadedVBOPart(this.polygonsVbo, pendingPolygons.batchOfPolygons.geometryId);
-                if (existingVboPart) {
-                    existingVboPart.scheduledForDrawing = true;
-                    existingVboPart.alpha = pendingPolygons.alpha;
-                }
-                else {
-                    needToRebuildVBO = true;
-                }
-            }
-            if (needToRebuildVBO) {
-                this.buildAndUploadPolygonsVBO();
-            }
-            this.pendingPolygonsList = [];
-        }
-        if (this.pendingLinesList.length > 0) {
-            var needToRebuildVBO = false;
-            for (var _b = 0, _c = this.pendingLinesList; _b < _c.length; _b++) {
-                var pendingLines = _c[_b];
-                var existingVboPart = PlotterWebGL.findUploadedVBOPart(this.linesVbo, pendingLines.batchOfLines.geometryId);
-                if (existingVboPart) {
-                    existingVboPart.scheduledForDrawing = true;
-                    existingVboPart.alpha = pendingLines.alpha;
-                    existingVboPart.color = pendingLines.color;
-                }
-                else {
-                    needToRebuildVBO = true;
-                }
-            }
-            if (needToRebuildVBO) {
-                this.buildAndUploadLinesVBO();
-            }
-            this.pendingLinesList = [];
-        }
+    PlotterWebGLBasic.prototype.finalize = function () {
         this.drawPolygonsVBO();
         this.drawLinesVBO();
     };
-    PlotterWebGL.prototype.drawLines = function (batchOfLines, _thickness, color, alpha) {
-        this.pendingLinesList.push({ batchOfLines: batchOfLines, color: color, alpha: alpha });
-    };
-    PlotterWebGL.prototype.drawPolygons = function (batchOfPolygons, alpha) {
-        this.pendingPolygonsList.push({ batchOfPolygons: batchOfPolygons, alpha: alpha });
-    };
-    PlotterWebGL.prototype.buildAndUploadLinesVBO = function () {
+    PlotterWebGLBasic.prototype.uploadLinesVbo = function (newLinesVbo) {
+        gl_canvas_1.gl.bindBuffer(gl_canvas_1.gl.ARRAY_BUFFER, this.linesVbo.id);
+        gl_canvas_1.gl.bufferData(gl_canvas_1.gl.ARRAY_BUFFER, newLinesVbo.buffer, gl_canvas_1.gl.DYNAMIC_DRAW);
         this.linesVbo.vboParts = [];
-        var nbVertices = 0;
-        for (var _i = 0, _a = this.pendingLinesList; _i < _a.length; _i++) {
-            var pendingLines = _a[_i];
-            var indexOfFirstVertice = nbVertices;
-            var verticesCount = 0;
-            for (var _b = 0, _c = pendingLines.batchOfLines.items; _b < _c.length; _b++) {
-                var line = _c[_b];
-                if (line.length >= 2) {
-                    verticesCount += 2 + 2 * (line.length - 2);
-                }
-            }
-            nbVertices += verticesCount;
+        for (var _i = 0, _a = newLinesVbo.bufferParts; _i < _a.length; _i++) {
+            var bufferPart = _a[_i];
             this.linesVbo.vboParts.push({
-                indexOfFirstVertice: indexOfFirstVertice,
-                verticesCount: verticesCount,
-                geometryId: pendingLines.batchOfLines.geometryId.copy(),
-                scheduledForDrawing: true,
-                color: pendingLines.color,
-                alpha: pendingLines.alpha,
+                indexOfFirstVertice: bufferPart.indexOfFirstVertice,
+                verticesCount: bufferPart.verticesCount,
+                scheduledForDrawing: false,
+                geometryId: bufferPart.geometryId.copy(),
+                color: color_1.Color.GREEN,
+                alpha: 1,
             });
         }
-        var FLOATS_PER_VERTICE = 2;
-        var bufferData = new Float32Array(nbVertices * FLOATS_PER_VERTICE);
-        var i = 0;
-        for (var _d = 0, _e = this.pendingLinesList; _d < _e.length; _d++) {
-            var pendingLines = _e[_d];
-            for (var _f = 0, _g = pendingLines.batchOfLines.items; _f < _g.length; _f++) {
-                var line = _g[_f];
-                if (line.length >= 2) {
-                    bufferData[i++] = line[0].x;
-                    bufferData[i++] = line[0].y;
-                    for (var iP = 1; iP < line.length - 1; iP++) {
-                        bufferData[i++] = line[iP].x;
-                        bufferData[i++] = line[iP].y;
-                        bufferData[i++] = line[iP].x;
-                        bufferData[i++] = line[iP].y;
-                    }
-                    bufferData[i++] = line[line.length - 1].x;
-                    bufferData[i++] = line[line.length - 1].y;
-                }
-            }
-        }
-        if (i !== bufferData.length) {
-            console.log("ALERT LINES");
-        }
-        gl_canvas_1.gl.bindBuffer(gl_canvas_1.gl.ARRAY_BUFFER, this.linesVbo.id);
-        gl_canvas_1.gl.bufferData(gl_canvas_1.gl.ARRAY_BUFFER, bufferData, gl_canvas_1.gl.DYNAMIC_DRAW);
     };
-    PlotterWebGL.prototype.drawLinesVBO = function () {
-        var vbpPartsScheduledForDrawing = PlotterWebGL.selectVBOPartsScheduledForDrawing(this.linesVbo);
+    PlotterWebGLBasic.prototype.uploadPolygonsVbo = function (newPolygonsVbo) {
+        gl_canvas_1.gl.bindBuffer(gl_canvas_1.gl.ARRAY_BUFFER, this.polygonsVbo.id);
+        gl_canvas_1.gl.bufferData(gl_canvas_1.gl.ARRAY_BUFFER, newPolygonsVbo.buffer, gl_canvas_1.gl.DYNAMIC_DRAW);
+        this.polygonsVbo.vboParts = [];
+        for (var _i = 0, _a = newPolygonsVbo.bufferParts; _i < _a.length; _i++) {
+            var bufferPart = _a[_i];
+            this.polygonsVbo.vboParts.push({
+                indexOfFirstVertice: bufferPart.indexOfFirstVertice,
+                verticesCount: bufferPart.verticesCount,
+                scheduledForDrawing: false,
+                geometryId: bufferPart.geometryId.copy(),
+                alpha: 1,
+            });
+        }
+    };
+    PlotterWebGLBasic.prototype.registerLinesVboPartForDrawing = function (vboPartId, color, alpha) {
+        var uploadedVBOPart = PlotterWebGLBasic.findUploadedVBOPart(this.linesVbo, vboPartId);
+        if (uploadedVBOPart) {
+            uploadedVBOPart.color = color;
+            uploadedVBOPart.alpha = alpha;
+            uploadedVBOPart.scheduledForDrawing = true;
+            return true;
+        }
+        return false;
+    };
+    PlotterWebGLBasic.prototype.registerPolygonsVboPartForDrawing = function (vboPartId, alpha) {
+        var uploadedVBOPart = PlotterWebGLBasic.findUploadedVBOPart(this.polygonsVbo, vboPartId);
+        if (uploadedVBOPart) {
+            uploadedVBOPart.alpha = alpha;
+            uploadedVBOPart.scheduledForDrawing = true;
+            return true;
+        }
+        return false;
+    };
+    PlotterWebGLBasic.prototype.drawLinesVBO = function () {
+        var vbpPartsScheduledForDrawing = PlotterWebGLBasic.selectVBOPartsScheduledForDrawing(this.linesVbo);
         if (this.shaderLines && vbpPartsScheduledForDrawing.length > 0) {
             this.shaderLines.use();
             var aVertexLocation = this.shaderLines.a["aVertex"].loc;
@@ -2238,9 +2302,10 @@ var PlotterWebGL = (function (_super) {
                 var indexOfFirstVertice = currentVboPart.indexOfFirstVertice;
                 var verticesCount = currentVboPart.verticesCount;
                 var nextVboPart = vbpPartsScheduledForDrawing[currentVboPartId + 1];
-                while (PlotterWebGL.doLinesVboPartsHaveSameUniforms(currentVboPart, nextVboPart)) {
+                while (PlotterWebGLBasic.canLinesVboPartsBeMerged(currentVboPart, nextVboPart)) {
                     verticesCount += nextVboPart.verticesCount;
                     currentVboPartId++;
+                    currentVboPart = nextVboPart;
                     nextVboPart = vbpPartsScheduledForDrawing[currentVboPartId + 1];
                 }
                 this.shaderLines.u["uColor"].value = [currentVboPart.color.r / 255, currentVboPart.color.g / 255, currentVboPart.color.b / 255, currentVboPart.alpha];
@@ -2250,69 +2315,8 @@ var PlotterWebGL = (function (_super) {
             }
         }
     };
-    PlotterWebGL.prototype.buildAndUploadPolygonsVBO = function () {
-        var nbVertices = 0;
-        for (var _i = 0, _a = this.pendingPolygonsList; _i < _a.length; _i++) {
-            var pendingPolygons = _a[_i];
-            var indexOfFirstVertice = nbVertices;
-            var verticesCount = 0;
-            for (var _b = 0, _c = pendingPolygons.batchOfPolygons.items; _b < _c.length; _b++) {
-                var polygon = _c[_b];
-                if (polygon.vertices.length >= 3) {
-                    verticesCount += 3 * (polygon.vertices.length - 2);
-                }
-            }
-            nbVertices += verticesCount;
-            this.polygonsVbo.vboParts.push({
-                indexOfFirstVertice: indexOfFirstVertice,
-                verticesCount: verticesCount,
-                geometryId: pendingPolygons.batchOfPolygons.geometryId.copy(),
-                scheduledForDrawing: true,
-                alpha: pendingPolygons.alpha,
-            });
-        }
-        var FLOATS_PER_VERTICE = 6;
-        var bufferData = new Float32Array(nbVertices * FLOATS_PER_VERTICE);
-        var i = 0;
-        for (var _d = 0, _e = this.pendingPolygonsList; _d < _e.length; _d++) {
-            var pendingPolygons = _e[_d];
-            for (var _f = 0, _g = pendingPolygons.batchOfPolygons.items; _f < _g.length; _f++) {
-                var polygon = _g[_f];
-                if (polygon.vertices.length >= 3) {
-                    var red = polygon.color.r / 255;
-                    var green = polygon.color.g / 255;
-                    var blue = polygon.color.b / 255;
-                    for (var iP = 1; iP < polygon.vertices.length - 1; iP++) {
-                        bufferData[i++] = polygon.vertices[0].x;
-                        bufferData[i++] = polygon.vertices[0].y;
-                        bufferData[i++] = red;
-                        bufferData[i++] = green;
-                        bufferData[i++] = blue;
-                        i++;
-                        bufferData[i++] = polygon.vertices[iP].x;
-                        bufferData[i++] = polygon.vertices[iP].y;
-                        bufferData[i++] = red;
-                        bufferData[i++] = green;
-                        bufferData[i++] = blue;
-                        i++;
-                        bufferData[i++] = polygon.vertices[iP + 1].x;
-                        bufferData[i++] = polygon.vertices[iP + 1].y;
-                        bufferData[i++] = red;
-                        bufferData[i++] = green;
-                        bufferData[i++] = blue;
-                        i++;
-                    }
-                }
-            }
-        }
-        if (i !== bufferData.length) {
-            console.log("ALERT POLYGONS");
-        }
-        gl_canvas_1.gl.bindBuffer(gl_canvas_1.gl.ARRAY_BUFFER, this.polygonsVbo.id);
-        gl_canvas_1.gl.bufferData(gl_canvas_1.gl.ARRAY_BUFFER, bufferData, gl_canvas_1.gl.DYNAMIC_DRAW);
-    };
-    PlotterWebGL.prototype.drawPolygonsVBO = function () {
-        var vbpPartsScheduledForDrawing = PlotterWebGL.selectVBOPartsScheduledForDrawing(this.polygonsVbo);
+    PlotterWebGLBasic.prototype.drawPolygonsVBO = function () {
+        var vbpPartsScheduledForDrawing = PlotterWebGLBasic.selectVBOPartsScheduledForDrawing(this.polygonsVbo);
         if (this.shaderPolygons && vbpPartsScheduledForDrawing.length > 0) {
             this.shaderPolygons.use();
             var BYTES_PER_FLOAT = Float32Array.BYTES_PER_ELEMENT;
@@ -2332,26 +2336,21 @@ var PlotterWebGL = (function (_super) {
             }
         }
     };
-    PlotterWebGL.findUploadedVBOPart = function (partitionedVBO, geometryId) {
-        for (var _i = 0, _a = partitionedVBO.vboParts; _i < _a.length; _i++) {
-            var vboPart = _a[_i];
-            if (vboPart.geometryId.isSameAs(geometryId)) {
-                return vboPart;
-            }
-        }
-        return null;
-    };
-    PlotterWebGL.selectVBOPartsScheduledForDrawing = function (partitionedVBO) {
+    PlotterWebGLBasic.selectVBOPartsScheduledForDrawing = function (partitionedVBO) {
         return partitionedVBO.vboParts.filter(function (vboPart) { return vboPart.scheduledForDrawing; });
     };
-    PlotterWebGL.doLinesVboPartsHaveSameUniforms = function (vboPart1, vboPart2) {
+    PlotterWebGLBasic.findUploadedVBOPart = function (uploadedVBO, searchedGeometryId) {
+        return uploadedVBO.vboParts.find(function (vboPart) { return vboPart.geometryId.isSameAs(searchedGeometryId); });
+    };
+    PlotterWebGLBasic.canLinesVboPartsBeMerged = function (vboPart1, vboPart2) {
         return vboPart1 && vboPart2 &&
+            (vboPart2.indexOfFirstVertice === vboPart1.indexOfFirstVertice + vboPart1.verticesCount) &&
             (vboPart1.color.r === vboPart2.color.r) &&
             (vboPart1.color.g === vboPart2.color.g) &&
             (vboPart1.color.b === vboPart2.color.b) &&
             (vboPart1.alpha === vboPart2.alpha);
     };
-    PlotterWebGL.asyncLoadShader = function (vertexFilename, fragmentFilename, callback) {
+    PlotterWebGLBasic.asyncLoadShader = function (vertexFilename, fragmentFilename, callback) {
         var id = vertexFilename + "__" + fragmentFilename + "__" + Math.random();
         Loader.registerLoadingObject(id);
         ShaderManager.buildShader({
@@ -2368,8 +2367,103 @@ var PlotterWebGL = (function (_super) {
             }
         });
     };
-    return PlotterWebGL;
+    return PlotterWebGLBasic;
 }(plotter_canvas_1.PlotterCanvas));
+exports.PlotterWebGLBasic = PlotterWebGLBasic;
+
+
+/***/ }),
+
+/***/ "./src/ts/plotter/plotter-webgl.ts":
+/*!*****************************************!*\
+  !*** ./src/ts/plotter/plotter-webgl.ts ***!
+  \*****************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.PlotterWebGL = void 0;
+var plotter_webgl_basic_1 = __webpack_require__(/*! ./plotter-webgl-basic */ "./src/ts/plotter/plotter-webgl-basic.ts");
+var PlotterWebGL = (function (_super) {
+    __extends(PlotterWebGL, _super);
+    function PlotterWebGL() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.pendingLinesList = [];
+        _this.pendingPolygonsList = [];
+        return _this;
+    }
+    PlotterWebGL.prototype.finalize = function () {
+        if (this.pendingPolygonsList.length > 0) {
+            for (var _i = 0, _a = this.pendingPolygonsList; _i < _a.length; _i++) {
+                var pendingPolygons = _a[_i];
+                if (!this.registerPolygonsVboPartForDrawing(pendingPolygons.batchOfPolygons.geometryId, pendingPolygons.alpha)) {
+                    this.buildAndUploadPolygonsVBO();
+                    break;
+                }
+            }
+            this.pendingPolygonsList = [];
+        }
+        if (this.pendingLinesList.length > 0) {
+            for (var _b = 0, _c = this.pendingLinesList; _b < _c.length; _b++) {
+                var pendingLines = _c[_b];
+                if (!this.registerLinesVboPartForDrawing(pendingLines.batchOfLines.geometryId, pendingLines.color, pendingLines.alpha)) {
+                    this.buildAndUploadLinesVBO();
+                    break;
+                }
+            }
+            this.pendingLinesList = [];
+        }
+        _super.prototype.finalize.call(this);
+    };
+    PlotterWebGL.prototype.drawLines = function (batchOfLines, _thickness, color, alpha) {
+        this.pendingLinesList.push({ batchOfLines: batchOfLines, color: color, alpha: alpha });
+    };
+    PlotterWebGL.prototype.drawPolygons = function (batchOfPolygons, alpha) {
+        this.pendingPolygonsList.push({ batchOfPolygons: batchOfPolygons, alpha: alpha });
+    };
+    PlotterWebGL.prototype.buildAndUploadLinesVBO = function () {
+        var pendingBatchesOfLines = [];
+        for (var _i = 0, _a = this.pendingLinesList; _i < _a.length; _i++) {
+            var pendingLines = _a[_i];
+            pendingBatchesOfLines.push(pendingLines.batchOfLines);
+        }
+        var linesVboBuffer = plotter_webgl_basic_1.PlotterWebGLBasic.buildLinesVboBuffer(pendingBatchesOfLines);
+        this.uploadLinesVbo(linesVboBuffer);
+        for (var _b = 0, _c = this.pendingLinesList; _b < _c.length; _b++) {
+            var pendingLines = _c[_b];
+            this.registerLinesVboPartForDrawing(pendingLines.batchOfLines.geometryId, pendingLines.color, pendingLines.alpha);
+        }
+    };
+    PlotterWebGL.prototype.buildAndUploadPolygonsVBO = function () {
+        var pendingBatchesOfPolygons = [];
+        for (var _i = 0, _a = this.pendingPolygonsList; _i < _a.length; _i++) {
+            var pendingPolygons = _a[_i];
+            pendingBatchesOfPolygons.push(pendingPolygons.batchOfPolygons);
+        }
+        var polygonsVboBuffer = plotter_webgl_basic_1.PlotterWebGLBasic.buildPolygonsVboBuffer(pendingBatchesOfPolygons);
+        this.uploadPolygonsVbo(polygonsVboBuffer);
+        for (var _b = 0, _c = this.pendingPolygonsList; _b < _c.length; _b++) {
+            var pendingPolygons = _c[_b];
+            this.registerPolygonsVboPartForDrawing(pendingPolygons.batchOfPolygons.geometryId, pendingPolygons.alpha);
+        }
+    };
+    return PlotterWebGL;
+}(plotter_webgl_basic_1.PlotterWebGLBasic));
 exports.PlotterWebGL = PlotterWebGL;
 
 
