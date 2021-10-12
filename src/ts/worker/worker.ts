@@ -14,3 +14,7 @@ MessagesFromMain.Reset.addListener((viewport: Rectangle, primitiveType: EPrimiti
     engine.reset(viewport, primitiveType);
 });
 
+MessagesFromMain.RecomputeColors.addListener((colorVariation: number) => {
+    engine.recomputeColors(colorVariation);
+});
+

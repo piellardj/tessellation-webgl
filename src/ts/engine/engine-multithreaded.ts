@@ -30,8 +30,8 @@ class EngineMultithreaded implements IEngine<PlotterWebGLBasic> {
         MessagesToWorker.Reset.sendMessage(this.worker, viewport, primitiveType);
     }
 
-    public recomputeColors(_colorVariation: number): void {
-        // throw new Error("not implemented");
+    public recomputeColors(colorVariation: number): void {
+        MessagesToWorker.RecomputeColors.sendMessage(this.worker, colorVariation);
     }
 
     public downloadAsSvg(_width: number, _height: number, _scaling: number): void {

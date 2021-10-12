@@ -1,5 +1,6 @@
 enum EVerb {
     RESET = "reset",
+    RECOMPUTE_COLORS = "recopute-colors",
     UPDATE = "update",
 }
 
