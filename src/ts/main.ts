@@ -1,6 +1,7 @@
 import { IEngine } from "./engine/engine-interface";
 import { EngineMonothreaded } from "./engine/engine-monothreaded";
 import { EngineMultithreaded } from "./engine/engine-multithreaded";
+import { Color } from "./misc/color";
 import { FrametimeMonitor } from "./misc/frame-time-monitor";
 import { IPoint } from "./misc/point";
 import { Zoom } from "./misc/zoom";
@@ -15,12 +16,21 @@ import "./page-interface-generated";
 
 
 function main<TPlotter extends PlotterCanvas>(engine: IEngine<TPlotter>, plotter: TPlotter): void {
+    const backgroundColor = Color.BLACK;
+
+    function linesColor(): Color | undefined {
+        if (Parameters.displayLines) {
+            return Parameters.linesColor;
+        }
+        return undefined;
+    }
+
     Parameters.recomputeColorsObservers.push(() => {
         engine.recomputeColors(Parameters.colorVariation);
     });
 
     Parameters.downloadObservers.push(() => {
-        engine.downloadAsSvg(plotter.width, plotter.height, Parameters.scaling);
+        engine.downloadAsSvg(plotter.width, plotter.height, Parameters.scaling, backgroundColor, linesColor());
     });
 
     function getCurrentMousePosition(): IPoint {
@@ -73,7 +83,7 @@ function main<TPlotter extends PlotterCanvas>(engine: IEngine<TPlotter>, plotter
 
         if (needToRedraw && plotter.isReady) {
             plotter.resizeCanvas();
-            engine.draw(plotter, Parameters.scaling);
+            engine.draw(plotter, Parameters.scaling, backgroundColor, linesColor());
             needToRedraw = false;
         }
 

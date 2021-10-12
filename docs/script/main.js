@@ -2,6 +2,26 @@
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
+/***/ "./src/ts/engine/engine-metrics.ts":
+/*!*****************************************!*\
+  !*** ./src/ts/engine/engine-metrics.ts ***!
+  \*****************************************/
+/***/ (function(__unused_webpack_module, exports) {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.updateEngineMetricsIndicators = void 0;
+function updateEngineMetricsIndicators(metrics) {
+    Page.Canvas.setIndicatorText("tree-depth", metrics.treeDepth.toString());
+    Page.Canvas.setIndicatorText("primitives-count", metrics.lastLayerPrimitivesCount.toString());
+    Page.Canvas.setIndicatorText("tree-nodes-count", metrics.totalPrimitivesCount.toString());
+    Page.Canvas.setIndicatorText("segments-count", metrics.segmentsCount.toString());
+}
+exports.updateEngineMetricsIndicators = updateEngineMetricsIndicators;
+
+
+/***/ }),
+
 /***/ "./src/ts/engine/engine-monothreaded.ts":
 /*!**********************************************!*\
   !*** ./src/ts/engine/engine-monothreaded.ts ***!
@@ -26,17 +46,17 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.EngineMonothreaded = void 0;
-var color_1 = __webpack_require__(/*! ../misc/color */ "./src/ts/misc/color.ts");
 var web_1 = __webpack_require__(/*! ../misc/web */ "./src/ts/misc/web.ts");
 var parameters_1 = __webpack_require__(/*! ../parameters */ "./src/ts/parameters.ts");
 var plotter_svg_1 = __webpack_require__(/*! ../plotter/plotter-svg */ "./src/ts/plotter/plotter-svg.ts");
 var engine_1 = __webpack_require__(/*! ./engine */ "./src/ts/engine/engine.ts");
+var engine_metrics_1 = __webpack_require__(/*! ./engine-metrics */ "./src/ts/engine/engine-metrics.ts");
 var EngineMonothreaded = (function (_super) {
     __extends(EngineMonothreaded, _super);
     function EngineMonothreaded() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
-    EngineMonothreaded.prototype.draw = function (plotter, scaling) {
+    EngineMonothreaded.prototype.draw = function (plotter, scaling, backgroundColor, linesColor) {
         if (this.layers.length < 1) {
             return;
         }
@@ -54,26 +74,29 @@ var EngineMonothreaded = (function (_super) {
             }
         }
         var emergingLayer = lastSolidLayer + 1;
-        plotter.initialize(color_1.Color.BLACK, this.cumulatedZoom, scaling);
+        plotter.initialize(backgroundColor, this.cumulatedZoom, scaling);
         plotter.drawPolygons(this.layers[lastSolidLayer].primitives, 1);
         if (emergingLayer < this.layers.length) {
             plotter.drawPolygons(this.layers[emergingLayer].primitives, emergingLayerAlpha);
         }
-        if (parameters_1.Parameters.displayLines) {
+        if (linesColor) {
             for (var iLayer = 0; iLayer < this.layers.length; iLayer++) {
                 var thickness = EngineMonothreaded.getLineThicknessForLayer(iLayer, this.layers.length);
                 var alpha = (iLayer === emergingLayer) ? emergingLayerAlpha : 1;
-                plotter.drawLines(this.layers[iLayer].outlines, thickness, parameters_1.Parameters.linesColor, alpha);
+                plotter.drawLines(this.layers[iLayer].outlines, thickness, linesColor, alpha);
             }
         }
         plotter.finalize();
     };
-    EngineMonothreaded.prototype.downloadAsSvg = function (width, height, scaling) {
+    EngineMonothreaded.prototype.downloadAsSvg = function (width, height, scaling, backgroundColor, linesColor) {
         var svgPlotter = new plotter_svg_1.PlotterSVG(width, height);
-        this.draw(svgPlotter, scaling);
-        var fileName = "subdivisions.svg";
+        this.draw(svgPlotter, scaling, backgroundColor, linesColor);
         var svgString = svgPlotter.output();
-        web_1.downloadTextFile(fileName, svgString);
+        web_1.downloadSvgOutput(svgString);
+    };
+    EngineMonothreaded.prototype.updateIndicators = function () {
+        var metrics = this.computeMetrics();
+        engine_metrics_1.updateEngineMetricsIndicators(metrics);
     };
     EngineMonothreaded.getLineThicknessForLayer = function (layerId, totalLayersCount) {
         var variablePart = 0;
@@ -96,24 +119,56 @@ exports.EngineMonothreaded = EngineMonothreaded;
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.EngineMultithreaded = void 0;
+var web_1 = __webpack_require__(/*! ../misc/web */ "./src/ts/misc/web.ts");
+var MessagesFromWorker = __importStar(__webpack_require__(/*! ../worker/messages/from-worker/messages */ "./src/ts/worker/messages/from-worker/messages.ts"));
+var MessagesToWorker = __importStar(__webpack_require__(/*! ../worker/messages/to-worker/messages */ "./src/ts/worker/messages/to-worker/messages.ts"));
+var engine_metrics_1 = __webpack_require__(/*! ./engine-metrics */ "./src/ts/engine/engine-metrics.ts");
 __webpack_require__(/*! ../page-interface-generated */ "./src/ts/page-interface-generated.ts");
 var EngineMultithreaded = (function () {
     function EngineMultithreaded() {
         this.worker = new Worker("script/worker.js?v=" + Page.version);
-        this.worker.postMessage(null);
+        MessagesFromWorker.NewMetrics.addListener(this.worker, function (engineMetrics) {
+            engine_metrics_1.updateEngineMetricsIndicators(engineMetrics);
+        });
+        MessagesFromWorker.NewSvgOutput.addListener(this.worker, function (output) {
+            web_1.downloadSvgOutput(output);
+        });
     }
-    EngineMultithreaded.prototype.update = function (_viewport, _instantZoom, _wantedDepth, _subdivisionBalance, _colorVariation) {
+    EngineMultithreaded.prototype.update = function (viewport, instantZoom, wantedDepth, subdivisionBalance, colorVariation) {
+        MessagesToWorker.Update.sendMessage(this.worker, viewport, instantZoom, wantedDepth, subdivisionBalance, colorVariation);
         return true;
     };
-    EngineMultithreaded.prototype.draw = function (_plotter, _scaling) {
+    EngineMultithreaded.prototype.draw = function (_plotter, _scaling, _backgroundColor, _linesColor) {
     };
-    EngineMultithreaded.prototype.reset = function (_viewport, _primitiveType) {
+    EngineMultithreaded.prototype.reset = function (viewport, primitiveType) {
+        MessagesToWorker.Reset.sendMessage(this.worker, viewport, primitiveType);
     };
-    EngineMultithreaded.prototype.recomputeColors = function (_colorVariation) {
+    EngineMultithreaded.prototype.recomputeColors = function (colorVariation) {
+        MessagesToWorker.RecomputeColors.sendMessage(this.worker, colorVariation);
     };
-    EngineMultithreaded.prototype.downloadAsSvg = function (_width, _height, _scaling) {
+    EngineMultithreaded.prototype.downloadAsSvg = function (width, height, scaling, backgroundColor, linesColor) {
+        MessagesToWorker.DownloadAsSvg.sendMessage(this.worker, width, height, scaling, backgroundColor, linesColor);
     };
     return EngineMultithreaded;
 }());
@@ -198,6 +253,27 @@ var Engine = (function () {
             var layer = _a[_i];
             layer.primitives.geometryId.registerChange();
         }
+    };
+    Engine.prototype.computeMetrics = function () {
+        var treeDepth = this.rootPrimitive.treeDepth();
+        var lastLayerPrimitivesCount = this.layers[this.layers.length - 1].primitives.items.length;
+        var totalPrimitivesCount = 0;
+        var segmentsCount = 0;
+        for (var _i = 0, _a = this.layers; _i < _a.length; _i++) {
+            var layer = _a[_i];
+            totalPrimitivesCount += layer.primitives.items.length;
+            for (var _b = 0, _c = layer.outlines.items; _b < _c.length; _b++) {
+                var line = _c[_b];
+                var nbLinePoints = line.length;
+                segmentsCount += (nbLinePoints > 1) ? (nbLinePoints - 1) : 0;
+            }
+        }
+        return {
+            treeDepth: treeDepth,
+            lastLayerPrimitivesCount: lastLayerPrimitivesCount,
+            totalPrimitivesCount: totalPrimitivesCount,
+            segmentsCount: segmentsCount,
+        };
     };
     Engine.prototype.computeRootPrimitiveColor = function () {
         var minLuminosity = 0.3;
@@ -336,23 +412,6 @@ var Engine = (function () {
             this.layers[iLayer].primitives = primitives;
             this.layers[iLayer].outlines = outlines;
         }
-    };
-    Engine.prototype.updateIndicators = function () {
-        Page.Canvas.setIndicatorText("tree-depth", this.rootPrimitive.treeDepth().toString());
-        Page.Canvas.setIndicatorText("primitives-count", this.layers[this.layers.length - 1].primitives.items.length.toString());
-        var totalPrimitivesCount = 0;
-        var segmentsCount = 0;
-        for (var _i = 0, _a = this.layers; _i < _a.length; _i++) {
-            var layer = _a[_i];
-            totalPrimitivesCount += layer.primitives.items.length;
-            for (var _b = 0, _c = layer.outlines.items; _b < _c.length; _b++) {
-                var line = _c[_b];
-                var nbLinePoints = line.length;
-                segmentsCount += (nbLinePoints > 1) ? (nbLinePoints - 1) : 0;
-            }
-        }
-        Page.Canvas.setIndicatorText("tree-nodes-count", totalPrimitivesCount.toString());
-        Page.Canvas.setIndicatorText("segments-count", segmentsCount.toString());
     };
     Object.defineProperty(Engine.prototype, "primitiveType", {
         get: function () {
@@ -1015,6 +1074,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 var engine_monothreaded_1 = __webpack_require__(/*! ./engine/engine-monothreaded */ "./src/ts/engine/engine-monothreaded.ts");
 var engine_multithreaded_1 = __webpack_require__(/*! ./engine/engine-multithreaded */ "./src/ts/engine/engine-multithreaded.ts");
+var color_1 = __webpack_require__(/*! ./misc/color */ "./src/ts/misc/color.ts");
 var frame_time_monitor_1 = __webpack_require__(/*! ./misc/frame-time-monitor */ "./src/ts/misc/frame-time-monitor.ts");
 var zoom_1 = __webpack_require__(/*! ./misc/zoom */ "./src/ts/misc/zoom.ts");
 var parameters_1 = __webpack_require__(/*! ./parameters */ "./src/ts/parameters.ts");
@@ -1024,11 +1084,18 @@ var plotter_webgl_basic_1 = __webpack_require__(/*! ./plotter/plotter-webgl-basi
 var Testing = __importStar(__webpack_require__(/*! ./testing/main-testing */ "./src/ts/testing/main-testing.ts"));
 __webpack_require__(/*! ./page-interface-generated */ "./src/ts/page-interface-generated.ts");
 function main(engine, plotter) {
+    var backgroundColor = color_1.Color.BLACK;
+    function linesColor() {
+        if (parameters_1.Parameters.displayLines) {
+            return parameters_1.Parameters.linesColor;
+        }
+        return undefined;
+    }
     parameters_1.Parameters.recomputeColorsObservers.push(function () {
         engine.recomputeColors(parameters_1.Parameters.colorVariation);
     });
     parameters_1.Parameters.downloadObservers.push(function () {
-        engine.downloadAsSvg(plotter.width, plotter.height, parameters_1.Parameters.scaling);
+        engine.downloadAsSvg(plotter.width, plotter.height, parameters_1.Parameters.scaling, backgroundColor, linesColor());
     });
     function getCurrentMousePosition() {
         var mousePosition = parameters_1.Parameters.mousePositionInPixels;
@@ -1071,7 +1138,7 @@ function main(engine, plotter) {
         }
         if (needToRedraw && plotter.isReady) {
             plotter.resizeCanvas();
-            engine.draw(plotter, parameters_1.Parameters.scaling);
+            engine.draw(plotter, parameters_1.Parameters.scaling, backgroundColor, linesColor());
             needToRedraw = false;
         }
         requestAnimationFrame(mainLoop);
@@ -1180,6 +1247,9 @@ var Color = (function () {
     }
     Color.random = function () {
         return new Color(Color.randomChannel(), Color.randomChannel(), Color.randomChannel());
+    };
+    Color.rehydrate = function (dehydrated) {
+        return new Color(dehydrated.r, dehydrated.g, dehydrated.b);
     };
     Color.prototype.toHexaString = function () {
         if (!this.hexString) {
@@ -1320,6 +1390,9 @@ var Rectangle = (function () {
         this.topLeft = { x: left, y: top };
         this.bottomRight = { x: right, y: bottom };
     }
+    Rectangle.rehydrate = function (dehydrated) {
+        return new Rectangle(dehydrated.topLeft.x, dehydrated.bottomRight.x, dehydrated.topLeft.y, dehydrated.bottomRight.y);
+    };
     Rectangle.prototype.containsPoint = function (point) {
         return (point.x >= this.topLeft.x && point.x <= this.bottomRight.x) &&
             (point.y >= this.topLeft.y && point.y <= this.bottomRight.y);
@@ -1459,7 +1532,7 @@ exports.Throttle = Throttle;
 
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.setQueryStringValue = exports.getQueryStringValue = exports.downloadTextFile = void 0;
+exports.setQueryStringValue = exports.getQueryStringValue = exports.downloadSvgOutput = void 0;
 function downloadTextFile(fileName, content) {
     var fileType = "text/plain";
     var blob = new Blob([content], { type: fileType });
@@ -1481,7 +1554,10 @@ function downloadTextFile(fileName, content) {
         }, 5000);
     }
 }
-exports.downloadTextFile = downloadTextFile;
+function downloadSvgOutput(output) {
+    downloadTextFile("tessellation.svg", output);
+}
+exports.downloadSvgOutput = downloadSvgOutput;
 function getQueryStringValue(name) {
     if (typeof URLSearchParams !== "undefined") {
         var params = new URLSearchParams(window.location.search);
@@ -1536,6 +1612,13 @@ var Zoom = (function () {
     }
     Zoom.noZoom = function () {
         return new Zoom({ x: 0, y: 0 }, 1);
+    };
+    Zoom.rehydrate = function (dehydrated) {
+        var result = new Zoom({ x: 0, y: 0 }, 1);
+        result.a = dehydrated.a;
+        result.b = dehydrated.b;
+        result.c = dehydrated.c;
+        return result;
     };
     Zoom.prototype.reset = function () {
         this.a = 1;
@@ -3189,6 +3272,324 @@ var TestEngine = (function () {
     return TestEngine;
 }());
 exports.TestEngine = TestEngine;
+
+
+/***/ }),
+
+/***/ "./src/ts/worker/messages/from-worker/messages.ts":
+/*!********************************************************!*\
+  !*** ./src/ts/worker/messages/from-worker/messages.ts ***!
+  \********************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.NewSvgOutput = exports.NewMetrics = void 0;
+var NewMetrics = __importStar(__webpack_require__(/*! ./new-metrics */ "./src/ts/worker/messages/from-worker/new-metrics.ts"));
+exports.NewMetrics = NewMetrics;
+var NewSvgOutput = __importStar(__webpack_require__(/*! ./new-svg-output */ "./src/ts/worker/messages/from-worker/new-svg-output.ts"));
+exports.NewSvgOutput = NewSvgOutput;
+
+
+/***/ }),
+
+/***/ "./src/ts/worker/messages/from-worker/new-metrics.ts":
+/*!***********************************************************!*\
+  !*** ./src/ts/worker/messages/from-worker/new-metrics.ts ***!
+  \***********************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.sendMessage = exports.addListener = void 0;
+var message_1 = __webpack_require__(/*! ../message */ "./src/ts/worker/messages/message.ts");
+var verb = message_1.EVerb.NEW_METRICS;
+function sendMessage(engineMetrics) {
+    var messageData = {
+        engineMetrics: engineMetrics,
+    };
+    message_1.sendMessageFromWorker(verb, messageData);
+}
+exports.sendMessage = sendMessage;
+function addListener(worker, listener) {
+    message_1.addListenerToWorker(worker, verb, function (data) {
+        listener(data.engineMetrics);
+    });
+}
+exports.addListener = addListener;
+
+
+/***/ }),
+
+/***/ "./src/ts/worker/messages/from-worker/new-svg-output.ts":
+/*!**************************************************************!*\
+  !*** ./src/ts/worker/messages/from-worker/new-svg-output.ts ***!
+  \**************************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.sendMessage = exports.addListener = void 0;
+var message_1 = __webpack_require__(/*! ../message */ "./src/ts/worker/messages/message.ts");
+var verb = message_1.EVerb.NEW_SVG_OUTPUT;
+function sendMessage(output) {
+    var messageData = {
+        output: output,
+    };
+    message_1.sendMessageFromWorker(verb, messageData);
+}
+exports.sendMessage = sendMessage;
+function addListener(worker, listener) {
+    message_1.addListenerToWorker(worker, verb, function (data) {
+        listener(data.output);
+    });
+}
+exports.addListener = addListener;
+
+
+/***/ }),
+
+/***/ "./src/ts/worker/messages/message.ts":
+/*!*******************************************!*\
+  !*** ./src/ts/worker/messages/message.ts ***!
+  \*******************************************/
+/***/ (function(__unused_webpack_module, exports) {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.sendMessageToWorker = exports.sendMessageFromWorker = exports.EVerb = exports.addListenerToWorker = exports.addListenerFromWorker = void 0;
+var EVerb;
+(function (EVerb) {
+    EVerb["RESET"] = "reset";
+    EVerb["RECOMPUTE_COLORS"] = "recopute-colors";
+    EVerb["DOWNLOAD_AS_SVG"] = "download-svg";
+    EVerb["UPDATE"] = "update";
+    EVerb["NEW_METRICS"] = "new-metrics";
+    EVerb["NEW_SVG_OUTPUT"] = "new-svg-output";
+})(EVerb || (EVerb = {}));
+exports.EVerb = EVerb;
+function sendMessage(target, verb, data) {
+    var messageData = {
+        verb: verb,
+        data: data,
+    };
+    target.postMessage(messageData);
+}
+function addListener(context, verb, callback) {
+    context.addEventListener("message", function (event) {
+        if (event && event.data.verb === verb) {
+            callback(event.data.data);
+        }
+    });
+}
+function sendMessageToWorker(worker, verb, data) {
+    sendMessage(worker, verb, data);
+}
+exports.sendMessageToWorker = sendMessageToWorker;
+function addListenerToWorker(worker, verb, callback) {
+    addListener(worker, verb, callback);
+}
+exports.addListenerToWorker = addListenerToWorker;
+function sendMessageFromWorker(verb, data) {
+    sendMessage(self, verb, data);
+}
+exports.sendMessageFromWorker = sendMessageFromWorker;
+function addListenerFromWorker(verb, callback) {
+    addListener(self, verb, callback);
+}
+exports.addListenerFromWorker = addListenerFromWorker;
+
+
+/***/ }),
+
+/***/ "./src/ts/worker/messages/to-worker/download-as-svg-message.ts":
+/*!*********************************************************************!*\
+  !*** ./src/ts/worker/messages/to-worker/download-as-svg-message.ts ***!
+  \*********************************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.sendMessage = exports.addListener = void 0;
+var color_1 = __webpack_require__(/*! ../../../misc/color */ "./src/ts/misc/color.ts");
+var message_1 = __webpack_require__(/*! ../message */ "./src/ts/worker/messages/message.ts");
+var verb = message_1.EVerb.DOWNLOAD_AS_SVG;
+function sendMessage(worker, width, height, scaling, backgroundColor, linesColor) {
+    var messageData = {
+        width: width,
+        height: height,
+        scaling: scaling,
+        backgroundColor: backgroundColor,
+        linesColor: linesColor,
+    };
+    message_1.sendMessageToWorker(worker, verb, messageData);
+}
+exports.sendMessage = sendMessage;
+function addListener(listener) {
+    message_1.addListenerFromWorker(verb, function (data) {
+        var backgroundColor = color_1.Color.rehydrate(data.backgroundColor);
+        var linesColor;
+        if (data.linesColor) {
+            linesColor = color_1.Color.rehydrate(data.linesColor);
+        }
+        listener(data.width, data.height, data.scaling, backgroundColor, linesColor);
+    });
+}
+exports.addListener = addListener;
+
+
+/***/ }),
+
+/***/ "./src/ts/worker/messages/to-worker/messages.ts":
+/*!******************************************************!*\
+  !*** ./src/ts/worker/messages/to-worker/messages.ts ***!
+  \******************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Update = exports.Reset = exports.RecomputeColors = exports.DownloadAsSvg = void 0;
+var DownloadAsSvg = __importStar(__webpack_require__(/*! ./download-as-svg-message */ "./src/ts/worker/messages/to-worker/download-as-svg-message.ts"));
+exports.DownloadAsSvg = DownloadAsSvg;
+var RecomputeColors = __importStar(__webpack_require__(/*! ./recompute-color-message */ "./src/ts/worker/messages/to-worker/recompute-color-message.ts"));
+exports.RecomputeColors = RecomputeColors;
+var Reset = __importStar(__webpack_require__(/*! ./reset-message */ "./src/ts/worker/messages/to-worker/reset-message.ts"));
+exports.Reset = Reset;
+var Update = __importStar(__webpack_require__(/*! ./update-message */ "./src/ts/worker/messages/to-worker/update-message.ts"));
+exports.Update = Update;
+
+
+/***/ }),
+
+/***/ "./src/ts/worker/messages/to-worker/recompute-color-message.ts":
+/*!*********************************************************************!*\
+  !*** ./src/ts/worker/messages/to-worker/recompute-color-message.ts ***!
+  \*********************************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.sendMessage = exports.addListener = void 0;
+var message_1 = __webpack_require__(/*! ../message */ "./src/ts/worker/messages/message.ts");
+var verb = message_1.EVerb.RECOMPUTE_COLORS;
+function sendMessage(worker, colorVariation) {
+    var messageData = {
+        colorVariation: colorVariation,
+    };
+    message_1.sendMessageToWorker(worker, verb, messageData);
+}
+exports.sendMessage = sendMessage;
+function addListener(listener) {
+    message_1.addListenerFromWorker(verb, function (data) {
+        listener(data.colorVariation);
+    });
+}
+exports.addListener = addListener;
+
+
+/***/ }),
+
+/***/ "./src/ts/worker/messages/to-worker/reset-message.ts":
+/*!***********************************************************!*\
+  !*** ./src/ts/worker/messages/to-worker/reset-message.ts ***!
+  \***********************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.sendMessage = exports.addListener = void 0;
+var rectangle_1 = __webpack_require__(/*! ../../../misc/rectangle */ "./src/ts/misc/rectangle.ts");
+var message_1 = __webpack_require__(/*! ../message */ "./src/ts/worker/messages/message.ts");
+var verb = message_1.EVerb.RESET;
+function sendMessage(worker, viewport, primitiveType) {
+    var messageData = {
+        viewport: viewport,
+        primitiveType: primitiveType,
+    };
+    message_1.sendMessageToWorker(worker, verb, messageData);
+}
+exports.sendMessage = sendMessage;
+function addListener(listener) {
+    message_1.addListenerFromWorker(verb, function (data) {
+        var viewport = rectangle_1.Rectangle.rehydrate(data.viewport);
+        listener(viewport, data.primitiveType);
+    });
+}
+exports.addListener = addListener;
+
+
+/***/ }),
+
+/***/ "./src/ts/worker/messages/to-worker/update-message.ts":
+/*!************************************************************!*\
+  !*** ./src/ts/worker/messages/to-worker/update-message.ts ***!
+  \************************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.sendMessage = exports.addListener = void 0;
+var rectangle_1 = __webpack_require__(/*! ../../../misc/rectangle */ "./src/ts/misc/rectangle.ts");
+var zoom_1 = __webpack_require__(/*! ../../../misc/zoom */ "./src/ts/misc/zoom.ts");
+var message_1 = __webpack_require__(/*! ../message */ "./src/ts/worker/messages/message.ts");
+var verb = message_1.EVerb.UPDATE;
+function sendMessage(worker, viewport, instantZoom, wantedDepth, subdivisionBalance, colorVariation) {
+    var messageData = {
+        viewport: viewport,
+        instantZoom: instantZoom,
+        wantedDepth: wantedDepth,
+        subdivisionBalance: subdivisionBalance,
+        colorVariation: colorVariation,
+    };
+    message_1.sendMessageToWorker(worker, verb, messageData);
+}
+exports.sendMessage = sendMessage;
+function addListener(listener) {
+    message_1.addListenerFromWorker(verb, function (data) {
+        var viewport = rectangle_1.Rectangle.rehydrate(data.viewport);
+        var instantZoom = zoom_1.Zoom.rehydrate(data.instantZoom);
+        listener(viewport, instantZoom, data.wantedDepth, data.subdivisionBalance, data.colorVariation);
+    });
+}
+exports.addListener = addListener;
 
 
 /***/ })

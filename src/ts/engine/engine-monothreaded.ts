@@ -1,5 +1,5 @@
 import { Color } from "../misc/color";
-import { downloadTextFile } from "../misc/web";
+import { downloadSvgOutput } from "../misc/web";
 import { Parameters } from "../parameters";
 import { IPlotter } from "../plotter/plotter-interface";
 import { PlotterSVG } from "../plotter/plotter-svg";
@@ -9,7 +9,7 @@ import { updateEngineMetricsIndicators } from "./engine-metrics";
 
 
 class EngineMonothreaded extends Engine implements IEngine<IPlotter> {
-    public draw(plotter: IPlotter, scaling: number): void {
+    public draw(plotter: IPlotter, scaling: number, backgroundColor: Color, linesColor?: Color): void {
         if (this.layers.length < 1) {
             return;
         }
@@ -30,30 +30,29 @@ class EngineMonothreaded extends Engine implements IEngine<IPlotter> {
         }
         const emergingLayer = lastSolidLayer + 1;
 
-        plotter.initialize(Color.BLACK, this.cumulatedZoom, scaling);
+        plotter.initialize(backgroundColor, this.cumulatedZoom, scaling);
 
         plotter.drawPolygons(this.layers[lastSolidLayer].primitives, 1);
         if (emergingLayer < this.layers.length) {
             plotter.drawPolygons(this.layers[emergingLayer].primitives, emergingLayerAlpha);
         }
 
-        if (Parameters.displayLines) {
+        if (linesColor) {
             for (let iLayer = 0; iLayer < this.layers.length; iLayer++) {
                 const thickness = EngineMonothreaded.getLineThicknessForLayer(iLayer, this.layers.length);
                 const alpha = (iLayer === emergingLayer) ? emergingLayerAlpha : 1;
-                plotter.drawLines(this.layers[iLayer].outlines, thickness, Parameters.linesColor, alpha);
+                plotter.drawLines(this.layers[iLayer].outlines, thickness, linesColor, alpha);
             }
         }
 
         plotter.finalize();
     }
 
-    public downloadAsSvg(width: number, height: number, scaling: number): void {
+    public downloadAsSvg(width: number, height: number, scaling: number, backgroundColor: Color, linesColor?: Color): void {
         const svgPlotter = new PlotterSVG(width, height);
-        this.draw(svgPlotter, scaling);
-        const fileName = "subdivisions.svg";
+        this.draw(svgPlotter, scaling, backgroundColor, linesColor);
         const svgString = svgPlotter.output();
-        downloadTextFile(fileName, svgString);
+        downloadSvgOutput(svgString);
     }
 
     protected updateIndicators(): void {

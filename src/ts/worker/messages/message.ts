@@ -1,8 +1,10 @@
 enum EVerb {
     RESET = "reset",
     RECOMPUTE_COLORS = "recopute-colors",
-    NEW_METRICS = "new-metrics",
+    DOWNLOAD_AS_SVG = "download-svg",
     UPDATE = "update",
+    NEW_METRICS = "new-metrics",
+    NEW_SVG_OUTPUT = "new-svg-output",
 }
 
 interface IMessageData<TData> {

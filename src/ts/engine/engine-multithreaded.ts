@@ -1,4 +1,6 @@
+import { Color } from "../misc/color";
 import { Rectangle } from "../misc/rectangle";
+import { downloadSvgOutput } from "../misc/web";
 import { Zoom } from "../misc/zoom";
 import { PlotterWebGLBasic } from "../plotter/plotter-webgl-basic";
 import { EPrimitiveType } from "../primitives/primitive-type-enum";
@@ -7,8 +9,8 @@ import * as MessagesToWorker from "../worker/messages/to-worker/messages";
 import { IEngine } from "./engine-interface";
 import { IEngineMetrics, updateEngineMetricsIndicators } from "./engine-metrics";
 
-
 import "../page-interface-generated";
+
 
 
 class EngineMultithreaded implements IEngine<PlotterWebGLBasic> {
@@ -20,6 +22,10 @@ class EngineMultithreaded implements IEngine<PlotterWebGLBasic> {
         MessagesFromWorker.NewMetrics.addListener(this.worker, (engineMetrics: IEngineMetrics) => {
             updateEngineMetricsIndicators(engineMetrics);
         });
+
+        MessagesFromWorker.NewSvgOutput.addListener(this.worker, (output: string) => {
+            downloadSvgOutput(output);
+        });
     }
 
     public update(viewport: Rectangle, instantZoom: Zoom, wantedDepth: number, subdivisionBalance: number, colorVariation: number): boolean {
@@ -27,7 +33,7 @@ class EngineMultithreaded implements IEngine<PlotterWebGLBasic> {
         return true;
     }
 
-    public draw(_plotter: PlotterWebGLBasic, _scaling: number): void {
+    public draw(_plotter: PlotterWebGLBasic, _scaling: number, _backgroundColor: Color, _linesColor?: Color): void {
         // throw new Error("not implemented");
     }
 
@@ -39,8 +45,8 @@ class EngineMultithreaded implements IEngine<PlotterWebGLBasic> {
         MessagesToWorker.RecomputeColors.sendMessage(this.worker, colorVariation);
     }
 
-    public downloadAsSvg(_width: number, _height: number, _scaling: number): void {
-        // throw new Error("not implemented");
+    public downloadAsSvg(width: number, height: number, scaling: number, backgroundColor: Color, linesColor?: Color): void {
+        MessagesToWorker.DownloadAsSvg.sendMessage(this.worker, width, height, scaling, backgroundColor, linesColor);
     }
 }
 

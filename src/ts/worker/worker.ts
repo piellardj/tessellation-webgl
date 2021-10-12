@@ -1,6 +1,8 @@
+import { Color } from "../misc/color";
 import { Rectangle } from "../misc/rectangle";
 import { Zoom } from "../misc/zoom";
 import { EPrimitiveType } from "../primitives/primitive-type-enum";
+import * as MessagesFromMain from "./messages/to-worker/messages";
 import { WorkerEngine } from "./worker-engine";
 
 
@@ -16,5 +18,9 @@ MessagesFromMain.Reset.addListener((viewport: Rectangle, primitiveType: EPrimiti
 
 MessagesFromMain.RecomputeColors.addListener((colorVariation: number) => {
     engine.recomputeColors(colorVariation);
+});
+
+MessagesFromMain.DownloadAsSvg.addListener((width: number, height: number, scaling: number, backgroundColor: Color, linesColor?: Color) => {
+    engine.downloadAsSvg(width, height, scaling, backgroundColor, linesColor);
 });
 

@@ -30,6 +30,10 @@ class Color {
         return new Color(Color.randomChannel(), Color.randomChannel(), Color.randomChannel());
     }
 
+    public static rehydrate(dehydrated: Color): Color {
+        return new Color(dehydrated.r, dehydrated.g, dehydrated.b);
+    }
+
     /** @param r in [0, 255]
      *  @param g in [0, 255]
      *  @param b in [0, 255]
