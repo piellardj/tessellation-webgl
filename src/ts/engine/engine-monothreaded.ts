@@ -7,7 +7,7 @@ import { Engine } from "./engine";
 import { IEngine } from "./engine-interface";
 
 
-class EngineMonothreaded extends Engine implements IEngine {
+class EngineMonothreaded extends Engine implements IEngine<IPlotter> {
     public draw(plotter: IPlotter, scaling: number): void {
         if (this.layers.length < 1) {
             return;

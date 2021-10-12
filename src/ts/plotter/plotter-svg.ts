@@ -12,10 +12,6 @@ class PlotterSVG implements IPlotter {
         private readonly height: number) {
     }
 
-    public get isReady(): boolean {
-        return true;
-    }
-
     public initialize(backgroundColor: Color, zoom: Zoom, scaling: number): void {
         this.lines = [];
 

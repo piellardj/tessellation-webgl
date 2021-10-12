@@ -98,6 +98,11 @@ const data = {
                     step: 0.01
                 },
                 {
+                    type: Demopage.supportedControls.Checkbox,
+                    title: "Multithreaded",
+                    id: "multithreaded-checkbox-id",
+                },
+                {
                     type: Demopage.supportedControls.Button,
                     label: "Reset",
                     id: "reset-button-id",

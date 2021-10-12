@@ -12,6 +12,7 @@ const controlId = {
     DEPTH_RANGE_ID: "depth-range-id",
     BALANCE_RANGE_ID: "balance-range-id",
     ZOOMING_SPEED_RANGE_ID: "zooming-speed-range-id",
+    MULTITHREADED_CHECKBOX_ID: "multithreaded-checkbox-id",
     RESET_BUTTON_ID: "reset-button-id",
 
     PLOTTER_TABS_ID: "plotter-tabs-id",
@@ -31,9 +32,25 @@ enum EPlotter {
     WEBGL = "webgl",
     CANVAS2D = "canvas2d",
 }
+
 const plotterQueryStringParamName = "plotter";
+const multithreadedQueryStringParamName = "multithread";
 
 type Observer = () => unknown;
+
+function isMultithreaded(): boolean {
+    return getQueryStringValue(multithreadedQueryStringParamName) === "1";
+}
+
+function getPlotter(): EPlotter {
+    if (isMultithreaded()) {
+        return EPlotter.WEBGL;
+    } else if (getQueryStringValue(plotterQueryStringParamName) === EPlotter.CANVAS2D) {
+        return EPlotter.CANVAS2D;
+    } else {
+        return EPlotter.WEBGL;
+    }
+}
 
 abstract class Parameters {
     public static readonly resetObservers: Observer[] = [];
@@ -42,7 +59,8 @@ abstract class Parameters {
     public static readonly downloadObservers: Observer[] = [];
 
     public static readonly debugMode: boolean = (getQueryStringValue("debug") === "1");
-    public static readonly plotter: EPlotter = (getQueryStringValue(plotterQueryStringParamName) === EPlotter.CANVAS2D) ? EPlotter.CANVAS2D : EPlotter.WEBGL;
+    public static readonly multithreaded: boolean = isMultithreaded();
+    public static readonly plotter: EPlotter = getPlotter();
 
     public static get primitiveType(): EPrimitiveType {
         return Page.Tabs.getValues(controlId.PRIMITIVE_TABS_ID)[0] as EPrimitiveType;
@@ -146,6 +164,13 @@ Page.Tabs.addObserver(controlId.PLOTTER_TABS_ID, (values: string[]) => {
     Page.Tabs.clearStoredState(controlId.PLOTTER_TABS_ID);
     setQueryStringValue(plotterQueryStringParamName, wantedPlotter);
 });
+
+Page.Checkbox.setChecked(controlId.MULTITHREADED_CHECKBOX_ID, Parameters.multithreaded);
+Page.Checkbox.addObserver(controlId.MULTITHREADED_CHECKBOX_ID, (checked: boolean) => {
+    Page.Checkbox.clearStoredState(controlId.MULTITHREADED_CHECKBOX_ID);
+    setQueryStringValue(multithreadedQueryStringParamName, checked ? "1" : null);
+});
+Page.Controls.setVisibility(controlId.PLOTTER_TABS_ID, !Parameters.multithreaded);
 
 export {
     EPlotter,

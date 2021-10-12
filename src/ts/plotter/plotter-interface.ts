@@ -4,8 +4,6 @@ import { BatchOfLines, BatchOfPolygons } from "./types";
 
 
 interface IPlotter {
-    get isReady(): boolean;
-
     initialize(backgroundColor: Color, zoom: Zoom, scaling: number): void;
     finalize(): void;
 

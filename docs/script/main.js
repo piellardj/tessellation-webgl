@@ -89,6 +89,40 @@ exports.EngineMonothreaded = EngineMonothreaded;
 
 /***/ }),
 
+/***/ "./src/ts/engine/engine-multithreaded.ts":
+/*!***********************************************!*\
+  !*** ./src/ts/engine/engine-multithreaded.ts ***!
+  \***********************************************/
+/***/ (function(__unused_webpack_module, exports) {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.EngineMultithreaded = void 0;
+var EngineMultithreaded = (function () {
+    function EngineMultithreaded() {
+    }
+    EngineMultithreaded.prototype.update = function (_viewport, _instantZoom, _wantedDepth, _subdivisionBalance, _colorVariation) {
+        throw new Error("not implemented");
+    };
+    EngineMultithreaded.prototype.draw = function (_plotter, _scaling) {
+        throw new Error("not implemented");
+    };
+    EngineMultithreaded.prototype.reset = function (_viewport, _primitiveType) {
+        throw new Error("not implemented");
+    };
+    EngineMultithreaded.prototype.recomputeColors = function (_colorVariation) {
+        throw new Error("not implemented");
+    };
+    EngineMultithreaded.prototype.downloadAsSvg = function (_width, _height, _scaling) {
+        throw new Error("not implemented");
+    };
+    return EngineMultithreaded;
+}());
+exports.EngineMultithreaded = EngineMultithreaded;
+
+
+/***/ }),
+
 /***/ "./src/ts/engine/engine.ts":
 /*!*********************************!*\
   !*** ./src/ts/engine/engine.ts ***!
@@ -981,24 +1015,16 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 var engine_monothreaded_1 = __webpack_require__(/*! ./engine/engine-monothreaded */ "./src/ts/engine/engine-monothreaded.ts");
+var engine_multithreaded_1 = __webpack_require__(/*! ./engine/engine-multithreaded */ "./src/ts/engine/engine-multithreaded.ts");
 var frame_time_monitor_1 = __webpack_require__(/*! ./misc/frame-time-monitor */ "./src/ts/misc/frame-time-monitor.ts");
 var zoom_1 = __webpack_require__(/*! ./misc/zoom */ "./src/ts/misc/zoom.ts");
 var parameters_1 = __webpack_require__(/*! ./parameters */ "./src/ts/parameters.ts");
 var plotter_canvas_2d_1 = __webpack_require__(/*! ./plotter/plotter-canvas-2d */ "./src/ts/plotter/plotter-canvas-2d.ts");
 var plotter_webgl_1 = __webpack_require__(/*! ./plotter/plotter-webgl */ "./src/ts/plotter/plotter-webgl.ts");
+var plotter_webgl_basic_1 = __webpack_require__(/*! ./plotter/plotter-webgl-basic */ "./src/ts/plotter/plotter-webgl-basic.ts");
 var Testing = __importStar(__webpack_require__(/*! ./testing/main-testing */ "./src/ts/testing/main-testing.ts"));
 __webpack_require__(/*! ./page-interface-generated */ "./src/ts/page-interface-generated.ts");
-function createPlotter() {
-    if (parameters_1.Parameters.plotter === parameters_1.EPlotter.CANVAS2D) {
-        return new plotter_canvas_2d_1.PlotterCanvas2D();
-    }
-    else {
-        return new plotter_webgl_1.PlotterWebGL();
-    }
-}
-function main() {
-    var plotter = createPlotter();
-    var engine = new engine_monothreaded_1.EngineMonothreaded();
+function main(engine, plotter) {
     parameters_1.Parameters.recomputeColorsObservers.push(function () {
         engine.recomputeColors(parameters_1.Parameters.colorVariation);
     });
@@ -1057,7 +1083,22 @@ if (parameters_1.Parameters.debugMode) {
     Testing.main();
 }
 else {
-    main();
+    if (parameters_1.Parameters.multithreaded) {
+        var engine = new engine_multithreaded_1.EngineMultithreaded();
+        var plotter = new plotter_webgl_basic_1.PlotterWebGLBasic();
+        main(engine, plotter);
+    }
+    else {
+        var engine = new engine_monothreaded_1.EngineMonothreaded();
+        if (parameters_1.Parameters.plotter === parameters_1.EPlotter.CANVAS2D) {
+            var plotter = new plotter_canvas_2d_1.PlotterCanvas2D();
+            main(engine, plotter);
+        }
+        else {
+            var plotter = new plotter_webgl_1.PlotterWebGL();
+            main(engine, plotter);
+        }
+    }
 }
 
 
@@ -1567,6 +1608,7 @@ var controlId = {
     DEPTH_RANGE_ID: "depth-range-id",
     BALANCE_RANGE_ID: "balance-range-id",
     ZOOMING_SPEED_RANGE_ID: "zooming-speed-range-id",
+    MULTITHREADED_CHECKBOX_ID: "multithreaded-checkbox-id",
     RESET_BUTTON_ID: "reset-button-id",
     PLOTTER_TABS_ID: "plotter-tabs-id",
     SCALING_RANGE_ID: "scaling-range-id",
@@ -1585,6 +1627,21 @@ var EPlotter;
 })(EPlotter || (EPlotter = {}));
 exports.EPlotter = EPlotter;
 var plotterQueryStringParamName = "plotter";
+var multithreadedQueryStringParamName = "multithread";
+function isMultithreaded() {
+    return web_1.getQueryStringValue(multithreadedQueryStringParamName) === "1";
+}
+function getPlotter() {
+    if (isMultithreaded()) {
+        return EPlotter.WEBGL;
+    }
+    else if (web_1.getQueryStringValue(plotterQueryStringParamName) === EPlotter.CANVAS2D) {
+        return EPlotter.CANVAS2D;
+    }
+    else {
+        return EPlotter.WEBGL;
+    }
+}
 var Parameters = (function () {
     function Parameters() {
     }
@@ -1688,7 +1745,8 @@ var Parameters = (function () {
     Parameters.redrawObservers = [];
     Parameters.downloadObservers = [];
     Parameters.debugMode = (web_1.getQueryStringValue("debug") === "1");
-    Parameters.plotter = (web_1.getQueryStringValue(plotterQueryStringParamName) === EPlotter.CANVAS2D) ? EPlotter.CANVAS2D : EPlotter.WEBGL;
+    Parameters.multithreaded = isMultithreaded();
+    Parameters.plotter = getPlotter();
     return Parameters;
 }());
 exports.Parameters = Parameters;
@@ -1729,6 +1787,12 @@ Page.Tabs.addObserver(controlId.PLOTTER_TABS_ID, function (values) {
     Page.Tabs.clearStoredState(controlId.PLOTTER_TABS_ID);
     web_1.setQueryStringValue(plotterQueryStringParamName, wantedPlotter);
 });
+Page.Checkbox.setChecked(controlId.MULTITHREADED_CHECKBOX_ID, Parameters.multithreaded);
+Page.Checkbox.addObserver(controlId.MULTITHREADED_CHECKBOX_ID, function (checked) {
+    Page.Checkbox.clearStoredState(controlId.MULTITHREADED_CHECKBOX_ID);
+    web_1.setQueryStringValue(multithreadedQueryStringParamName, checked ? "1" : null);
+});
+Page.Controls.setVisibility(controlId.PLOTTER_TABS_ID, !Parameters.multithreaded);
 
 
 /***/ }),
@@ -1941,13 +2005,6 @@ var PlotterSVG = (function () {
         this.height = height;
         this.lines = [];
     }
-    Object.defineProperty(PlotterSVG.prototype, "isReady", {
-        get: function () {
-            return true;
-        },
-        enumerable: false,
-        configurable: true
-    });
     PlotterSVG.prototype.initialize = function (backgroundColor, zoom, scaling) {
         this.lines = [];
         this.lines.push("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>");

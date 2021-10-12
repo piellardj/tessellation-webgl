@@ -16,6 +16,8 @@ abstract class PlotterCanvas {
         this.resizeCanvas();
     }
 
+    public abstract get isReady(): boolean;
+
     public get viewport(): Rectangle {
         return new Rectangle(-0.5 * this._width, 0.5 * this._width, -0.5 * this._height, 0.5 * this._height);
     }

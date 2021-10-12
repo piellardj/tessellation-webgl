@@ -1,30 +1,20 @@
 import { IEngine } from "./engine/engine-interface";
 import { EngineMonothreaded } from "./engine/engine-monothreaded";
+import { EngineMultithreaded } from "./engine/engine-multithreaded";
 import { FrametimeMonitor } from "./misc/frame-time-monitor";
 import { IPoint } from "./misc/point";
 import { Zoom } from "./misc/zoom";
 import { EPlotter, Parameters } from "./parameters";
 import { PlotterCanvas } from "./plotter/plotter-canvas";
 import { PlotterCanvas2D } from "./plotter/plotter-canvas-2d";
-import { IPlotter } from "./plotter/plotter-interface";
 import { PlotterWebGL } from "./plotter/plotter-webgl";
+import { PlotterWebGLBasic } from "./plotter/plotter-webgl-basic";
 import * as Testing from "./testing/main-testing";
 
 import "./page-interface-generated";
 
 
-function createPlotter(): PlotterCanvas & IPlotter {
-    if (Parameters.plotter === EPlotter.CANVAS2D) {
-        return new PlotterCanvas2D();
-    } else {
-        return new PlotterWebGL();
-    }
-}
-
-function main(): void {
-    const plotter = createPlotter();
-    const engine: IEngine = new EngineMonothreaded();
-
+function main<TPlotter extends PlotterCanvas>(engine: IEngine<TPlotter>, plotter: TPlotter): void {
     Parameters.recomputeColorsObservers.push(() => {
         engine.recomputeColors(Parameters.colorVariation);
     });
@@ -95,5 +85,18 @@ function main(): void {
 if (Parameters.debugMode) {
     Testing.main();
 } else {
-    main();
+    if (Parameters.multithreaded) {
+        const engine = new EngineMultithreaded();
+        const plotter = new PlotterWebGLBasic();
+        main<typeof plotter>(engine, plotter);
+    } else {
+        const engine = new EngineMonothreaded();
+        if (Parameters.plotter === EPlotter.CANVAS2D) {
+            const plotter = new PlotterCanvas2D();
+            main<typeof plotter>(engine, plotter);
+        } else {
+            const plotter = new PlotterWebGL();
+            main<typeof plotter>(engine, plotter);
+        }
+    }
 }
