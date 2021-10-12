@@ -93,28 +93,27 @@ exports.EngineMonothreaded = EngineMonothreaded;
 /*!***********************************************!*\
   !*** ./src/ts/engine/engine-multithreaded.ts ***!
   \***********************************************/
-/***/ (function(__unused_webpack_module, exports) {
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.EngineMultithreaded = void 0;
+__webpack_require__(/*! ../page-interface-generated */ "./src/ts/page-interface-generated.ts");
 var EngineMultithreaded = (function () {
     function EngineMultithreaded() {
+        this.worker = new Worker("script/worker.js?v=" + Page.version);
+        this.worker.postMessage(null);
     }
     EngineMultithreaded.prototype.update = function (_viewport, _instantZoom, _wantedDepth, _subdivisionBalance, _colorVariation) {
-        throw new Error("not implemented");
+        return true;
     };
     EngineMultithreaded.prototype.draw = function (_plotter, _scaling) {
-        throw new Error("not implemented");
     };
     EngineMultithreaded.prototype.reset = function (_viewport, _primitiveType) {
-        throw new Error("not implemented");
     };
     EngineMultithreaded.prototype.recomputeColors = function (_colorVariation) {
-        throw new Error("not implemented");
     };
     EngineMultithreaded.prototype.downloadAsSvg = function (_width, _height, _scaling) {
-        throw new Error("not implemented");
     };
     return EngineMultithreaded;
 }());

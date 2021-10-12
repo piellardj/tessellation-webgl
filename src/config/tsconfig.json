@@ -1,6 +1,7 @@
 {
     "files": [
-        "../ts/main.ts"
+        "../ts/main.ts",
+        "../ts/worker/worker.ts"
     ],
     "compilerOptions": {
         /* Basic Options */

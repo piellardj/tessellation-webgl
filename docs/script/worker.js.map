@@ -1,0 +1,1 @@
+{"version":3,"file":"worker.js","mappings":";;;;;;;AAAA,OAAO,CAAC,GAAG,CAAC,MAAM,CAAC,CAAC","sources":["webpack://tessellation-webgl/./src/ts/worker/worker.ts"],"sourcesContent":["console.log(\"hihi\");\r\n"],"names":[],"sourceRoot":""}

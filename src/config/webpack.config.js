@@ -43,4 +43,5 @@ function buildConfig(entryFilename /* string */, outputFilename /* string */) /*
 
 module.exports = [
     buildConfig("main.ts", "main.js"),
+    buildConfig("worker/worker.ts", "worker.js"),
 ];
