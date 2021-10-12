@@ -9,6 +9,7 @@ interface IEngine {
     draw(plotter: IPlotter, scaling: number): void;
     reset(viewport: Rectangle, primitiveType: EPrimitiveType): void;
     recomputeColors(colorVariation: number): void;
+    downloadAsSvg(width: number, height: number, scaling: number): void;
 }
 
 export {

@@ -1,6 +1,8 @@
 import { Color } from "../misc/color";
+import { downloadTextFile } from "../misc/web";
 import { Parameters } from "../parameters";
 import { IPlotter } from "../plotter/plotter-interface";
+import { PlotterSVG } from "../plotter/plotter-svg";
 import { Engine } from "./engine";
 import { IEngine } from "./engine-interface";
 
@@ -43,6 +45,14 @@ class EngineSynchonous extends Engine implements IEngine {
         }
 
         plotter.finalize();
+    }
+
+    public downloadAsSvg(width: number, height: number, scaling: number): void {
+        const svgPlotter = new PlotterSVG(width, height);
+        this.draw(svgPlotter, scaling);
+        const fileName = "subdivisions.svg";
+        const svgString = svgPlotter.output();
+        downloadTextFile(fileName, svgString);
     }
 
     private static getLineThicknessForLayer(layerId: number, totalLayersCount: number): number {

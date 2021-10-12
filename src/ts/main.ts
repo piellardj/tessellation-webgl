@@ -2,13 +2,11 @@ import { IEngine } from "./engine/engine-interface";
 import { EngineSynchonous } from "./engine/engine-synchronous";
 import { FrametimeMonitor } from "./misc/frame-time-monitor";
 import { IPoint } from "./misc/point";
-import { downloadTextFile } from "./misc/web";
 import { Zoom } from "./misc/zoom";
 import { EPlotter, Parameters } from "./parameters";
 import { PlotterCanvas } from "./plotter/plotter-canvas";
 import { PlotterCanvas2D } from "./plotter/plotter-canvas-2d";
 import { IPlotter } from "./plotter/plotter-interface";
-import { PlotterSVG } from "./plotter/plotter-svg";
 import { PlotterWebGL } from "./plotter/plotter-webgl";
 import * as Testing from "./testing/main-testing";
 
@@ -32,11 +30,7 @@ function main(): void {
     });
 
     Parameters.downloadObservers.push(() => {
-        const svgPlotter = new PlotterSVG(plotter.width, plotter.height);
-        engine.draw(svgPlotter, Parameters.scaling);
-        const fileName = "subdivisions.svg";
-        const svgString = svgPlotter.output();
-        downloadTextFile(fileName, svgString);
+        engine.downloadAsSvg(plotter.width, plotter.height, Parameters.scaling);
     });
 
     function getCurrentMousePosition(): IPoint {
