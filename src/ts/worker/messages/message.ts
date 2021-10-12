@@ -1,5 +1,6 @@
 enum EVerb {
     RESET = "reset",
+    UPDATE = "update",
 }
 
 interface IMessageData<TData> {

@@ -5,6 +5,14 @@ class Zoom {
         return new Zoom({ x: 0, y: 0 }, 1);
     }
 
+    public static rehydrate(dehydrated: Zoom): Zoom {
+        const result = new Zoom({ x: 0, y: 0 }, 1); // whatever
+        result.a = dehydrated.a;
+        result.b = dehydrated.b;
+        result.c = dehydrated.c;
+        return result;
+    }
+
     /* The 2D zoom is stored as a 3x3 matrix in the form
      * | a 0 b |
      * | 0 a c |

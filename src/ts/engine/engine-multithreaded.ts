@@ -16,7 +16,8 @@ class EngineMultithreaded implements IEngine<PlotterWebGLBasic> {
         this.worker.postMessage(null);
     }
 
-    public update(_viewport: Rectangle, _instantZoom: Zoom, _wantedDepth: number, _subdivisionBalance: number, _colorVariation: number): boolean {
+    public update(viewport: Rectangle, instantZoom: Zoom, wantedDepth: number, subdivisionBalance: number, colorVariation: number): boolean {
+        MessagesToWorker.Update.sendMessage(this.worker, viewport, instantZoom, wantedDepth, subdivisionBalance, colorVariation);
         return true;
         // throw new Error("not implemented");
     }
