@@ -2,6 +2,7 @@ import { Rectangle } from "../misc/rectangle";
 import { Zoom } from "../misc/zoom";
 import { PlotterWebGLBasic } from "../plotter/plotter-webgl-basic";
 import { EPrimitiveType } from "../primitives/primitive-type-enum";
+import * as MessagesToWorker from "../worker/messages/to-worker/messages";
 import { IEngine } from "./engine-interface";
 
 import "../page-interface-generated";
@@ -24,8 +25,8 @@ class EngineMultithreaded implements IEngine<PlotterWebGLBasic> {
         // throw new Error("not implemented");
     }
 
-    public reset(_viewport: Rectangle, _primitiveType: EPrimitiveType): void {
-        // throw new Error("not implemented");
+    public reset(viewport: Rectangle, primitiveType: EPrimitiveType): void {
+        MessagesToWorker.Reset.sendMessage(this.worker, viewport, primitiveType);
     }
 
     public recomputeColors(_colorVariation: number): void {

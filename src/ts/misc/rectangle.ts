@@ -2,6 +2,10 @@ import { IPoint } from "./point";
 
 
 class Rectangle {
+    public static rehydrate(dehydrated: Rectangle): Rectangle {
+        return new Rectangle(dehydrated.topLeft.x, dehydrated.bottomRight.x, dehydrated.topLeft.y, dehydrated.bottomRight.y);
+    }
+
     public readonly topLeft: IPoint;
     public readonly bottomRight: IPoint;
 
