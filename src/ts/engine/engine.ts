@@ -110,6 +110,31 @@ abstract class Engine {
         }
     }
 
+    protected computeMetrics(): IEngineMetrics {
+        const treeDepth = this.rootPrimitive.treeDepth();
+        const lastLayerPrimitivesCount = this.layers[this.layers.length - 1].primitives.items.length;
+        let totalPrimitivesCount = 0;
+        let segmentsCount = 0;
+
+        for (const layer of this.layers) {
+            totalPrimitivesCount += layer.primitives.items.length;
+
+            for (const line of layer.outlines.items) {
+                const nbLinePoints = line.length;
+                segmentsCount += (nbLinePoints > 1) ? (nbLinePoints - 1) : 0;
+            }
+        }
+
+        return {
+            treeDepth,
+            lastLayerPrimitivesCount,
+            totalPrimitivesCount,
+            segmentsCount,
+        };
+    }
+
+    protected abstract updateIndicators(): void;
+
     private computeRootPrimitiveColor(): Color {
         const minLuminosity = 0.3;
         const maxLuminosity = 0.7;
@@ -263,31 +288,6 @@ abstract class Engine {
             this.layers[iLayer].outlines = outlines;
         }
     }
-
-    protected computeMetrics(): IEngineMetrics {
-        const treeDepth = this.rootPrimitive.treeDepth();
-        const lastLayerPrimitivesCount = this.layers[this.layers.length - 1].primitives.items.length;
-        let totalPrimitivesCount = 0;
-        let segmentsCount = 0;
-
-        for (const layer of this.layers) {
-            totalPrimitivesCount += layer.primitives.items.length;
-
-            for (const line of layer.outlines.items) {
-                const nbLinePoints = line.length;
-                segmentsCount += (nbLinePoints > 1) ? (nbLinePoints - 1) : 0;
-            }
-        }
-
-        return {
-            treeDepth,
-            lastLayerPrimitivesCount,
-            totalPrimitivesCount,
-            segmentsCount,
-        };
-    }
-
-    protected abstract updateIndicators(): void;
 
     private get primitiveType(): EPrimitiveType {
         return this.rootPrimitive.primitiveType;
