@@ -1,13 +1,15 @@
 const path = require("path");
 
 const PROJECT_DIR = path.resolve(__dirname, "..", "..");
+const INPUT_SCRIPT_DIR = path.join(PROJECT_DIR, "src", "ts");
+const OUTPUT_SCRIPT_DIR = path.join(PROJECT_DIR, "docs", "script");
 
 module.exports = {
     devtool: "source-map",
     mode: "development",
-    entry: path.join(PROJECT_DIR, "src", "ts", "main.ts"),
+    entry: path.join(INPUT_SCRIPT_DIR, "main.ts"),
     output: {
-        path: path.join(PROJECT_DIR, "docs", "script"),
+        path: OUTPUT_SCRIPT_DIR,
         filename: "[name].js"
     },
     target: ["web", "es5"],
@@ -25,7 +27,7 @@ module.exports = {
                         options: {
                             //   transpileOnly: true,
                             compilerOptions: {
-                                rootDir: path.join(PROJECT_DIR, "src", "ts")
+                                rootDir: INPUT_SCRIPT_DIR
                             },
                             configFile: path.join(PROJECT_DIR, "src", "config", 'tsconfig.json')
                         }
