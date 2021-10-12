@@ -1,5 +1,5 @@
 import { IEngine } from "./engine/engine-interface";
-import { EngineSynchonous } from "./engine/engine-synchronous";
+import { EngineMonothreaded } from "./engine/engine-monothreaded";
 import { FrametimeMonitor } from "./misc/frame-time-monitor";
 import { IPoint } from "./misc/point";
 import { Zoom } from "./misc/zoom";
@@ -23,7 +23,7 @@ function createPlotter(): PlotterCanvas & IPlotter {
 
 function main(): void {
     const plotter = createPlotter();
-    const engine: IEngine = new EngineSynchonous();
+    const engine: IEngine = new EngineMonothreaded();
 
     Parameters.recomputeColorsObservers.push(() => {
         engine.recomputeColors(Parameters.colorVariation);

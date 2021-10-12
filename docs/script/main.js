@@ -2,10 +2,10 @@
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
-/***/ "./src/ts/engine/engine-synchronous.ts":
-/*!*********************************************!*\
-  !*** ./src/ts/engine/engine-synchronous.ts ***!
-  \*********************************************/
+/***/ "./src/ts/engine/engine-monothreaded.ts":
+/*!**********************************************!*\
+  !*** ./src/ts/engine/engine-monothreaded.ts ***!
+  \**********************************************/
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -25,16 +25,18 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.EngineSynchonous = void 0;
+exports.EngineMonothreaded = void 0;
 var color_1 = __webpack_require__(/*! ../misc/color */ "./src/ts/misc/color.ts");
+var web_1 = __webpack_require__(/*! ../misc/web */ "./src/ts/misc/web.ts");
 var parameters_1 = __webpack_require__(/*! ../parameters */ "./src/ts/parameters.ts");
+var plotter_svg_1 = __webpack_require__(/*! ../plotter/plotter-svg */ "./src/ts/plotter/plotter-svg.ts");
 var engine_1 = __webpack_require__(/*! ./engine */ "./src/ts/engine/engine.ts");
-var EngineSynchonous = (function (_super) {
-    __extends(EngineSynchonous, _super);
-    function EngineSynchonous() {
+var EngineMonothreaded = (function (_super) {
+    __extends(EngineMonothreaded, _super);
+    function EngineMonothreaded() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
-    EngineSynchonous.prototype.draw = function (plotter, scaling) {
+    EngineMonothreaded.prototype.draw = function (plotter, scaling) {
         if (this.layers.length < 1) {
             return;
         }
@@ -59,23 +61,30 @@ var EngineSynchonous = (function (_super) {
         }
         if (parameters_1.Parameters.displayLines) {
             for (var iLayer = 0; iLayer < this.layers.length; iLayer++) {
-                var thickness = EngineSynchonous.getLineThicknessForLayer(iLayer, this.layers.length);
+                var thickness = EngineMonothreaded.getLineThicknessForLayer(iLayer, this.layers.length);
                 var alpha = (iLayer === emergingLayer) ? emergingLayerAlpha : 1;
                 plotter.drawLines(this.layers[iLayer].outlines, thickness, parameters_1.Parameters.linesColor, alpha);
             }
         }
         plotter.finalize();
     };
-    EngineSynchonous.getLineThicknessForLayer = function (layerId, totalLayersCount) {
+    EngineMonothreaded.prototype.downloadAsSvg = function (width, height, scaling) {
+        var svgPlotter = new plotter_svg_1.PlotterSVG(width, height);
+        this.draw(svgPlotter, scaling);
+        var fileName = "subdivisions.svg";
+        var svgString = svgPlotter.output();
+        web_1.downloadTextFile(fileName, svgString);
+    };
+    EngineMonothreaded.getLineThicknessForLayer = function (layerId, totalLayersCount) {
         var variablePart = 0;
         if (layerId > 0) {
             variablePart = parameters_1.Parameters.thickness * (totalLayersCount - 1 - layerId) / (totalLayersCount - 1);
         }
         return 1 + variablePart;
     };
-    return EngineSynchonous;
+    return EngineMonothreaded;
 }(engine_1.Engine));
-exports.EngineSynchonous = EngineSynchonous;
+exports.EngineMonothreaded = EngineMonothreaded;
 
 
 /***/ }),
@@ -971,13 +980,11 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-var engine_synchronous_1 = __webpack_require__(/*! ./engine/engine-synchronous */ "./src/ts/engine/engine-synchronous.ts");
+var engine_monothreaded_1 = __webpack_require__(/*! ./engine/engine-monothreaded */ "./src/ts/engine/engine-monothreaded.ts");
 var frame_time_monitor_1 = __webpack_require__(/*! ./misc/frame-time-monitor */ "./src/ts/misc/frame-time-monitor.ts");
-var web_1 = __webpack_require__(/*! ./misc/web */ "./src/ts/misc/web.ts");
 var zoom_1 = __webpack_require__(/*! ./misc/zoom */ "./src/ts/misc/zoom.ts");
 var parameters_1 = __webpack_require__(/*! ./parameters */ "./src/ts/parameters.ts");
 var plotter_canvas_2d_1 = __webpack_require__(/*! ./plotter/plotter-canvas-2d */ "./src/ts/plotter/plotter-canvas-2d.ts");
-var plotter_svg_1 = __webpack_require__(/*! ./plotter/plotter-svg */ "./src/ts/plotter/plotter-svg.ts");
 var plotter_webgl_1 = __webpack_require__(/*! ./plotter/plotter-webgl */ "./src/ts/plotter/plotter-webgl.ts");
 var Testing = __importStar(__webpack_require__(/*! ./testing/main-testing */ "./src/ts/testing/main-testing.ts"));
 __webpack_require__(/*! ./page-interface-generated */ "./src/ts/page-interface-generated.ts");
@@ -991,16 +998,12 @@ function createPlotter() {
 }
 function main() {
     var plotter = createPlotter();
-    var engine = new engine_synchronous_1.EngineSynchonous();
+    var engine = new engine_monothreaded_1.EngineMonothreaded();
     parameters_1.Parameters.recomputeColorsObservers.push(function () {
         engine.recomputeColors(parameters_1.Parameters.colorVariation);
     });
     parameters_1.Parameters.downloadObservers.push(function () {
-        var svgPlotter = new plotter_svg_1.PlotterSVG(plotter.width, plotter.height);
-        engine.draw(svgPlotter, parameters_1.Parameters.scaling);
-        var fileName = "subdivisions.svg";
-        var svgString = svgPlotter.output();
-        web_1.downloadTextFile(fileName, svgString);
+        engine.downloadAsSvg(plotter.width, plotter.height, parameters_1.Parameters.scaling);
     });
     function getCurrentMousePosition() {
         var mousePosition = parameters_1.Parameters.mousePositionInPixels;

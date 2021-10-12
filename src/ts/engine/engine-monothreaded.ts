@@ -7,7 +7,7 @@ import { Engine } from "./engine";
 import { IEngine } from "./engine-interface";
 
 
-class EngineSynchonous extends Engine implements IEngine {
+class EngineMonothreaded extends Engine implements IEngine {
     public draw(plotter: IPlotter, scaling: number): void {
         if (this.layers.length < 1) {
             return;
@@ -38,7 +38,7 @@ class EngineSynchonous extends Engine implements IEngine {
 
         if (Parameters.displayLines) {
             for (let iLayer = 0; iLayer < this.layers.length; iLayer++) {
-                const thickness = EngineSynchonous.getLineThicknessForLayer(iLayer, this.layers.length);
+                const thickness = EngineMonothreaded.getLineThicknessForLayer(iLayer, this.layers.length);
                 const alpha = (iLayer === emergingLayer) ? emergingLayerAlpha : 1;
                 plotter.drawLines(this.layers[iLayer].outlines, thickness, Parameters.linesColor, alpha);
             }
@@ -65,5 +65,6 @@ class EngineSynchonous extends Engine implements IEngine {
 }
 
 export {
-    EngineSynchonous,
+    EngineMonothreaded,
 };
+
