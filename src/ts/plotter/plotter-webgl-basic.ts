@@ -4,6 +4,7 @@ import { Zoom } from "../misc/zoom";
 import { GeometryId } from "./geometry-id";
 import { PlotterCanvas } from "./plotter-canvas";
 import { BatchOfLines, BatchOfPolygons } from "./types";
+import { IVboBuffer, IVboPart } from "./vbo-types";
 
 import * as GLCanvas from "../gl-utils/gl-canvas";
 import { gl } from "../gl-utils/gl-canvas";
@@ -12,19 +13,6 @@ import * as ShaderManager from "../gl-utils/shader-manager";
 import { Viewport } from "../gl-utils/viewport";
 
 import "../page-interface-generated";
-
-
-interface IVboPart {
-    readonly indexOfFirstVertice: number;
-    readonly verticesCount: number;
-    readonly geometryId: GeometryId;
-}
-
-// VBO when it is still on CPU side
-interface IVboBuffer {
-    readonly buffer: Float32Array;
-    readonly bufferParts: IVboPart[];
-}
 
 
 interface IUploadedVboPart extends IVboPart {
