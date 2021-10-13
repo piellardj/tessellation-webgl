@@ -6,11 +6,11 @@ import { PlotterCanvas } from "./plotter-canvas";
 import { BatchOfLines, BatchOfPolygons } from "./types";
 import { IVboBuffer, IVboPart } from "./vbo-types";
 
-import * as GLCanvas from "../gl-utils/gl-canvas";
-import { gl } from "../gl-utils/gl-canvas";
-import { Shader } from "../gl-utils/shader";
-import * as ShaderManager from "../gl-utils/shader-manager";
-import { Viewport } from "../gl-utils/viewport";
+import * as GLCanvas from "./gl-utils/gl-canvas";
+import { gl } from "./gl-utils/gl-canvas";
+import { Shader } from "./gl-utils/shader";
+import * as ShaderManager from "./gl-utils/shader-manager";
+import { Viewport } from "./gl-utils/viewport";
 
 import "../page-interface-generated";
 

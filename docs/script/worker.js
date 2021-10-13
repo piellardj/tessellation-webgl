@@ -953,525 +953,6 @@ MessagesFromMain.DownloadAsSvg.addListener(function (width, height, scaling, bac
 
 /***/ }),
 
-/***/ "./src/ts/gl-utils/gl-canvas.ts":
-/*!**************************************!*\
-  !*** ./src/ts/gl-utils/gl-canvas.ts ***!
-  \**************************************/
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.gl = exports.initGL = exports.adjustSize = void 0;
-__webpack_require__(/*! ../page-interface-generated */ "./src/ts/page-interface-generated.ts");
-var gl = null;
-exports.gl = gl;
-function initGL(flags) {
-    function setError(message) {
-        Page.Demopage.setErrorMessage("webgl-support", message);
-    }
-    var canvas = Page.Canvas.getCanvas();
-    exports.gl = gl = canvas.getContext("webgl", flags);
-    if (gl == null) {
-        exports.gl = gl = canvas.getContext("experimental-webgl", flags);
-        if (gl == null) {
-            setError("Your browser or device does not seem to support WebGL.");
-            return false;
-        }
-        setError("Your browser or device only supports experimental WebGL.\nThe simulation may not run as expected.");
-    }
-    gl.disable(gl.CULL_FACE);
-    gl.disable(gl.DEPTH_TEST);
-    gl.disable(gl.BLEND);
-    gl.clearColor(0, 0, 0, 1);
-    return true;
-}
-exports.initGL = initGL;
-function adjustSize(hidpi) {
-    if (hidpi === void 0) { hidpi = false; }
-    var cssPixel = (hidpi) ? window.devicePixelRatio : 1;
-    var canvas = gl.canvas;
-    var width = Math.floor(canvas.clientWidth * cssPixel);
-    var height = Math.floor(canvas.clientHeight * cssPixel);
-    if (canvas.width !== width || canvas.height !== height) {
-        canvas.width = width;
-        canvas.height = height;
-    }
-}
-exports.adjustSize = adjustSize;
-
-
-/***/ }),
-
-/***/ "./src/ts/gl-utils/gl-resource.ts":
-/*!****************************************!*\
-  !*** ./src/ts/gl-utils/gl-resource.ts ***!
-  \****************************************/
-/***/ (function(__unused_webpack_module, exports) {
-
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.GLResource = void 0;
-var GLResource = (function () {
-    function GLResource(gl) {
-        this._gl = gl;
-    }
-    GLResource.prototype.gl = function () {
-        return this._gl;
-    };
-    return GLResource;
-}());
-exports.GLResource = GLResource;
-
-
-/***/ }),
-
-/***/ "./src/ts/gl-utils/shader-manager.ts":
-/*!*******************************************!*\
-  !*** ./src/ts/gl-utils/shader-manager.ts ***!
-  \*******************************************/
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.deleteShader = exports.registerShader = exports.getShader = exports.buildShader = void 0;
-var gl_canvas_1 = __webpack_require__(/*! ./gl-canvas */ "./src/ts/gl-utils/gl-canvas.ts");
-var shader_1 = __webpack_require__(/*! ./shader */ "./src/ts/gl-utils/shader.ts");
-var ShaderSources = __importStar(__webpack_require__(/*! ./shader-sources */ "./src/ts/gl-utils/shader-sources.ts"));
-var cachedShaders = {};
-function getShader(name) {
-    return cachedShaders[name].shader;
-}
-exports.getShader = getShader;
-function buildShader(infos, callback) {
-    var sourcesPending = 2;
-    var sourcesFailed = 0;
-    function loadedSource(success) {
-        function processSource(source) {
-            return source.replace(/#INJECT\(([^)]*)\)/mg, function (match, name) {
-                if (infos.injected[name]) {
-                    return infos.injected[name];
-                }
-                return match;
-            });
-        }
-        sourcesPending--;
-        if (!success) {
-            sourcesFailed++;
-        }
-        if (sourcesPending === 0) {
-            var shader = null;
-            if (sourcesFailed === 0) {
-                var vert = ShaderSources.getSource(infos.vertexFilename);
-                var frag = ShaderSources.getSource(infos.fragmentFilename);
-                var processedVert = processSource(vert);
-                var processedFrag = processSource(frag);
-                shader = new shader_1.Shader(gl_canvas_1.gl, processedVert, processedFrag);
-            }
-            callback(shader);
-        }
-    }
-    ShaderSources.loadSource(infos.vertexFilename, loadedSource);
-    ShaderSources.loadSource(infos.fragmentFilename, loadedSource);
-}
-exports.buildShader = buildShader;
-function registerShader(name, infos, callback) {
-    function callAndClearCallbacks(cached) {
-        for (var _i = 0, _a = cached.callbacks; _i < _a.length; _i++) {
-            var cachedCallback = _a[_i];
-            cachedCallback(!cached.failed, cached.shader);
-        }
-        cached.callbacks = [];
-    }
-    if (typeof cachedShaders[name] === "undefined") {
-        cachedShaders[name] = {
-            callbacks: [callback],
-            failed: false,
-            infos: infos,
-            pending: true,
-            shader: null,
-        };
-        var cached_1 = cachedShaders[name];
-        buildShader(infos, function (builtShader) {
-            cached_1.pending = false;
-            cached_1.failed = builtShader === null;
-            cached_1.shader = builtShader;
-            callAndClearCallbacks(cached_1);
-        });
-    }
-    else {
-        var cached = cachedShaders[name];
-        if (cached.pending === true) {
-            cached.callbacks.push(callback);
-        }
-        else {
-            callAndClearCallbacks(cached);
-        }
-    }
-}
-exports.registerShader = registerShader;
-function deleteShader(name) {
-    if (typeof cachedShaders[name] !== "undefined") {
-        if (cachedShaders[name].shader !== null) {
-            cachedShaders[name].shader.freeGLResources();
-        }
-        delete cachedShaders[name];
-    }
-}
-exports.deleteShader = deleteShader;
-
-
-/***/ }),
-
-/***/ "./src/ts/gl-utils/shader-sources.ts":
-/*!*******************************************!*\
-  !*** ./src/ts/gl-utils/shader-sources.ts ***!
-  \*******************************************/
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.loadSource = exports.getSource = void 0;
-__webpack_require__(/*! ../page-interface-generated */ "./src/ts/page-interface-generated.ts");
-var cachedSources = {};
-function loadSource(filename, callback) {
-    function callAndClearCallbacks(cached) {
-        for (var _i = 0, _a = cached.callbacks; _i < _a.length; _i++) {
-            var cachedCallback = _a[_i];
-            cachedCallback(!cached.failed);
-        }
-        cached.callbacks = [];
-    }
-    if (typeof cachedSources[filename] === "undefined") {
-        cachedSources[filename] = {
-            callbacks: [callback],
-            failed: false,
-            pending: true,
-            text: null,
-        };
-        var cached_1 = cachedSources[filename];
-        var url = "./shaders/" + filename;
-        if (typeof Page.version !== "undefined") {
-            url += "?v=" + Page.version;
-        }
-        var xhr_1 = new XMLHttpRequest();
-        xhr_1.open("GET", url, true);
-        xhr_1.onload = function () {
-            if (xhr_1.readyState === 4) {
-                cached_1.pending = false;
-                if (xhr_1.status === 200) {
-                    cached_1.text = xhr_1.responseText;
-                    cached_1.failed = false;
-                }
-                else {
-                    console.error("Cannot load '" + filename + "' shader source: " + xhr_1.statusText);
-                    cached_1.failed = true;
-                }
-                callAndClearCallbacks(cached_1);
-            }
-        };
-        xhr_1.onerror = function () {
-            console.error("Cannot load '" + filename + "' shader source: " + xhr_1.statusText);
-            cached_1.pending = false;
-            cached_1.failed = true;
-            callAndClearCallbacks(cached_1);
-        };
-        xhr_1.send(null);
-    }
-    else {
-        var cached = cachedSources[filename];
-        if (cached.pending === true) {
-            cached.callbacks.push(callback);
-        }
-        else {
-            cached.callbacks = [callback];
-            callAndClearCallbacks(cached);
-        }
-    }
-}
-exports.loadSource = loadSource;
-function getSource(filename) {
-    return cachedSources[filename].text;
-}
-exports.getSource = getSource;
-
-
-/***/ }),
-
-/***/ "./src/ts/gl-utils/shader.ts":
-/*!***********************************!*\
-  !*** ./src/ts/gl-utils/shader.ts ***!
-  \***********************************/
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.Shader = void 0;
-var gl_resource_1 = __webpack_require__(/*! ./gl-resource */ "./src/ts/gl-utils/gl-resource.ts");
-function notImplemented() {
-    alert("NOT IMPLEMENTED YET");
-}
-function bindUniformFloat(gl, location, value) {
-    if (Array.isArray(value)) {
-        gl.uniform1fv(location, value);
-    }
-    else {
-        gl.uniform1f(location, value);
-    }
-}
-function bindUniformFloat2v(gl, location, value) {
-    gl.uniform2fv(location, value);
-}
-function bindUniformFloat3v(gl, location, value) {
-    gl.uniform3fv(location, value);
-}
-function bindUniformFloat4v(gl, location, value) {
-    gl.uniform4fv(location, value);
-}
-function bindUniformInt(gl, location, value) {
-    if (Array.isArray(value)) {
-        gl.uniform1iv(location, value);
-    }
-    else {
-        gl.uniform1iv(location, value);
-    }
-}
-function bindUniformInt2v(gl, location, value) {
-    gl.uniform2iv(location, value);
-}
-function bindUniformInt3v(gl, location, value) {
-    gl.uniform3iv(location, value);
-}
-function bindUniformInt4v(gl, location, value) {
-    gl.uniform4iv(location, value);
-}
-function bindUniformBool(gl, location, value) {
-    gl.uniform1i(location, +value);
-}
-function bindUniformBool2v(gl, location, value) {
-    gl.uniform2iv(location, value);
-}
-function bindUniformBool3v(gl, location, value) {
-    gl.uniform3iv(location, value);
-}
-function bindUniformBool4v(gl, location, value) {
-    gl.uniform4iv(location, value);
-}
-function bindUniformFloatMat2(gl, location, value) {
-    gl.uniformMatrix2fv(location, false, value);
-}
-function bindUniformFloatMat3(gl, location, value) {
-    gl.uniformMatrix3fv(location, false, value);
-}
-function bindUniformFloatMat4(gl, location, value) {
-    gl.uniformMatrix4fv(location, false, value);
-}
-function bindSampler2D(gl, location, unitNb, value) {
-    gl.uniform1i(location, unitNb);
-    gl.activeTexture(gl["TEXTURE" + unitNb]);
-    gl.bindTexture(gl.TEXTURE_2D, value);
-}
-function bindSamplerCube(gl, location, unitNb, value) {
-    gl.uniform1i(location, unitNb);
-    gl.activeTexture(gl["TEXTURE" + unitNb]);
-    gl.bindTexture(gl.TEXTURE_CUBE_MAP, value);
-}
-var types = {
-    0x8B50: { str: "FLOAT_VEC2", binder: bindUniformFloat2v },
-    0x8B51: { str: "FLOAT_VEC3", binder: bindUniformFloat3v },
-    0x8B52: { str: "FLOAT_VEC4", binder: bindUniformFloat4v },
-    0x8B53: { str: "INT_VEC2", binder: bindUniformInt2v },
-    0x8B54: { str: "INT_VEC3", binder: bindUniformInt3v },
-    0x8B55: { str: "INT_VEC4", binder: bindUniformInt4v },
-    0x8B56: { str: "BOOL", binder: bindUniformBool },
-    0x8B57: { str: "BOOL_VEC2", binder: bindUniformBool2v },
-    0x8B58: { str: "BOOL_VEC3", binder: bindUniformBool3v },
-    0x8B59: { str: "BOOL_VEC4", binder: bindUniformBool4v },
-    0x8B5A: { str: "FLOAT_MAT2", binder: bindUniformFloatMat2 },
-    0x8B5B: { str: "FLOAT_MAT3", binder: bindUniformFloatMat3 },
-    0x8B5C: { str: "FLOAT_MAT4", binder: bindUniformFloatMat4 },
-    0x8B5E: { str: "SAMPLER_2D", binder: bindSampler2D },
-    0x8B60: { str: "SAMPLER_CUBE", binder: bindSamplerCube },
-    0x1400: { str: "BYTE", binder: notImplemented },
-    0x1401: { str: "UNSIGNED_BYTE", binder: notImplemented },
-    0x1402: { str: "SHORT", binder: notImplemented },
-    0x1403: { str: "UNSIGNED_SHORT", binder: notImplemented },
-    0x1404: { str: "INT", binder: bindUniformInt },
-    0x1405: { str: "UNSIGNED_INT", binder: notImplemented },
-    0x1406: { str: "FLOAT", binder: bindUniformFloat },
-};
-var ShaderProgram = (function (_super) {
-    __extends(ShaderProgram, _super);
-    function ShaderProgram(gl, vertexSource, fragmentSource) {
-        var _this = this;
-        function createShader(type, source) {
-            var shader = gl.createShader(type);
-            gl.shaderSource(shader, source);
-            gl.compileShader(shader);
-            var compileSuccess = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
-            if (!compileSuccess) {
-                console.error(gl.getShaderInfoLog(shader));
-                console.log(source);
-                gl.deleteShader(shader);
-                return null;
-            }
-            return shader;
-        }
-        _this = _super.call(this, gl) || this;
-        _this.id = null;
-        _this.uCount = 0;
-        _this.aCount = 0;
-        var vertexShader = createShader(gl.VERTEX_SHADER, vertexSource);
-        var fragmentShader = createShader(gl.FRAGMENT_SHADER, fragmentSource);
-        var id = gl.createProgram();
-        gl.attachShader(id, vertexShader);
-        gl.attachShader(id, fragmentShader);
-        gl.linkProgram(id);
-        var linkSuccess = gl.getProgramParameter(id, gl.LINK_STATUS);
-        if (!linkSuccess) {
-            console.error(gl.getProgramInfoLog(id));
-            gl.deleteProgram(id);
-        }
-        else {
-            _this.id = id;
-            _this.introspection();
-        }
-        return _this;
-    }
-    ShaderProgram.prototype.freeGLResources = function () {
-        _super.prototype.gl.call(this).deleteProgram(this.id);
-        this.id = null;
-    };
-    ShaderProgram.prototype.use = function () {
-        _super.prototype.gl.call(this).useProgram(this.id);
-    };
-    ShaderProgram.prototype.bindUniforms = function () {
-        var _this = this;
-        var gl = _super.prototype.gl.call(this);
-        var currTextureUnitNb = 0;
-        Object.keys(this.u).forEach(function (uName) {
-            var uniform = _this.u[uName];
-            if (uniform.value !== null) {
-                if (uniform.type === 0x8B5E || uniform.type === 0x8B60) {
-                    var unitNb = currTextureUnitNb;
-                    types[uniform.type].binder(gl, uniform.loc, unitNb, uniform.value);
-                    currTextureUnitNb++;
-                }
-                else {
-                    types[uniform.type].binder(gl, uniform.loc, uniform.value);
-                }
-            }
-        });
-    };
-    ShaderProgram.prototype.bindAttributes = function () {
-        var _this = this;
-        Object.keys(this.a).forEach(function (aName) {
-            var attribute = _this.a[aName];
-            if (attribute.VBO !== null) {
-                attribute.VBO.bind(attribute.loc);
-            }
-        });
-    };
-    ShaderProgram.prototype.bindUniformsAndAttributes = function () {
-        this.bindUniforms();
-        this.bindAttributes();
-    };
-    ShaderProgram.prototype.introspection = function () {
-        var gl = _super.prototype.gl.call(this);
-        this.uCount = gl.getProgramParameter(this.id, gl.ACTIVE_UNIFORMS);
-        this.u = {};
-        for (var i = 0; i < this.uCount; i++) {
-            var uniform = gl.getActiveUniform(this.id, i);
-            var name_1 = uniform.name;
-            this.u[name_1] = {
-                loc: gl.getUniformLocation(this.id, name_1),
-                size: uniform.size,
-                type: uniform.type,
-                value: null,
-            };
-        }
-        this.aCount = gl.getProgramParameter(this.id, gl.ACTIVE_ATTRIBUTES);
-        this.a = {};
-        for (var i = 0; i < this.aCount; i++) {
-            var attribute = gl.getActiveAttrib(this.id, i);
-            var name_2 = attribute.name;
-            this.a[name_2] = {
-                VBO: null,
-                loc: gl.getAttribLocation(this.id, name_2),
-                size: attribute.size,
-                type: attribute.type,
-            };
-        }
-    };
-    return ShaderProgram;
-}(gl_resource_1.GLResource));
-exports.Shader = ShaderProgram;
-
-
-/***/ }),
-
-/***/ "./src/ts/gl-utils/viewport.ts":
-/*!*************************************!*\
-  !*** ./src/ts/gl-utils/viewport.ts ***!
-  \*************************************/
-/***/ (function(__unused_webpack_module, exports) {
-
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.Viewport = void 0;
-var Viewport = (function () {
-    function Viewport(left, lower, width, height) {
-        this.left = left;
-        this.lower = lower;
-        this.width = width;
-        this.height = height;
-    }
-    Viewport.setFullCanvas = function (gl) {
-        gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-    };
-    Viewport.prototype.set = function (gl) {
-        gl.viewport(this.lower, this.left, this.width, this.height);
-    };
-    return Viewport;
-}());
-exports.Viewport = Viewport;
-
-
-/***/ }),
-
 /***/ "./src/ts/misc/arithmetics.ts":
 /*!************************************!*\
   !*** ./src/ts/misc/arithmetics.ts ***!
@@ -1886,6 +1367,525 @@ exports.GeometryId = GeometryId;
 
 /***/ }),
 
+/***/ "./src/ts/plotter/gl-utils/gl-canvas.ts":
+/*!**********************************************!*\
+  !*** ./src/ts/plotter/gl-utils/gl-canvas.ts ***!
+  \**********************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.gl = exports.initGL = exports.adjustSize = void 0;
+__webpack_require__(/*! ../../page-interface-generated */ "./src/ts/page-interface-generated.ts");
+var gl = null;
+exports.gl = gl;
+function initGL(flags) {
+    function setError(message) {
+        Page.Demopage.setErrorMessage("webgl-support", message);
+    }
+    var canvas = Page.Canvas.getCanvas();
+    exports.gl = gl = canvas.getContext("webgl", flags);
+    if (gl == null) {
+        exports.gl = gl = canvas.getContext("experimental-webgl", flags);
+        if (gl == null) {
+            setError("Your browser or device does not seem to support WebGL.");
+            return false;
+        }
+        setError("Your browser or device only supports experimental WebGL.\nThe simulation may not run as expected.");
+    }
+    gl.disable(gl.CULL_FACE);
+    gl.disable(gl.DEPTH_TEST);
+    gl.disable(gl.BLEND);
+    gl.clearColor(0, 0, 0, 1);
+    return true;
+}
+exports.initGL = initGL;
+function adjustSize(hidpi) {
+    if (hidpi === void 0) { hidpi = false; }
+    var cssPixel = (hidpi) ? window.devicePixelRatio : 1;
+    var canvas = gl.canvas;
+    var width = Math.floor(canvas.clientWidth * cssPixel);
+    var height = Math.floor(canvas.clientHeight * cssPixel);
+    if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+    }
+}
+exports.adjustSize = adjustSize;
+
+
+/***/ }),
+
+/***/ "./src/ts/plotter/gl-utils/gl-resource.ts":
+/*!************************************************!*\
+  !*** ./src/ts/plotter/gl-utils/gl-resource.ts ***!
+  \************************************************/
+/***/ (function(__unused_webpack_module, exports) {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.GLResource = void 0;
+var GLResource = (function () {
+    function GLResource(gl) {
+        this._gl = gl;
+    }
+    GLResource.prototype.gl = function () {
+        return this._gl;
+    };
+    return GLResource;
+}());
+exports.GLResource = GLResource;
+
+
+/***/ }),
+
+/***/ "./src/ts/plotter/gl-utils/shader-manager.ts":
+/*!***************************************************!*\
+  !*** ./src/ts/plotter/gl-utils/shader-manager.ts ***!
+  \***************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.deleteShader = exports.registerShader = exports.getShader = exports.buildShader = void 0;
+var gl_canvas_1 = __webpack_require__(/*! ./gl-canvas */ "./src/ts/plotter/gl-utils/gl-canvas.ts");
+var shader_1 = __webpack_require__(/*! ./shader */ "./src/ts/plotter/gl-utils/shader.ts");
+var ShaderSources = __importStar(__webpack_require__(/*! ./shader-sources */ "./src/ts/plotter/gl-utils/shader-sources.ts"));
+var cachedShaders = {};
+function getShader(name) {
+    return cachedShaders[name].shader;
+}
+exports.getShader = getShader;
+function buildShader(infos, callback) {
+    var sourcesPending = 2;
+    var sourcesFailed = 0;
+    function loadedSource(success) {
+        function processSource(source) {
+            return source.replace(/#INJECT\(([^)]*)\)/mg, function (match, name) {
+                if (infos.injected[name]) {
+                    return infos.injected[name];
+                }
+                return match;
+            });
+        }
+        sourcesPending--;
+        if (!success) {
+            sourcesFailed++;
+        }
+        if (sourcesPending === 0) {
+            var shader = null;
+            if (sourcesFailed === 0) {
+                var vert = ShaderSources.getSource(infos.vertexFilename);
+                var frag = ShaderSources.getSource(infos.fragmentFilename);
+                var processedVert = processSource(vert);
+                var processedFrag = processSource(frag);
+                shader = new shader_1.Shader(gl_canvas_1.gl, processedVert, processedFrag);
+            }
+            callback(shader);
+        }
+    }
+    ShaderSources.loadSource(infos.vertexFilename, loadedSource);
+    ShaderSources.loadSource(infos.fragmentFilename, loadedSource);
+}
+exports.buildShader = buildShader;
+function registerShader(name, infos, callback) {
+    function callAndClearCallbacks(cached) {
+        for (var _i = 0, _a = cached.callbacks; _i < _a.length; _i++) {
+            var cachedCallback = _a[_i];
+            cachedCallback(!cached.failed, cached.shader);
+        }
+        cached.callbacks = [];
+    }
+    if (typeof cachedShaders[name] === "undefined") {
+        cachedShaders[name] = {
+            callbacks: [callback],
+            failed: false,
+            infos: infos,
+            pending: true,
+            shader: null,
+        };
+        var cached_1 = cachedShaders[name];
+        buildShader(infos, function (builtShader) {
+            cached_1.pending = false;
+            cached_1.failed = builtShader === null;
+            cached_1.shader = builtShader;
+            callAndClearCallbacks(cached_1);
+        });
+    }
+    else {
+        var cached = cachedShaders[name];
+        if (cached.pending === true) {
+            cached.callbacks.push(callback);
+        }
+        else {
+            callAndClearCallbacks(cached);
+        }
+    }
+}
+exports.registerShader = registerShader;
+function deleteShader(name) {
+    if (typeof cachedShaders[name] !== "undefined") {
+        if (cachedShaders[name].shader !== null) {
+            cachedShaders[name].shader.freeGLResources();
+        }
+        delete cachedShaders[name];
+    }
+}
+exports.deleteShader = deleteShader;
+
+
+/***/ }),
+
+/***/ "./src/ts/plotter/gl-utils/shader-sources.ts":
+/*!***************************************************!*\
+  !*** ./src/ts/plotter/gl-utils/shader-sources.ts ***!
+  \***************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.loadSource = exports.getSource = void 0;
+__webpack_require__(/*! ../../page-interface-generated */ "./src/ts/page-interface-generated.ts");
+var cachedSources = {};
+function loadSource(filename, callback) {
+    function callAndClearCallbacks(cached) {
+        for (var _i = 0, _a = cached.callbacks; _i < _a.length; _i++) {
+            var cachedCallback = _a[_i];
+            cachedCallback(!cached.failed);
+        }
+        cached.callbacks = [];
+    }
+    if (typeof cachedSources[filename] === "undefined") {
+        cachedSources[filename] = {
+            callbacks: [callback],
+            failed: false,
+            pending: true,
+            text: null,
+        };
+        var cached_1 = cachedSources[filename];
+        var url = "./shaders/" + filename;
+        if (typeof Page.version !== "undefined") {
+            url += "?v=" + Page.version;
+        }
+        var xhr_1 = new XMLHttpRequest();
+        xhr_1.open("GET", url, true);
+        xhr_1.onload = function () {
+            if (xhr_1.readyState === 4) {
+                cached_1.pending = false;
+                if (xhr_1.status === 200) {
+                    cached_1.text = xhr_1.responseText;
+                    cached_1.failed = false;
+                }
+                else {
+                    console.error("Cannot load '" + filename + "' shader source: " + xhr_1.statusText);
+                    cached_1.failed = true;
+                }
+                callAndClearCallbacks(cached_1);
+            }
+        };
+        xhr_1.onerror = function () {
+            console.error("Cannot load '" + filename + "' shader source: " + xhr_1.statusText);
+            cached_1.pending = false;
+            cached_1.failed = true;
+            callAndClearCallbacks(cached_1);
+        };
+        xhr_1.send(null);
+    }
+    else {
+        var cached = cachedSources[filename];
+        if (cached.pending === true) {
+            cached.callbacks.push(callback);
+        }
+        else {
+            cached.callbacks = [callback];
+            callAndClearCallbacks(cached);
+        }
+    }
+}
+exports.loadSource = loadSource;
+function getSource(filename) {
+    return cachedSources[filename].text;
+}
+exports.getSource = getSource;
+
+
+/***/ }),
+
+/***/ "./src/ts/plotter/gl-utils/shader.ts":
+/*!*******************************************!*\
+  !*** ./src/ts/plotter/gl-utils/shader.ts ***!
+  \*******************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Shader = void 0;
+var gl_resource_1 = __webpack_require__(/*! ./gl-resource */ "./src/ts/plotter/gl-utils/gl-resource.ts");
+function notImplemented() {
+    alert("NOT IMPLEMENTED YET");
+}
+function bindUniformFloat(gl, location, value) {
+    if (Array.isArray(value)) {
+        gl.uniform1fv(location, value);
+    }
+    else {
+        gl.uniform1f(location, value);
+    }
+}
+function bindUniformFloat2v(gl, location, value) {
+    gl.uniform2fv(location, value);
+}
+function bindUniformFloat3v(gl, location, value) {
+    gl.uniform3fv(location, value);
+}
+function bindUniformFloat4v(gl, location, value) {
+    gl.uniform4fv(location, value);
+}
+function bindUniformInt(gl, location, value) {
+    if (Array.isArray(value)) {
+        gl.uniform1iv(location, value);
+    }
+    else {
+        gl.uniform1iv(location, value);
+    }
+}
+function bindUniformInt2v(gl, location, value) {
+    gl.uniform2iv(location, value);
+}
+function bindUniformInt3v(gl, location, value) {
+    gl.uniform3iv(location, value);
+}
+function bindUniformInt4v(gl, location, value) {
+    gl.uniform4iv(location, value);
+}
+function bindUniformBool(gl, location, value) {
+    gl.uniform1i(location, +value);
+}
+function bindUniformBool2v(gl, location, value) {
+    gl.uniform2iv(location, value);
+}
+function bindUniformBool3v(gl, location, value) {
+    gl.uniform3iv(location, value);
+}
+function bindUniformBool4v(gl, location, value) {
+    gl.uniform4iv(location, value);
+}
+function bindUniformFloatMat2(gl, location, value) {
+    gl.uniformMatrix2fv(location, false, value);
+}
+function bindUniformFloatMat3(gl, location, value) {
+    gl.uniformMatrix3fv(location, false, value);
+}
+function bindUniformFloatMat4(gl, location, value) {
+    gl.uniformMatrix4fv(location, false, value);
+}
+function bindSampler2D(gl, location, unitNb, value) {
+    gl.uniform1i(location, unitNb);
+    gl.activeTexture(gl["TEXTURE" + unitNb]);
+    gl.bindTexture(gl.TEXTURE_2D, value);
+}
+function bindSamplerCube(gl, location, unitNb, value) {
+    gl.uniform1i(location, unitNb);
+    gl.activeTexture(gl["TEXTURE" + unitNb]);
+    gl.bindTexture(gl.TEXTURE_CUBE_MAP, value);
+}
+var types = {
+    0x8B50: { str: "FLOAT_VEC2", binder: bindUniformFloat2v },
+    0x8B51: { str: "FLOAT_VEC3", binder: bindUniformFloat3v },
+    0x8B52: { str: "FLOAT_VEC4", binder: bindUniformFloat4v },
+    0x8B53: { str: "INT_VEC2", binder: bindUniformInt2v },
+    0x8B54: { str: "INT_VEC3", binder: bindUniformInt3v },
+    0x8B55: { str: "INT_VEC4", binder: bindUniformInt4v },
+    0x8B56: { str: "BOOL", binder: bindUniformBool },
+    0x8B57: { str: "BOOL_VEC2", binder: bindUniformBool2v },
+    0x8B58: { str: "BOOL_VEC3", binder: bindUniformBool3v },
+    0x8B59: { str: "BOOL_VEC4", binder: bindUniformBool4v },
+    0x8B5A: { str: "FLOAT_MAT2", binder: bindUniformFloatMat2 },
+    0x8B5B: { str: "FLOAT_MAT3", binder: bindUniformFloatMat3 },
+    0x8B5C: { str: "FLOAT_MAT4", binder: bindUniformFloatMat4 },
+    0x8B5E: { str: "SAMPLER_2D", binder: bindSampler2D },
+    0x8B60: { str: "SAMPLER_CUBE", binder: bindSamplerCube },
+    0x1400: { str: "BYTE", binder: notImplemented },
+    0x1401: { str: "UNSIGNED_BYTE", binder: notImplemented },
+    0x1402: { str: "SHORT", binder: notImplemented },
+    0x1403: { str: "UNSIGNED_SHORT", binder: notImplemented },
+    0x1404: { str: "INT", binder: bindUniformInt },
+    0x1405: { str: "UNSIGNED_INT", binder: notImplemented },
+    0x1406: { str: "FLOAT", binder: bindUniformFloat },
+};
+var ShaderProgram = (function (_super) {
+    __extends(ShaderProgram, _super);
+    function ShaderProgram(gl, vertexSource, fragmentSource) {
+        var _this = this;
+        function createShader(type, source) {
+            var shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            var compileSuccess = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+            if (!compileSuccess) {
+                console.error(gl.getShaderInfoLog(shader));
+                console.log(source);
+                gl.deleteShader(shader);
+                return null;
+            }
+            return shader;
+        }
+        _this = _super.call(this, gl) || this;
+        _this.id = null;
+        _this.uCount = 0;
+        _this.aCount = 0;
+        var vertexShader = createShader(gl.VERTEX_SHADER, vertexSource);
+        var fragmentShader = createShader(gl.FRAGMENT_SHADER, fragmentSource);
+        var id = gl.createProgram();
+        gl.attachShader(id, vertexShader);
+        gl.attachShader(id, fragmentShader);
+        gl.linkProgram(id);
+        var linkSuccess = gl.getProgramParameter(id, gl.LINK_STATUS);
+        if (!linkSuccess) {
+            console.error(gl.getProgramInfoLog(id));
+            gl.deleteProgram(id);
+        }
+        else {
+            _this.id = id;
+            _this.introspection();
+        }
+        return _this;
+    }
+    ShaderProgram.prototype.freeGLResources = function () {
+        _super.prototype.gl.call(this).deleteProgram(this.id);
+        this.id = null;
+    };
+    ShaderProgram.prototype.use = function () {
+        _super.prototype.gl.call(this).useProgram(this.id);
+    };
+    ShaderProgram.prototype.bindUniforms = function () {
+        var _this = this;
+        var gl = _super.prototype.gl.call(this);
+        var currTextureUnitNb = 0;
+        Object.keys(this.u).forEach(function (uName) {
+            var uniform = _this.u[uName];
+            if (uniform.value !== null) {
+                if (uniform.type === 0x8B5E || uniform.type === 0x8B60) {
+                    var unitNb = currTextureUnitNb;
+                    types[uniform.type].binder(gl, uniform.loc, unitNb, uniform.value);
+                    currTextureUnitNb++;
+                }
+                else {
+                    types[uniform.type].binder(gl, uniform.loc, uniform.value);
+                }
+            }
+        });
+    };
+    ShaderProgram.prototype.bindAttributes = function () {
+        var _this = this;
+        Object.keys(this.a).forEach(function (aName) {
+            var attribute = _this.a[aName];
+            if (attribute.VBO !== null) {
+                attribute.VBO.bind(attribute.loc);
+            }
+        });
+    };
+    ShaderProgram.prototype.bindUniformsAndAttributes = function () {
+        this.bindUniforms();
+        this.bindAttributes();
+    };
+    ShaderProgram.prototype.introspection = function () {
+        var gl = _super.prototype.gl.call(this);
+        this.uCount = gl.getProgramParameter(this.id, gl.ACTIVE_UNIFORMS);
+        this.u = {};
+        for (var i = 0; i < this.uCount; i++) {
+            var uniform = gl.getActiveUniform(this.id, i);
+            var name_1 = uniform.name;
+            this.u[name_1] = {
+                loc: gl.getUniformLocation(this.id, name_1),
+                size: uniform.size,
+                type: uniform.type,
+                value: null,
+            };
+        }
+        this.aCount = gl.getProgramParameter(this.id, gl.ACTIVE_ATTRIBUTES);
+        this.a = {};
+        for (var i = 0; i < this.aCount; i++) {
+            var attribute = gl.getActiveAttrib(this.id, i);
+            var name_2 = attribute.name;
+            this.a[name_2] = {
+                VBO: null,
+                loc: gl.getAttribLocation(this.id, name_2),
+                size: attribute.size,
+                type: attribute.type,
+            };
+        }
+    };
+    return ShaderProgram;
+}(gl_resource_1.GLResource));
+exports.Shader = ShaderProgram;
+
+
+/***/ }),
+
+/***/ "./src/ts/plotter/gl-utils/viewport.ts":
+/*!*********************************************!*\
+  !*** ./src/ts/plotter/gl-utils/viewport.ts ***!
+  \*********************************************/
+/***/ (function(__unused_webpack_module, exports) {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Viewport = void 0;
+var Viewport = (function () {
+    function Viewport(left, lower, width, height) {
+        this.left = left;
+        this.lower = lower;
+        this.width = width;
+        this.height = height;
+    }
+    Viewport.setFullCanvas = function (gl) {
+        gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+    };
+    Viewport.prototype.set = function (gl) {
+        gl.viewport(this.lower, this.left, this.width, this.height);
+    };
+    return Viewport;
+}());
+exports.Viewport = Viewport;
+
+
+/***/ }),
+
 /***/ "./src/ts/plotter/plotter-canvas.ts":
 /*!******************************************!*\
   !*** ./src/ts/plotter/plotter-canvas.ts ***!
@@ -2073,10 +2073,10 @@ exports.PlotterWebGLBasic = void 0;
 var color_1 = __webpack_require__(/*! ../misc/color */ "./src/ts/misc/color.ts");
 var Loader = __importStar(__webpack_require__(/*! ../misc/loader */ "./src/ts/misc/loader.ts"));
 var plotter_canvas_1 = __webpack_require__(/*! ./plotter-canvas */ "./src/ts/plotter/plotter-canvas.ts");
-var GLCanvas = __importStar(__webpack_require__(/*! ../gl-utils/gl-canvas */ "./src/ts/gl-utils/gl-canvas.ts"));
-var gl_canvas_1 = __webpack_require__(/*! ../gl-utils/gl-canvas */ "./src/ts/gl-utils/gl-canvas.ts");
-var ShaderManager = __importStar(__webpack_require__(/*! ../gl-utils/shader-manager */ "./src/ts/gl-utils/shader-manager.ts"));
-var viewport_1 = __webpack_require__(/*! ../gl-utils/viewport */ "./src/ts/gl-utils/viewport.ts");
+var GLCanvas = __importStar(__webpack_require__(/*! ./gl-utils/gl-canvas */ "./src/ts/plotter/gl-utils/gl-canvas.ts"));
+var gl_canvas_1 = __webpack_require__(/*! ./gl-utils/gl-canvas */ "./src/ts/plotter/gl-utils/gl-canvas.ts");
+var ShaderManager = __importStar(__webpack_require__(/*! ./gl-utils/shader-manager */ "./src/ts/plotter/gl-utils/shader-manager.ts"));
+var viewport_1 = __webpack_require__(/*! ./gl-utils/viewport */ "./src/ts/plotter/gl-utils/viewport.ts");
 __webpack_require__(/*! ../page-interface-generated */ "./src/ts/page-interface-generated.ts");
 var PlotterWebGLBasic = (function (_super) {
     __extends(PlotterWebGLBasic, _super);

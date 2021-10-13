@@ -1,4 +1,4 @@
-import "../page-interface-generated";
+import "../../page-interface-generated";
 
 let gl: WebGLRenderingContext = null;
 

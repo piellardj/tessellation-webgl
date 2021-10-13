@@ -1,4 +1,4 @@
-import "../page-interface-generated";
+import "../../page-interface-generated";
 
 
 type LoadCallback = (success: boolean) => void;
