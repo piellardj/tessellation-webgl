@@ -54,6 +54,19 @@ class Zoom {
         return new Zoom(this.a, this.b, this.c);
     }
 
+    public inverse(): Zoom {
+        /* compute invert matrix of
+            | a 0 b |
+            | 0 a c |
+            | 0 0 1 |
+        */
+        return new Zoom(
+            1 / this.a, // if a=0, then the current zoom is not inversible anyways so do not protect this
+            -this.b / this.a,
+            -this.c / this.a
+        );
+    }
+
     public get scale(): number {
         return this.a;
     }

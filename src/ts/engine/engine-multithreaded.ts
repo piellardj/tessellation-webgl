@@ -30,12 +30,26 @@ class EngineMultithreaded implements IEngine<PlotterWebGLBasic> {
             updateEngineMetricsIndicators(engineMetrics);
         });
 
-        MessagesFromWorker.NewSvgOutput.addListener(this.worker, (output: string) => {
+        MessagesFromWorker.DownloadAsSvgOutput.addListener(this.worker, (output: string) => {
             downloadSvgOutput(output);
         });
 
-        MessagesFromWorker.NewGeometry.addListener(this.worker, (polygonsVboBuffer: IVboBuffer, linesVboBuffer: IVboBuffer) => {
+        MessagesFromWorker.ResetOutput.addListener(this.worker, (polygonsVboBuffer: IVboBuffer, linesVboBuffer: IVboBuffer) => {
             this.cumulatedZoom = Zoom.noZoom();
+            this.polygonsVboBuffer = polygonsVboBuffer;
+            this.linesVboBuffer = linesVboBuffer;
+            this.hasSomethingNewToDraw = true;
+        });
+
+        MessagesFromWorker.RecomputeColorsOutput.addListener(this.worker, (polygonsVboBuffer: IVboBuffer, linesVboBuffer: IVboBuffer) => {
+            this.polygonsVboBuffer = polygonsVboBuffer;
+            this.linesVboBuffer = linesVboBuffer;
+            this.hasSomethingNewToDraw = true;
+        });
+
+        MessagesFromWorker.MaintainanceOutput.addListener(this.worker, (polygonsVboBuffer: IVboBuffer, linesVboBuffer: IVboBuffer, appliedZoom: Zoom) => {
+            const invAppliedZoom = appliedZoom.inverse();
+            this.cumulatedZoom = Zoom.multiply(this.cumulatedZoom, invAppliedZoom); // keep the advance we had on the worker
             this.polygonsVboBuffer = polygonsVboBuffer;
             this.linesVboBuffer = linesVboBuffer;
             this.hasSomethingNewToDraw = true;

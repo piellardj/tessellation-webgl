@@ -5,7 +5,7 @@ import { IPlotter } from "../plotter/plotter-interface";
 import { PlotterSVG } from "../plotter/plotter-svg";
 import { Engine } from "./engine";
 import { IEngine } from "./engine-interface";
-import { updateEngineMetricsIndicators } from "./engine-metrics";
+import { IEngineMetrics, updateEngineMetricsIndicators } from "./engine-metrics";
 
 
 class EngineMonothreaded extends Engine implements IEngine<IPlotter> {
@@ -55,13 +55,8 @@ class EngineMonothreaded extends Engine implements IEngine<IPlotter> {
         downloadSvgOutput(svgString);
     }
 
-    protected onGeometryChange(): void {
-        this.updateIndicators();
-    }
-
-    private updateIndicators(): void {
-        const metrics = this.computeMetrics();
-        updateEngineMetricsIndicators(metrics);
+    protected onNewMetrics(newMetrics: IEngineMetrics): void {
+        updateEngineMetricsIndicators(newMetrics);
     }
 
     private static getLineThicknessForLayer(layerId: number, totalLayersCount: number): number {

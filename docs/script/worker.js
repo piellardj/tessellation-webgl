@@ -26,14 +26,14 @@ var Engine = (function () {
     function Engine() {
         this.reset(new rectangle_1.Rectangle(0, 512, 0, 512), primitive_type_enum_1.EPrimitiveType.TRIANGLES);
         this.cumulatedZoom = zoom_1.Zoom.noZoom();
-        this.maintainanceThrottle = new throttle_1.Throttle(100);
+        this.maintainanceThrottle = new throttle_1.Throttle(500);
     }
     Engine.prototype.update = function (viewport, instantZoom, wantedDepth, subdivisionBalance, colorVariation) {
         var _this = this;
         var somethingChanged = false;
         this.cumulatedZoom = zoom_1.Zoom.multiply(instantZoom, this.cumulatedZoom);
         this.maintainanceThrottle.runIfAvailable(function () {
-            somethingChanged = _this.maintenance(viewport, wantedDepth, subdivisionBalance, colorVariation);
+            somethingChanged = _this.maintainance(viewport, wantedDepth, subdivisionBalance, colorVariation);
         });
         return somethingChanged;
     };
@@ -58,7 +58,7 @@ var Engine = (function () {
                 },
                 birthTimestamp: performance.now(),
             }];
-        this.onGeometryChange();
+        this.onNewMetrics(this.computeMetrics());
     };
     Engine.prototype.recomputeColors = function (colorVariation) {
         var newColor = this.computeRootPrimitiveColor();
@@ -67,9 +67,8 @@ var Engine = (function () {
             var layer = _a[_i];
             layer.primitives.geometryId.registerChange();
         }
-        this.onGeometryChange();
     };
-    Engine.prototype.maintenance = function (viewport, wantedDepth, subdivisionBalance, colorVariation) {
+    Engine.prototype.maintainance = function (viewport, wantedDepth, subdivisionBalance, colorVariation) {
         var somethingChanged = false;
         somethingChanged = this.applyCumulatedZoom() || somethingChanged;
         somethingChanged = this.adjustLayersCount(wantedDepth, subdivisionBalance, colorVariation) || somethingChanged;
@@ -80,7 +79,7 @@ var Engine = (function () {
                 layer.primitives.geometryId.registerChange();
                 layer.outlines.geometryId.registerChange();
             }
-            this.onGeometryChange();
+            this.onNewMetrics(this.computeMetrics());
         }
         return somethingChanged;
     };
@@ -1217,6 +1216,9 @@ var Zoom = (function () {
     Zoom.prototype.copy = function () {
         return new Zoom(this.a, this.b, this.c);
     };
+    Zoom.prototype.inverse = function () {
+        return new Zoom(1 / this.a, -this.b / this.a, -this.c / this.a);
+    };
     Object.defineProperty(Zoom.prototype, "scale", {
         get: function () {
             return this.a;
@@ -1786,6 +1788,36 @@ exports.PlotterWebGLBasic = PlotterWebGLBasic;
 
 /***/ }),
 
+/***/ "./src/ts/plotter/vbo-types.ts":
+/*!*************************************!*\
+  !*** ./src/ts/plotter/vbo-types.ts ***!
+  \*************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.rehydrateVboBuffer = void 0;
+var geometry_id_1 = __webpack_require__(/*! ./geometry-id */ "./src/ts/plotter/geometry-id.ts");
+function rehydrateVboBuffer(vboBuffer) {
+    var bufferParts = [];
+    for (var _i = 0, _a = vboBuffer.bufferParts; _i < _a.length; _i++) {
+        var dehydratedBufferPart = _a[_i];
+        bufferParts.push({
+            indexOfFirstVertice: dehydratedBufferPart.indexOfFirstVertice,
+            verticesCount: dehydratedBufferPart.verticesCount,
+            geometryId: geometry_id_1.GeometryId.rehydrate(dehydratedBufferPart.geometryId),
+        });
+    }
+    return {
+        buffer: vboBuffer.buffer,
+        bufferParts: bufferParts,
+    };
+}
+exports.rehydrateVboBuffer = rehydrateVboBuffer;
+
+
+/***/ }),
+
 /***/ "./src/ts/primitives/primitive-base.ts":
 /*!*********************************************!*\
   !*** ./src/ts/primitives/primitive-base.ts ***!
@@ -2285,6 +2317,73 @@ exports.EPrimitiveType = EPrimitiveType;
 
 /***/ }),
 
+/***/ "./src/ts/worker/messages/from-worker/download-as-svg-output.ts":
+/*!**********************************************************************!*\
+  !*** ./src/ts/worker/messages/from-worker/download-as-svg-output.ts ***!
+  \**********************************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.sendMessage = exports.addListener = void 0;
+var message_1 = __webpack_require__(/*! ../message */ "./src/ts/worker/messages/message.ts");
+var verb = message_1.EVerb.DOWNLOAD_AS_SVG_OUTPUT;
+function sendMessage(output) {
+    var messageData = {
+        output: output,
+    };
+    message_1.sendMessageFromWorker(verb, messageData);
+}
+exports.sendMessage = sendMessage;
+function addListener(worker, listener) {
+    message_1.addListenerToWorker(worker, verb, function (data) {
+        listener(data.output);
+    });
+}
+exports.addListener = addListener;
+
+
+/***/ }),
+
+/***/ "./src/ts/worker/messages/from-worker/maintainance-output.ts":
+/*!*******************************************************************!*\
+  !*** ./src/ts/worker/messages/from-worker/maintainance-output.ts ***!
+  \*******************************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.sendMessage = exports.addListener = void 0;
+var zoom_1 = __webpack_require__(/*! ../../../misc/zoom */ "./src/ts/misc/zoom.ts");
+var vbo_types_1 = __webpack_require__(/*! ../../../plotter/vbo-types */ "./src/ts/plotter/vbo-types.ts");
+var message_1 = __webpack_require__(/*! ../message */ "./src/ts/worker/messages/message.ts");
+var verb = message_1.EVerb.MAINTAINANCE_OUTPUT;
+function sendMessage(polygonsVboBuffer, linesVboBuffer, appliedZoom) {
+    var messageData = {
+        polygonsVboBuffer: polygonsVboBuffer,
+        linesVboBuffer: linesVboBuffer,
+        appliedZoom: appliedZoom,
+    };
+    var transfer = [
+        polygonsVboBuffer.buffer.buffer,
+        linesVboBuffer.buffer.buffer,
+    ];
+    message_1.sendMessageFromWorker(verb, messageData, transfer);
+}
+exports.sendMessage = sendMessage;
+function addListener(worker, listener) {
+    message_1.addListenerToWorker(worker, verb, function (data) {
+        var polygonsVboBuffer = vbo_types_1.rehydrateVboBuffer(data.polygonsVboBuffer);
+        var linesVboBuffer = vbo_types_1.rehydrateVboBuffer(data.linesVboBuffer);
+        var appliedZoom = zoom_1.Zoom.rehydrate(data.appliedZoom);
+        listener(polygonsVboBuffer, linesVboBuffer, appliedZoom);
+    });
+}
+exports.addListener = addListener;
+
+
+/***/ }),
+
 /***/ "./src/ts/worker/messages/from-worker/messages.ts":
 /*!********************************************************!*\
   !*** ./src/ts/worker/messages/from-worker/messages.ts ***!
@@ -2312,64 +2411,17 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.NewSvgOutput = exports.NewMetrics = exports.NewGeometry = void 0;
-var NewGeometry = __importStar(__webpack_require__(/*! ./new-geometry */ "./src/ts/worker/messages/from-worker/new-geometry.ts"));
-exports.NewGeometry = NewGeometry;
+exports.ResetOutput = exports.RecomputeColorsOutput = exports.DownloadAsSvgOutput = exports.NewMetrics = exports.MaintainanceOutput = void 0;
+var DownloadAsSvgOutput = __importStar(__webpack_require__(/*! ./download-as-svg-output */ "./src/ts/worker/messages/from-worker/download-as-svg-output.ts"));
+exports.DownloadAsSvgOutput = DownloadAsSvgOutput;
+var MaintainanceOutput = __importStar(__webpack_require__(/*! ./maintainance-output */ "./src/ts/worker/messages/from-worker/maintainance-output.ts"));
+exports.MaintainanceOutput = MaintainanceOutput;
 var NewMetrics = __importStar(__webpack_require__(/*! ./new-metrics */ "./src/ts/worker/messages/from-worker/new-metrics.ts"));
 exports.NewMetrics = NewMetrics;
-var NewSvgOutput = __importStar(__webpack_require__(/*! ./new-svg-output */ "./src/ts/worker/messages/from-worker/new-svg-output.ts"));
-exports.NewSvgOutput = NewSvgOutput;
-
-
-/***/ }),
-
-/***/ "./src/ts/worker/messages/from-worker/new-geometry.ts":
-/*!************************************************************!*\
-  !*** ./src/ts/worker/messages/from-worker/new-geometry.ts ***!
-  \************************************************************/
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.sendMessage = exports.addListener = void 0;
-var geometry_id_1 = __webpack_require__(/*! ../../../plotter/geometry-id */ "./src/ts/plotter/geometry-id.ts");
-var message_1 = __webpack_require__(/*! ../message */ "./src/ts/worker/messages/message.ts");
-var verb = message_1.EVerb.NEW_GEOMETRY;
-function sendMessage(polygonsVboBuffer, linesVboBuffer) {
-    var messageData = {
-        polygonsVboBuffer: polygonsVboBuffer,
-        linesVboBuffer: linesVboBuffer,
-    };
-    var transfer = [
-        polygonsVboBuffer.buffer.buffer,
-        linesVboBuffer.buffer.buffer,
-    ];
-    message_1.sendMessageFromWorker(verb, messageData, transfer);
-}
-exports.sendMessage = sendMessage;
-function rehydrateVboBuffer(vboBuffer) {
-    var bufferParts = [];
-    for (var _i = 0, _a = vboBuffer.bufferParts; _i < _a.length; _i++) {
-        var dehydratedBufferPart = _a[_i];
-        bufferParts.push({
-            indexOfFirstVertice: dehydratedBufferPart.indexOfFirstVertice,
-            verticesCount: dehydratedBufferPart.verticesCount,
-            geometryId: geometry_id_1.GeometryId.rehydrate(dehydratedBufferPart.geometryId),
-        });
-    }
-    return {
-        buffer: vboBuffer.buffer,
-        bufferParts: bufferParts,
-    };
-}
-function addListener(worker, listener) {
-    message_1.addListenerToWorker(worker, verb, function (data) {
-        var polygonsVboBuffer = rehydrateVboBuffer(data.polygonsVboBuffer);
-        var linesVboBuffer = rehydrateVboBuffer(data.linesVboBuffer);
-        listener(polygonsVboBuffer, linesVboBuffer);
-    });
-}
-exports.addListener = addListener;
+var RecomputeColorsOutput = __importStar(__webpack_require__(/*! ./recompute-colors-output */ "./src/ts/worker/messages/from-worker/recompute-colors-output.ts"));
+exports.RecomputeColorsOutput = RecomputeColorsOutput;
+var ResetOutput = __importStar(__webpack_require__(/*! ./reset-output */ "./src/ts/worker/messages/from-worker/reset-output.ts"));
+exports.ResetOutput = ResetOutput;
 
 
 /***/ }),
@@ -2402,27 +2454,71 @@ exports.addListener = addListener;
 
 /***/ }),
 
-/***/ "./src/ts/worker/messages/from-worker/new-svg-output.ts":
-/*!**************************************************************!*\
-  !*** ./src/ts/worker/messages/from-worker/new-svg-output.ts ***!
-  \**************************************************************/
+/***/ "./src/ts/worker/messages/from-worker/recompute-colors-output.ts":
+/*!***********************************************************************!*\
+  !*** ./src/ts/worker/messages/from-worker/recompute-colors-output.ts ***!
+  \***********************************************************************/
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.sendMessage = exports.addListener = void 0;
+var vbo_types_1 = __webpack_require__(/*! ../../../plotter/vbo-types */ "./src/ts/plotter/vbo-types.ts");
 var message_1 = __webpack_require__(/*! ../message */ "./src/ts/worker/messages/message.ts");
-var verb = message_1.EVerb.NEW_SVG_OUTPUT;
-function sendMessage(output) {
+var verb = message_1.EVerb.RECOMPUTE_COLORS_OUTPUT;
+function sendMessage(polygonsVboBuffer, linesVboBuffer) {
     var messageData = {
-        output: output,
+        polygonsVboBuffer: polygonsVboBuffer,
+        linesVboBuffer: linesVboBuffer,
     };
-    message_1.sendMessageFromWorker(verb, messageData);
+    var transfer = [
+        polygonsVboBuffer.buffer.buffer,
+        linesVboBuffer.buffer.buffer,
+    ];
+    message_1.sendMessageFromWorker(verb, messageData, transfer);
 }
 exports.sendMessage = sendMessage;
 function addListener(worker, listener) {
     message_1.addListenerToWorker(worker, verb, function (data) {
-        listener(data.output);
+        var polygonsVboBuffer = vbo_types_1.rehydrateVboBuffer(data.polygonsVboBuffer);
+        var linesVboBuffer = vbo_types_1.rehydrateVboBuffer(data.linesVboBuffer);
+        listener(polygonsVboBuffer, linesVboBuffer);
+    });
+}
+exports.addListener = addListener;
+
+
+/***/ }),
+
+/***/ "./src/ts/worker/messages/from-worker/reset-output.ts":
+/*!************************************************************!*\
+  !*** ./src/ts/worker/messages/from-worker/reset-output.ts ***!
+  \************************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.sendMessage = exports.addListener = void 0;
+var vbo_types_1 = __webpack_require__(/*! ../../../plotter/vbo-types */ "./src/ts/plotter/vbo-types.ts");
+var message_1 = __webpack_require__(/*! ../message */ "./src/ts/worker/messages/message.ts");
+var verb = message_1.EVerb.RESET_OUTPUT;
+function sendMessage(polygonsVboBuffer, linesVboBuffer) {
+    var messageData = {
+        polygonsVboBuffer: polygonsVboBuffer,
+        linesVboBuffer: linesVboBuffer,
+    };
+    var transfer = [
+        polygonsVboBuffer.buffer.buffer,
+        linesVboBuffer.buffer.buffer,
+    ];
+    message_1.sendMessageFromWorker(verb, messageData, transfer);
+}
+exports.sendMessage = sendMessage;
+function addListener(worker, listener) {
+    message_1.addListenerToWorker(worker, verb, function (data) {
+        var polygonsVboBuffer = vbo_types_1.rehydrateVboBuffer(data.polygonsVboBuffer);
+        var linesVboBuffer = vbo_types_1.rehydrateVboBuffer(data.linesVboBuffer);
+        listener(polygonsVboBuffer, linesVboBuffer);
     });
 }
 exports.addListener = addListener;
@@ -2442,12 +2538,14 @@ exports.sendMessageToWorker = exports.sendMessageFromWorker = exports.EVerb = ex
 var EVerb;
 (function (EVerb) {
     EVerb["RESET"] = "reset";
+    EVerb["RESET_OUTPUT"] = "reset-output";
     EVerb["RECOMPUTE_COLORS"] = "recopute-colors";
+    EVerb["RECOMPUTE_COLORS_OUTPUT"] = "recompute-colors-output";
     EVerb["DOWNLOAD_AS_SVG"] = "download-svg";
+    EVerb["DOWNLOAD_AS_SVG_OUTPUT"] = "download-as-svg-output";
     EVerb["UPDATE"] = "update";
     EVerb["NEW_METRICS"] = "new-metrics";
-    EVerb["NEW_SVG_OUTPUT"] = "new-svg-output";
-    EVerb["NEW_GEOMETRY"] = "new-geometry";
+    EVerb["MAINTAINANCE_OUTPUT"] = "maintenance-output";
 })(EVerb || (EVerb = {}));
 exports.EVerb = EVerb;
 function sendMessage(target, verb, data, transfer) {
@@ -2709,34 +2807,47 @@ var WorkerEngine = (function (_super) {
     function WorkerEngine() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
+    WorkerEngine.prototype.reset = function (viewport, primitiveType) {
+        _super.prototype.reset.call(this, viewport, primitiveType);
+        var polygonsVboBuffer = this.computePolygonsVboBuffer();
+        var linesVboBuffer = this.computeLinesVboBuffer();
+        MessagesToMain.ResetOutput.sendMessage(polygonsVboBuffer, linesVboBuffer);
+    };
+    WorkerEngine.prototype.recomputeColors = function (colorVariation) {
+        _super.prototype.recomputeColors.call(this, colorVariation);
+        var polygonsVboBuffer = this.computePolygonsVboBuffer();
+        var linesVboBuffer = this.computeLinesVboBuffer();
+        MessagesToMain.RecomputeColorsOutput.sendMessage(polygonsVboBuffer, linesVboBuffer);
+    };
     WorkerEngine.prototype.downloadAsSvg = function (width, height, scaling, backgroundColor, linesColor) {
         var svgOutput = this.drawAsSvg(width, height, scaling, backgroundColor, linesColor);
-        MessagesToMain.NewSvgOutput.sendMessage(svgOutput);
+        MessagesToMain.DownloadAsSvgOutput.sendMessage(svgOutput);
     };
-    WorkerEngine.prototype.onGeometryChange = function () {
-        this.sendVbos();
-        this.updateIndicators();
+    WorkerEngine.prototype.maintainance = function (viewport, wantedDepth, subdivisionBalance, colorVariation) {
+        var zoomBeforeMaintainance = this.cumulatedZoom.copy();
+        var result = _super.prototype.maintainance.call(this, viewport, wantedDepth, subdivisionBalance, colorVariation);
+        var polygonsVboBuffer = this.computePolygonsVboBuffer();
+        var linesVboBuffer = this.computeLinesVboBuffer();
+        MessagesToMain.MaintainanceOutput.sendMessage(polygonsVboBuffer, linesVboBuffer, zoomBeforeMaintainance);
+        return result;
     };
-    WorkerEngine.prototype.updateIndicators = function () {
-        var metrics = this.computeMetrics();
-        MessagesToMain.NewMetrics.sendMessage(metrics);
+    WorkerEngine.prototype.onNewMetrics = function (newMetrics) {
+        MessagesToMain.NewMetrics.sendMessage(newMetrics);
     };
-    WorkerEngine.prototype.sendVbos = function () {
+    WorkerEngine.prototype.computePolygonsVboBuffer = function () {
         var lastLayer = this.layers[this.layers.length - 1];
-        var polygonsVboBuffer = plotter_webgl_basic_1.PlotterWebGLBasic.buildPolygonsVboBuffer([{
+        return plotter_webgl_basic_1.PlotterWebGLBasic.buildPolygonsVboBuffer([{
                 items: lastLayer.primitives.items,
                 geometryId: lastLayer.primitives.geometryId.copy(),
             }]);
+    };
+    WorkerEngine.prototype.computeLinesVboBuffer = function () {
         var batchesOfLines = [];
         for (var _i = 0, _a = this.layers; _i < _a.length; _i++) {
             var layer = _a[_i];
             batchesOfLines.push(layer.outlines);
         }
-        var linesVboBuffer = plotter_webgl_basic_1.PlotterWebGLBasic.buildLinesVboBuffer(batchesOfLines);
-        MessagesToMain.NewGeometry.sendMessage(polygonsVboBuffer, linesVboBuffer);
-        if (polygonsVboBuffer.buffer.length !== 0) {
-            console.warn("Buffer was copied and not transferred...");
-        }
+        return plotter_webgl_basic_1.PlotterWebGLBasic.buildLinesVboBuffer(batchesOfLines);
     };
     WorkerEngine.prototype.drawAsSvg = function (width, height, scaling, backgroundColor, linesColor) {
         var svgPlotter = new plotter_svg_1.PlotterSVG(width, height);

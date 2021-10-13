@@ -1,7 +1,7 @@
 import { addListenerToWorker, EVerb, sendMessageFromWorker } from "../message";
 
 
-const verb = EVerb.NEW_SVG_OUTPUT;
+const verb = EVerb.DOWNLOAD_AS_SVG_OUTPUT;
 
 interface IMessageData {
     readonly output: string;

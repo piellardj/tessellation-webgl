@@ -32,7 +32,7 @@ abstract class Engine {
     public constructor() {
         this.reset(new Rectangle(0, 512, 0, 512), EPrimitiveType.TRIANGLES);
         this.cumulatedZoom = Zoom.noZoom();
-        this.maintainanceThrottle = new Throttle(100);
+        this.maintainanceThrottle = new Throttle(500);
     }
 
     public update(viewport: Rectangle, instantZoom: Zoom, wantedDepth: number, subdivisionBalance: number, colorVariation: number): boolean {
@@ -42,7 +42,7 @@ abstract class Engine {
 
         // don't do maintainance too often because it is costly
         this.maintainanceThrottle.runIfAvailable(() => {
-            somethingChanged = this.maintenance(viewport, wantedDepth, subdivisionBalance, colorVariation);
+            somethingChanged = this.maintainance(viewport, wantedDepth, subdivisionBalance, colorVariation);
         });
 
         return somethingChanged;
@@ -85,7 +85,7 @@ abstract class Engine {
             birthTimestamp: performance.now(),
         }];
 
-        this.onGeometryChange();
+        this.onNewMetrics(this.computeMetrics());
     }
 
     public recomputeColors(colorVariation: number): void {
@@ -96,11 +96,9 @@ abstract class Engine {
         for (const layer of this.layers) {
             layer.primitives.geometryId.registerChange();
         }
-
-        this.onGeometryChange();
     }
 
-    protected maintenance(viewport: Rectangle, wantedDepth: number, subdivisionBalance: number, colorVariation: number): boolean {
+    protected maintainance(viewport: Rectangle, wantedDepth: number, subdivisionBalance: number, colorVariation: number): boolean {
         let somethingChanged = false;
         somethingChanged = this.applyCumulatedZoom() || somethingChanged;
         somethingChanged = this.adjustLayersCount(wantedDepth, subdivisionBalance, colorVariation) || somethingChanged;
@@ -112,12 +110,14 @@ abstract class Engine {
                 layer.outlines.geometryId.registerChange();
             }
 
-            this.onGeometryChange();
+            this.onNewMetrics(this.computeMetrics());
         }
         return somethingChanged;
     }
 
-    protected computeMetrics(): IEngineMetrics {
+    protected abstract onNewMetrics(newMetrics: IEngineMetrics): void;
+
+    private computeMetrics(): IEngineMetrics {
         const treeDepth = this.rootPrimitive.treeDepth();
         const lastLayerPrimitivesCount = this.layers[this.layers.length - 1].primitives.items.length;
         let totalPrimitivesCount = 0;
@@ -139,8 +139,6 @@ abstract class Engine {
             segmentsCount,
         };
     }
-
-    protected abstract onGeometryChange(): void;
 
     private computeRootPrimitiveColor(): Color {
         const minLuminosity = 0.3;

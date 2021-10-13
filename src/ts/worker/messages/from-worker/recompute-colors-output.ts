@@ -3,7 +3,7 @@ import { rehydrateVboBuffer } from "../../../plotter/vbo-types";
 import { addListenerToWorker, EVerb, sendMessageFromWorker } from "../message";
 
 
-const verb = EVerb.NEW_GEOMETRY;
+const verb = EVerb.RECOMPUTE_COLORS_OUTPUT;
 
 interface IMessageData {
     readonly polygonsVboBuffer: IVboBuffer;
