@@ -3,11 +3,13 @@ import { Color } from "../misc/color";
 import { IPoint } from "../misc/point";
 import { Rectangle } from "../misc/rectangle";
 import { Zoom } from "../misc/zoom";
-import { Parameters } from "../parameters";
 import { EVisibility, PrimitiveBase } from "./primitive-base";
+import { EPrimitiveType } from "./primitive-type-enum";
 
 
 class PrimitiveTriangles extends PrimitiveBase {
+    public readonly primitiveType: EPrimitiveType = EPrimitiveType.TRIANGLES;
+
     public constructor(
         protected readonly p1: IPoint,
         protected readonly p2: IPoint,
@@ -20,11 +22,11 @@ class PrimitiveTriangles extends PrimitiveBase {
         return 2;
     }
 
-    public subdivide(): void {
+    public subdivide(subdivisionBalance: number, childrenColorVariation: number): void {
         this.removeChildren();
 
         const subdivideInternal = (sourcePoint: IPoint, otherPoint1: IPoint, otherPoint2: IPoint) => {
-            const minRand = 0.5 * Parameters.balance;
+            const minRand = 0.5 * subdivisionBalance;
             const maxRand = 1 - minRand;
             const rand = Arithmetics.random(minRand, maxRand);
 
@@ -34,8 +36,8 @@ class PrimitiveTriangles extends PrimitiveBase {
             ];
 
             this.addChildren(
-                new PrimitiveTriangles(sourcePoint, otherPoint1, this.subdivision[1], this.color.computeCloseColor()),
-                new PrimitiveTriangles(sourcePoint, this.subdivision[1], otherPoint2, this.color.computeCloseColor())
+                new PrimitiveTriangles(sourcePoint, otherPoint1, this.subdivision[1], this.color.computeCloseColor(childrenColorVariation)),
+                new PrimitiveTriangles(sourcePoint, this.subdivision[1], otherPoint2, this.color.computeCloseColor(childrenColorVariation))
             );
         };
 

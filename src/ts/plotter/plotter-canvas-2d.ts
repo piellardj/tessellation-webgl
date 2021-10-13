@@ -1,10 +1,13 @@
 import { Color } from "../misc/color";
-import { BatchOfLines, BatchOfPolygons, PlotterBase } from "./plotter-base";
+import { Zoom } from "../misc/zoom";
+import { PlotterCanvas } from "./plotter-canvas";
+import { IPlotter } from "./plotter-interface";
+import { BatchOfLines, BatchOfPolygons } from "./types";
 
 import "../page-interface-generated";
 
 
-class PlotterCanvas2D extends PlotterBase {
+class PlotterCanvas2D extends PlotterCanvas implements IPlotter {
     private readonly context: CanvasRenderingContext2D;
 
     public constructor() {
@@ -16,15 +19,31 @@ class PlotterCanvas2D extends PlotterBase {
         return true;
     }
 
-    // tslint:disable-next-line:no-empty
-    public initialize(): void { }
+    public initialize(backgroundColor: Color, zoom: Zoom, scaling: number): void {
+        // reset all transforms
+        this.context.setTransform(1, 0, 0, 1, 0, 0);
+
+        // clear canvas
+        this.context.fillStyle = backgroundColor.toHexaString();
+        this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // apply scaling
+        this.context.translate(+0.5 * this.width, +0.5 * this.height);
+        this.context.scale(scaling, scaling);
+        this.context.translate(-0.5 * this.width, -0.5 * this.height);
+
+        // apply zoom
+        const zoomTranslate = zoom.translate;
+        this.context.translate(zoomTranslate.x, zoomTranslate.y);
+
+        const zoomScale = zoom.scale;
+        this.context.translate(+0.5 * this.width, +0.5 * this.height);
+        this.context.scale(zoomScale, zoomScale);
+        this.context.translate(-0.5 * this.width, -0.5 * this.height);
+    }
+
     // tslint:disable-next-line:no-empty
     public finalize(): void { }
-
-    public clearCanvas(color: Color): void {
-        this.context.fillStyle = color.toHexaString();
-        this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    }
 
     public drawLines(batchOfLines: BatchOfLines, thickness: number, color: Color, alpha: number): void {
         if (alpha > 0 && batchOfLines) {
@@ -76,3 +95,4 @@ class PlotterCanvas2D extends PlotterBase {
 export {
     PlotterCanvas2D,
 };
+

@@ -43,6 +43,10 @@ const data = {
             id: "segments-count",
             label: "Segments count"
         },
+        {
+            id: "multithreaded",
+            label: "Multithreaded"
+        },
     ],
     canvas: {
         width: 512,
@@ -98,6 +102,11 @@ const data = {
                     step: 0.01
                 },
                 {
+                    type: Demopage.supportedControls.Checkbox,
+                    title: "Multithreaded",
+                    id: "multithreaded-checkbox-id",
+                },
+                {
                     type: Demopage.supportedControls.Button,
                     label: "Reset",
                     id: "reset-button-id",
@@ -126,8 +135,8 @@ const data = {
                 },
                 {
                     type: Demopage.supportedControls.Range,
-                    title: "Scale",
-                    id: "viewport-scale-range-id",
+                    title: "Scaling",
+                    id: "scaling-range-id",
                     min: 0.25,
                     max: 1,
                     value: 1,

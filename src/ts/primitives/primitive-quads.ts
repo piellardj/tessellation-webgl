@@ -3,11 +3,13 @@ import { Color } from "../misc/color";
 import { IPoint } from "../misc/point";
 import { Rectangle } from "../misc/rectangle";
 import { Zoom } from "../misc/zoom";
-import { Parameters } from "../parameters";
 import { EVisibility, PrimitiveBase } from "./primitive-base";
+import { EPrimitiveType } from "./primitive-type-enum";
 
 
 class PrimitiveQuads extends PrimitiveBase {
+    public readonly primitiveType: EPrimitiveType = EPrimitiveType.QUADS;
+
     public constructor(
         private readonly topLeft: IPoint,
         private readonly topRight: IPoint,
@@ -21,10 +23,10 @@ class PrimitiveQuads extends PrimitiveBase {
         return 2;
     }
 
-    public subdivide(): void {
+    public subdivide(subdivisionBalance: number, childrenColorVariation: number): void {
         this.removeChildren();
 
-        const minRand = 0.5 * Parameters.balance;
+        const minRand = 0.5 * subdivisionBalance;
         const maxRand = 1 - minRand;
         const rand1 = Arithmetics.random(minRand, maxRand);
         const rand2 = Arithmetics.random(minRand, maxRand);
@@ -39,8 +41,8 @@ class PrimitiveQuads extends PrimitiveBase {
             ];
 
             this.addChildren(
-                new PrimitiveQuads(this.topLeft, this.subdivision[0], this.bottomLeft, this.subdivision[1], this.color.computeCloseColor()),
-                new PrimitiveQuads(this.subdivision[0], this.topRight, this.subdivision[1], this.bottomRight, this.color.computeCloseColor())
+                new PrimitiveQuads(this.topLeft, this.subdivision[0], this.bottomLeft, this.subdivision[1], this.color.computeCloseColor(childrenColorVariation)),
+                new PrimitiveQuads(this.subdivision[0], this.topRight, this.subdivision[1], this.bottomRight, this.color.computeCloseColor(childrenColorVariation))
             );
         } else { // current is more tall than wide => subdivide horizontally
             this.subdivision = [
@@ -49,8 +51,8 @@ class PrimitiveQuads extends PrimitiveBase {
             ];
 
             this.addChildren(
-                new PrimitiveQuads(this.topLeft, this.topRight, this.subdivision[0], this.subdivision[1], this.color.computeCloseColor()),
-                new PrimitiveQuads(this.subdivision[0], this.subdivision[1], this.bottomLeft, this.bottomRight, this.color.computeCloseColor())
+                new PrimitiveQuads(this.topLeft, this.topRight, this.subdivision[0], this.subdivision[1], this.color.computeCloseColor(childrenColorVariation)),
+                new PrimitiveQuads(this.subdivision[0], this.subdivision[1], this.bottomLeft, this.bottomRight, this.color.computeCloseColor(childrenColorVariation))
             );
         }
     }

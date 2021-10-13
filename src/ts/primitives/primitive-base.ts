@@ -3,7 +3,8 @@ import { Color } from "../misc/color";
 import { IPoint } from "../misc/point";
 import { Rectangle } from "../misc/rectangle";
 import { Zoom } from "../misc/zoom";
-import { IPolygon } from "../plotter/plotter-base";
+import { IPolygon } from "../plotter/types";
+import { EPrimitiveType } from "./primitive-type-enum";
 
 
 type Line = IPoint[];
@@ -15,6 +16,8 @@ enum EVisibility {
 }
 
 abstract class PrimitiveBase extends TreeNode implements IPolygon {
+    public abstract readonly primitiveType: EPrimitiveType;
+
     public subdivision: Line | null = null;
     protected _color: Color;
 
@@ -23,15 +26,16 @@ abstract class PrimitiveBase extends TreeNode implements IPolygon {
 
     protected constructor(color: Color) {
         super();
-        this.color = color;
+        this._color = color;
     }
 
-    public set color(color: Color) {
+    public setColor(color: Color, childrenColorVariation: number): void {
         this._color = color;
 
         const children = this.getDirectChildren() as PrimitiveBase[];
         for (const child of children) {
-            child.color = this.color.computeCloseColor();
+            const childColor = this.color.computeCloseColor(childrenColorVariation);
+            child.setColor(childColor, childrenColorVariation);
         }
     }
 
@@ -59,7 +63,7 @@ abstract class PrimitiveBase extends TreeNode implements IPolygon {
         }
     }
 
-    public abstract subdivide(): void;
+    public abstract subdivide(subdivisionBalance: number, childrenColorVariation: number): void;
     public abstract get vertices(): IPoint[];
 
     protected abstract applyZoom(zoom: Zoom, isRoot: boolean): void;

@@ -24,6 +24,10 @@ function downloadTextFile(fileName: string, content: string): void {
     }
 }
 
+function downloadSvgOutput(output: string): void {
+    downloadTextFile("tessellation.svg", output);
+}
+
 function getQueryStringValue(name: string): string | null {
     if (typeof URLSearchParams !== "undefined") {
         const params = new URLSearchParams(window.location.search);
@@ -58,7 +62,7 @@ function setQueryStringValue(name: string, value: string | null): void {
 }
 
 export {
-    downloadTextFile,
+    downloadSvgOutput,
     getQueryStringValue,
     setQueryStringValue,
 };

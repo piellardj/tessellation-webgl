@@ -1,5 +1,3 @@
-import { Parameters } from "../parameters";
-
 function registerPadStartPolyfill(): void {
     if (typeof String.prototype.padStart !== "function") {
         String.prototype.padStart = function padStart(maxLength: number, fillString?: string): string {
@@ -32,6 +30,10 @@ class Color {
         return new Color(Color.randomChannel(), Color.randomChannel(), Color.randomChannel());
     }
 
+    public static rehydrate(dehydrated: Color): Color {
+        return new Color(dehydrated.r, dehydrated.g, dehydrated.b);
+    }
+
     /** @param r in [0, 255]
      *  @param g in [0, 255]
      *  @param b in [0, 255]
@@ -53,11 +55,11 @@ class Color {
         return `rgba(${this.r}, ${this.g}, ${this.b}, ${alpha})`;
     }
 
-    public computeCloseColor(): Color {
+    public computeCloseColor(colorVariation: number): Color {
         return new Color(
-            Color.computeCloseChannelValue(this.r),
-            Color.computeCloseChannelValue(this.g),
-            Color.computeCloseChannelValue(this.b),
+            Color.computeCloseChannelValue(this.r, colorVariation),
+            Color.computeCloseChannelValue(this.g, colorVariation),
+            Color.computeCloseChannelValue(this.b, colorVariation),
         );
     }
 
@@ -69,9 +71,8 @@ class Color {
         return Math.floor(256 * Math.random());
     }
 
-    private static computeCloseChannelValue(v: number): number {
-        const variation = Parameters.colorVariation;
-        const raw = v + Math.round(variation * (Math.random() - 0.5));
+    private static computeCloseChannelValue(referenceValue: number, variation: number): number {
+        const raw = referenceValue + Math.round(variation * (Math.random() - 0.5));
         if (raw < 0) {
             return 0;
         } else if (raw > 255) {

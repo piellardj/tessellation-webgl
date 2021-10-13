@@ -2,239 +2,6 @@
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
-/***/ "./src/ts/engine/engine-metrics.ts":
-/*!*****************************************!*\
-  !*** ./src/ts/engine/engine-metrics.ts ***!
-  \*****************************************/
-/***/ (function(__unused_webpack_module, exports) {
-
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.updateEngineMetricsIndicators = void 0;
-function updateEngineMetricsIndicators(metrics) {
-    Page.Canvas.setIndicatorText("tree-depth", metrics.treeDepth.toString());
-    Page.Canvas.setIndicatorText("primitives-count", metrics.lastLayerPrimitivesCount.toString());
-    Page.Canvas.setIndicatorText("tree-nodes-count", metrics.totalPrimitivesCount.toString());
-    Page.Canvas.setIndicatorText("segments-count", metrics.segmentsCount.toString());
-}
-exports.updateEngineMetricsIndicators = updateEngineMetricsIndicators;
-
-
-/***/ }),
-
-/***/ "./src/ts/engine/engine-monothreaded.ts":
-/*!**********************************************!*\
-  !*** ./src/ts/engine/engine-monothreaded.ts ***!
-  \**********************************************/
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.EngineMonothreaded = void 0;
-var web_1 = __webpack_require__(/*! ../misc/web */ "./src/ts/misc/web.ts");
-var parameters_1 = __webpack_require__(/*! ../parameters */ "./src/ts/parameters.ts");
-var plotter_svg_1 = __webpack_require__(/*! ../plotter/plotter-svg */ "./src/ts/plotter/plotter-svg.ts");
-var engine_1 = __webpack_require__(/*! ./engine */ "./src/ts/engine/engine.ts");
-var engine_metrics_1 = __webpack_require__(/*! ./engine-metrics */ "./src/ts/engine/engine-metrics.ts");
-var EngineMonothreaded = (function (_super) {
-    __extends(EngineMonothreaded, _super);
-    function EngineMonothreaded() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    EngineMonothreaded.prototype.draw = function (plotter, scaling, backgroundColor, linesColor) {
-        if (this.layers.length < 1) {
-            return;
-        }
-        var lastSolidLayer = this.layers.length - 1;
-        var emergingLayerAlpha = 0;
-        if (parameters_1.Parameters.blending && this.layers.length > 1) {
-            if (parameters_1.Parameters.zoomingSpeed > 0) {
-                var emergingTimeOfLastLayer = 1000 / Math.pow((1 + parameters_1.Parameters.zoomingSpeed), 2);
-                var lastLayer = this.layers[this.layers.length - 1];
-                var ageOfLastLayer = performance.now() - lastLayer.birthTimestamp;
-                if (ageOfLastLayer < emergingTimeOfLastLayer) {
-                    lastSolidLayer--;
-                    emergingLayerAlpha = ageOfLastLayer / emergingTimeOfLastLayer;
-                }
-            }
-        }
-        var emergingLayer = lastSolidLayer + 1;
-        plotter.initialize(backgroundColor, this.cumulatedZoom, scaling);
-        plotter.drawPolygons(this.layers[lastSolidLayer].primitives, 1);
-        if (emergingLayer < this.layers.length) {
-            plotter.drawPolygons(this.layers[emergingLayer].primitives, emergingLayerAlpha);
-        }
-        if (linesColor) {
-            for (var iLayer = 0; iLayer < this.layers.length; iLayer++) {
-                var thickness = EngineMonothreaded.getLineThicknessForLayer(iLayer, this.layers.length);
-                var alpha = (iLayer === emergingLayer) ? emergingLayerAlpha : 1;
-                plotter.drawLines(this.layers[iLayer].outlines, thickness, linesColor, alpha);
-            }
-        }
-        plotter.finalize();
-    };
-    EngineMonothreaded.prototype.downloadAsSvg = function (width, height, scaling, backgroundColor, linesColor) {
-        var svgPlotter = new plotter_svg_1.PlotterSVG(width, height);
-        this.draw(svgPlotter, scaling, backgroundColor, linesColor);
-        var svgString = svgPlotter.output();
-        web_1.downloadSvgOutput(svgString);
-    };
-    EngineMonothreaded.prototype.onNewMetrics = function (newMetrics) {
-        engine_metrics_1.updateEngineMetricsIndicators(newMetrics);
-    };
-    EngineMonothreaded.getLineThicknessForLayer = function (layerId, totalLayersCount) {
-        var variablePart = 0;
-        if (layerId > 0) {
-            variablePart = parameters_1.Parameters.thickness * (totalLayersCount - 1 - layerId) / (totalLayersCount - 1);
-        }
-        return 1 + variablePart;
-    };
-    return EngineMonothreaded;
-}(engine_1.Engine));
-exports.EngineMonothreaded = EngineMonothreaded;
-
-
-/***/ }),
-
-/***/ "./src/ts/engine/engine-multithreaded.ts":
-/*!***********************************************!*\
-  !*** ./src/ts/engine/engine-multithreaded.ts ***!
-  \***********************************************/
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.EngineMultithreaded = void 0;
-var web_1 = __webpack_require__(/*! ../misc/web */ "./src/ts/misc/web.ts");
-var zoom_1 = __webpack_require__(/*! ../misc/zoom */ "./src/ts/misc/zoom.ts");
-var MessagesFromWorker = __importStar(__webpack_require__(/*! ./worker/messages/from-worker/messages */ "./src/ts/engine/worker/messages/from-worker/messages.ts"));
-var MessagesToWorker = __importStar(__webpack_require__(/*! ./worker/messages/to-worker/messages */ "./src/ts/engine/worker/messages/to-worker/messages.ts"));
-var engine_metrics_1 = __webpack_require__(/*! ./engine-metrics */ "./src/ts/engine/engine-metrics.ts");
-__webpack_require__(/*! ../page-interface-generated */ "./src/ts/page-interface-generated.ts");
-var EngineMultithreaded = (function () {
-    function EngineMultithreaded() {
-        var _this = this;
-        this.hasSomethingNewToDraw = true;
-        this.worker = new Worker("script/worker.js?v=" + Page.version);
-        MessagesFromWorker.NewMetrics.addListener(this.worker, function (engineMetrics) {
-            engine_metrics_1.updateEngineMetricsIndicators(engineMetrics);
-        });
-        MessagesFromWorker.DownloadAsSvgOutput.addListener(this.worker, function (output) {
-            web_1.downloadSvgOutput(output);
-        });
-        MessagesFromWorker.ResetOutput.addListener(this.worker, function (polygonsVboBuffer, linesVboBuffer) {
-            _this.cumulatedZoom = zoom_1.Zoom.noZoom();
-            _this.polygonsVboBuffer = polygonsVboBuffer;
-            _this.linesVboBuffer = linesVboBuffer;
-            _this.hasSomethingNewToDraw = true;
-        });
-        MessagesFromWorker.RecomputeColorsOutput.addListener(this.worker, function (polygonsVboBuffer, linesVboBuffer) {
-            _this.polygonsVboBuffer = polygonsVboBuffer;
-            _this.linesVboBuffer = linesVboBuffer;
-            _this.hasSomethingNewToDraw = true;
-        });
-        MessagesFromWorker.MaintainanceOutput.addListener(this.worker, function (polygonsVboBuffer, linesVboBuffer, appliedZoom) {
-            var invAppliedZoom = appliedZoom.inverse();
-            _this.cumulatedZoom = zoom_1.Zoom.multiply(_this.cumulatedZoom, invAppliedZoom);
-            _this.polygonsVboBuffer = polygonsVboBuffer;
-            _this.linesVboBuffer = linesVboBuffer;
-            _this.hasSomethingNewToDraw = true;
-        });
-        this.cumulatedZoom = zoom_1.Zoom.noZoom();
-    }
-    EngineMultithreaded.prototype.update = function (viewport, instantZoom, wantedDepth, subdivisionBalance, colorVariation) {
-        this.cumulatedZoom = zoom_1.Zoom.multiply(instantZoom, this.cumulatedZoom);
-        MessagesToWorker.Update.sendMessage(this.worker, viewport, instantZoom, wantedDepth, subdivisionBalance, colorVariation);
-        return this.hasSomethingNewToDraw;
-    };
-    EngineMultithreaded.prototype.draw = function (plotter, scaling, backgroundColor, linesColor) {
-        this.hasSomethingNewToDraw = false;
-        plotter.initialize(backgroundColor, this.cumulatedZoom, scaling);
-        if (this.polygonsVboBuffer) {
-            var needToReupload = false;
-            for (var _i = 0, _a = this.polygonsVboBuffer.bufferParts; _i < _a.length; _i++) {
-                var polygonsVboPart = _a[_i];
-                if (!plotter.registerPolygonsVboPartForDrawing(polygonsVboPart.geometryId, 1)) {
-                    needToReupload = true;
-                }
-            }
-            if (needToReupload) {
-                plotter.uploadPolygonsVbo(this.polygonsVboBuffer);
-                for (var _b = 0, _c = this.polygonsVboBuffer.bufferParts; _b < _c.length; _b++) {
-                    var polygonsVboPart = _c[_b];
-                    plotter.registerPolygonsVboPartForDrawing(polygonsVboPart.geometryId, 1);
-                }
-            }
-        }
-        if (this.linesVboBuffer && linesColor) {
-            var needToReupload = false;
-            for (var _d = 0, _e = this.linesVboBuffer.bufferParts; _d < _e.length; _d++) {
-                var linesVboPart = _e[_d];
-                if (!plotter.registerLinesVboPartForDrawing(linesVboPart.geometryId, linesColor, 1)) {
-                    needToReupload = true;
-                }
-            }
-            if (needToReupload) {
-                plotter.uploadLinesVbo(this.linesVboBuffer);
-                for (var _f = 0, _g = this.linesVboBuffer.bufferParts; _f < _g.length; _f++) {
-                    var linesVboPart = _g[_f];
-                    plotter.registerLinesVboPartForDrawing(linesVboPart.geometryId, linesColor, 1);
-                }
-            }
-        }
-        plotter.finalize();
-    };
-    EngineMultithreaded.prototype.reset = function (viewport, primitiveType) {
-        MessagesToWorker.Reset.sendMessage(this.worker, viewport, primitiveType);
-    };
-    EngineMultithreaded.prototype.recomputeColors = function (colorVariation) {
-        MessagesToWorker.RecomputeColors.sendMessage(this.worker, colorVariation);
-    };
-    EngineMultithreaded.prototype.downloadAsSvg = function (width, height, scaling, backgroundColor, linesColor) {
-        MessagesToWorker.DownloadAsSvg.sendMessage(this.worker, width, height, scaling, backgroundColor, linesColor);
-    };
-    EngineMultithreaded.isSupported = (typeof Worker !== "undefined");
-    return EngineMultithreaded;
-}());
-exports.EngineMultithreaded = EngineMultithreaded;
-
-
-/***/ }),
-
 /***/ "./src/ts/engine/engine.ts":
 /*!*********************************!*\
   !*** ./src/ts/engine/engine.ts ***!
@@ -1026,6 +793,166 @@ exports.addListener = addListener;
 
 /***/ }),
 
+/***/ "./src/ts/engine/worker/worker-engine.ts":
+/*!***********************************************!*\
+  !*** ./src/ts/engine/worker/worker-engine.ts ***!
+  \***********************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.WorkerEngine = void 0;
+var engine_1 = __webpack_require__(/*! ../engine */ "./src/ts/engine/engine.ts");
+var plotter_svg_1 = __webpack_require__(/*! ../../plotter/plotter-svg */ "./src/ts/plotter/plotter-svg.ts");
+var plotter_webgl_basic_1 = __webpack_require__(/*! ../../plotter/plotter-webgl-basic */ "./src/ts/plotter/plotter-webgl-basic.ts");
+var MessagesToMain = __importStar(__webpack_require__(/*! ./messages/from-worker/messages */ "./src/ts/engine/worker/messages/from-worker/messages.ts"));
+var WorkerEngine = (function (_super) {
+    __extends(WorkerEngine, _super);
+    function WorkerEngine() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    WorkerEngine.prototype.reset = function (viewport, primitiveType) {
+        _super.prototype.reset.call(this, viewport, primitiveType);
+        var polygonsVboBuffer = this.computePolygonsVboBuffer();
+        var linesVboBuffer = this.computeLinesVboBuffer();
+        MessagesToMain.ResetOutput.sendMessage(polygonsVboBuffer, linesVboBuffer);
+    };
+    WorkerEngine.prototype.recomputeColors = function (colorVariation) {
+        _super.prototype.recomputeColors.call(this, colorVariation);
+        var polygonsVboBuffer = this.computePolygonsVboBuffer();
+        var linesVboBuffer = this.computeLinesVboBuffer();
+        MessagesToMain.RecomputeColorsOutput.sendMessage(polygonsVboBuffer, linesVboBuffer);
+    };
+    WorkerEngine.prototype.downloadAsSvg = function (width, height, scaling, backgroundColor, linesColor) {
+        var svgOutput = this.drawAsSvg(width, height, scaling, backgroundColor, linesColor);
+        MessagesToMain.DownloadAsSvgOutput.sendMessage(svgOutput);
+    };
+    WorkerEngine.prototype.maintainance = function (viewport, wantedDepth, subdivisionBalance, colorVariation) {
+        var zoomBeforeMaintainance = this.cumulatedZoom.copy();
+        var result = _super.prototype.maintainance.call(this, viewport, wantedDepth, subdivisionBalance, colorVariation);
+        var polygonsVboBuffer = this.computePolygonsVboBuffer();
+        var linesVboBuffer = this.computeLinesVboBuffer();
+        MessagesToMain.MaintainanceOutput.sendMessage(polygonsVboBuffer, linesVboBuffer, zoomBeforeMaintainance);
+        return result;
+    };
+    WorkerEngine.prototype.onNewMetrics = function (newMetrics) {
+        MessagesToMain.NewMetrics.sendMessage(newMetrics);
+    };
+    WorkerEngine.prototype.computePolygonsVboBuffer = function () {
+        var lastLayer = this.layers[this.layers.length - 1];
+        return plotter_webgl_basic_1.PlotterWebGLBasic.buildPolygonsVboBuffer([{
+                items: lastLayer.primitives.items,
+                geometryId: lastLayer.primitives.geometryId.copy(),
+            }]);
+    };
+    WorkerEngine.prototype.computeLinesVboBuffer = function () {
+        var batchesOfLines = [];
+        for (var _i = 0, _a = this.layers; _i < _a.length; _i++) {
+            var layer = _a[_i];
+            batchesOfLines.push(layer.outlines);
+        }
+        return plotter_webgl_basic_1.PlotterWebGLBasic.buildLinesVboBuffer(batchesOfLines);
+    };
+    WorkerEngine.prototype.drawAsSvg = function (width, height, scaling, backgroundColor, linesColor) {
+        var svgPlotter = new plotter_svg_1.PlotterSVG(width, height);
+        svgPlotter.initialize(backgroundColor, this.cumulatedZoom, scaling);
+        svgPlotter.drawPolygons(this.layers[this.layers.length - 1].primitives, 1);
+        if (linesColor) {
+            for (var _i = 0, _a = this.layers; _i < _a.length; _i++) {
+                var layer = _a[_i];
+                svgPlotter.drawLines(layer.outlines, 1, linesColor, 1);
+            }
+        }
+        svgPlotter.finalize();
+        return svgPlotter.output();
+    };
+    return WorkerEngine;
+}(engine_1.Engine));
+exports.WorkerEngine = WorkerEngine;
+
+
+/***/ }),
+
+/***/ "./src/ts/engine/worker/worker.ts":
+/*!****************************************!*\
+  !*** ./src/ts/engine/worker/worker.ts ***!
+  \****************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+var MessagesFromMain = __importStar(__webpack_require__(/*! ./messages/to-worker/messages */ "./src/ts/engine/worker/messages/to-worker/messages.ts"));
+var worker_engine_1 = __webpack_require__(/*! ./worker-engine */ "./src/ts/engine/worker/worker-engine.ts");
+var engine = new worker_engine_1.WorkerEngine();
+MessagesFromMain.Update.addListener(function (viewport, instantZoom, wantedDepth, subdivisionBalance, colorVariation) {
+    engine.update(viewport, instantZoom, wantedDepth, subdivisionBalance, colorVariation);
+});
+MessagesFromMain.Reset.addListener(function (viewport, primitiveType) {
+    engine.reset(viewport, primitiveType);
+});
+MessagesFromMain.RecomputeColors.addListener(function (colorVariation) {
+    engine.recomputeColors(colorVariation);
+});
+MessagesFromMain.DownloadAsSvg.addListener(function (width, height, scaling, backgroundColor, linesColor) {
+    engine.downloadAsSvg(width, height, scaling, backgroundColor, linesColor);
+});
+
+
+/***/ }),
+
 /***/ "./src/ts/gl-utils/gl-canvas.ts":
 /*!**************************************!*\
   !*** ./src/ts/gl-utils/gl-canvas.ts ***!
@@ -1545,135 +1472,6 @@ exports.Viewport = Viewport;
 
 /***/ }),
 
-/***/ "./src/ts/main.ts":
-/*!************************!*\
-  !*** ./src/ts/main.ts ***!
-  \************************/
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-var engine_monothreaded_1 = __webpack_require__(/*! ./engine/engine-monothreaded */ "./src/ts/engine/engine-monothreaded.ts");
-var engine_multithreaded_1 = __webpack_require__(/*! ./engine/engine-multithreaded */ "./src/ts/engine/engine-multithreaded.ts");
-var color_1 = __webpack_require__(/*! ./misc/color */ "./src/ts/misc/color.ts");
-var frame_time_monitor_1 = __webpack_require__(/*! ./misc/frame-time-monitor */ "./src/ts/misc/frame-time-monitor.ts");
-var zoom_1 = __webpack_require__(/*! ./misc/zoom */ "./src/ts/misc/zoom.ts");
-var parameters_1 = __webpack_require__(/*! ./parameters */ "./src/ts/parameters.ts");
-var plotter_canvas_2d_1 = __webpack_require__(/*! ./plotter/plotter-canvas-2d */ "./src/ts/plotter/plotter-canvas-2d.ts");
-var plotter_webgl_1 = __webpack_require__(/*! ./plotter/plotter-webgl */ "./src/ts/plotter/plotter-webgl.ts");
-var plotter_webgl_basic_1 = __webpack_require__(/*! ./plotter/plotter-webgl-basic */ "./src/ts/plotter/plotter-webgl-basic.ts");
-var Testing = __importStar(__webpack_require__(/*! ./testing/main-testing */ "./src/ts/testing/main-testing.ts"));
-__webpack_require__(/*! ./page-interface-generated */ "./src/ts/page-interface-generated.ts");
-function main(engine, plotter) {
-    var backgroundColor = color_1.Color.BLACK;
-    function linesColor() {
-        if (parameters_1.Parameters.displayLines) {
-            return parameters_1.Parameters.linesColor;
-        }
-        return undefined;
-    }
-    parameters_1.Parameters.recomputeColorsObservers.push(function () {
-        engine.recomputeColors(parameters_1.Parameters.colorVariation);
-    });
-    parameters_1.Parameters.downloadObservers.push(function () {
-        engine.downloadAsSvg(plotter.width, plotter.height, parameters_1.Parameters.scaling, backgroundColor, linesColor());
-    });
-    function getCurrentMousePosition() {
-        var mousePosition = parameters_1.Parameters.mousePositionInPixels;
-        mousePosition.x -= 0.5 * plotter.width;
-        mousePosition.y -= 0.5 * plotter.height;
-        return mousePosition;
-    }
-    var lastZoomCenter;
-    function buildInstantZoom(dt) {
-        if (Page.Canvas.isMouseDown()) {
-            lastZoomCenter = getCurrentMousePosition();
-        }
-        return zoom_1.Zoom.buildZoom(lastZoomCenter, 1 + dt * parameters_1.Parameters.zoomingSpeed);
-    }
-    function reset() {
-        plotter.resizeCanvas();
-        engine.reset(plotter.viewport, parameters_1.Parameters.primitiveType);
-        lastZoomCenter = { x: 0, y: 0 };
-    }
-    parameters_1.Parameters.resetObservers.push(reset);
-    reset();
-    var needToRedraw = true;
-    parameters_1.Parameters.redrawObservers.push(function () { needToRedraw = true; });
-    var frametimeMonitor = new frame_time_monitor_1.FrametimeMonitor();
-    setInterval(function () {
-        frametimeMonitor.updateIndicators();
-    }, 1000);
-    var MAX_DT = 1 / 30;
-    var lastFrameTimestamp = performance.now();
-    function mainLoop() {
-        var now = performance.now();
-        var millisecondsSinceLastFrame = now - lastFrameTimestamp;
-        lastFrameTimestamp = now;
-        frametimeMonitor.registerFrameTime(millisecondsSinceLastFrame);
-        var dt = Math.min(MAX_DT, 0.001 * millisecondsSinceLastFrame);
-        var instantZoom = buildInstantZoom(dt);
-        var updatedChangedSomething = engine.update(plotter.viewport, instantZoom, parameters_1.Parameters.depth, parameters_1.Parameters.balance, parameters_1.Parameters.colorVariation);
-        if (updatedChangedSomething || instantZoom.isNotNull()) {
-            needToRedraw = true;
-        }
-        if (needToRedraw && plotter.isReady) {
-            plotter.resizeCanvas();
-            engine.draw(plotter, parameters_1.Parameters.scaling, backgroundColor, linesColor());
-            needToRedraw = false;
-        }
-        requestAnimationFrame(mainLoop);
-    }
-    mainLoop();
-}
-if (parameters_1.Parameters.debugMode) {
-    Testing.main();
-}
-else {
-    if (parameters_1.Parameters.multithreaded) {
-        if (!engine_multithreaded_1.EngineMultithreaded.isSupported) {
-            Page.Demopage.setErrorMessage("worker-not-supported", "Your browser does not the multithreaded mode because it does not support Web Workers.");
-        }
-        var engine = new engine_multithreaded_1.EngineMultithreaded();
-        var plotter = new plotter_webgl_basic_1.PlotterWebGLBasic();
-        main(engine, plotter);
-    }
-    else {
-        var engine = new engine_monothreaded_1.EngineMonothreaded();
-        if (parameters_1.Parameters.plotter === parameters_1.EPlotter.CANVAS2D) {
-            var plotter = new plotter_canvas_2d_1.PlotterCanvas2D();
-            main(engine, plotter);
-        }
-        else {
-            var plotter = new plotter_webgl_1.PlotterWebGL();
-            main(engine, plotter);
-        }
-    }
-    Page.Canvas.setIndicatorText("multithreaded", parameters_1.Parameters.multithreaded ? "yes" : "no");
-}
-
-
-/***/ }),
-
 /***/ "./src/ts/misc/arithmetics.ts":
 /*!************************************!*\
   !*** ./src/ts/misc/arithmetics.ts ***!
@@ -1797,56 +1595,6 @@ var Color = (function () {
     return Color;
 }());
 exports.Color = Color;
-
-
-/***/ }),
-
-/***/ "./src/ts/misc/frame-time-monitor.ts":
-/*!*******************************************!*\
-  !*** ./src/ts/misc/frame-time-monitor.ts ***!
-  \*******************************************/
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.FrametimeMonitor = void 0;
-__webpack_require__(/*! ../page-interface-generated */ "./src/ts/page-interface-generated.ts");
-var FrametimeMonitor = (function () {
-    function FrametimeMonitor() {
-        this.reset();
-    }
-    FrametimeMonitor.prototype.reset = function () {
-        this.nbFrameSinceLastIndicatorsUpdate = 0;
-        this.lastIndicatorsUpdateTimestamp = performance.now();
-    };
-    FrametimeMonitor.prototype.registerFrameTime = function (frametime) {
-        if (this.nbFrameSinceLastIndicatorsUpdate === 0) {
-            this.maxFrametime = frametime;
-        }
-        else if (frametime > this.maxFrametime) {
-            this.maxFrametime = frametime;
-        }
-        this.nbFrameSinceLastIndicatorsUpdate++;
-    };
-    FrametimeMonitor.prototype.updateIndicators = function () {
-        var now = performance.now();
-        var timespanSinceLastUpdate = now - this.lastIndicatorsUpdateTimestamp;
-        this.lastIndicatorsUpdateTimestamp = now;
-        if (this.nbFrameSinceLastIndicatorsUpdate > 0) {
-            var averageFrametime = timespanSinceLastUpdate / this.nbFrameSinceLastIndicatorsUpdate;
-            Page.Canvas.setIndicatorText("average-frame-time", FrametimeMonitor.frametimeToString(averageFrametime));
-            Page.Canvas.setIndicatorText("max-frame-time", FrametimeMonitor.frametimeToString(this.maxFrametime));
-            this.reset();
-        }
-    };
-    FrametimeMonitor.frametimeToString = function (frametime) {
-        var shortenedFrametime = frametime.toFixed(0);
-        var shortenedFps = (1000 / frametime).toFixed(0);
-        return shortenedFrametime + " ms (" + shortenedFps + " fps)";
-    };
-    return FrametimeMonitor;
-}());
-exports.FrametimeMonitor = FrametimeMonitor;
 
 
 /***/ }),
@@ -2028,77 +1776,6 @@ exports.Throttle = Throttle;
 
 /***/ }),
 
-/***/ "./src/ts/misc/web.ts":
-/*!****************************!*\
-  !*** ./src/ts/misc/web.ts ***!
-  \****************************/
-/***/ (function(__unused_webpack_module, exports) {
-
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.setQueryStringValue = exports.getQueryStringValue = exports.downloadSvgOutput = void 0;
-function downloadTextFile(fileName, content) {
-    var fileType = "text/plain";
-    var blob = new Blob([content], { type: fileType });
-    if (typeof window.navigator !== "undefined" && typeof window.navigator.msSaveBlob !== "undefined") {
-        window.navigator.msSaveBlob(blob, fileName);
-    }
-    else {
-        var objectUrl_1 = URL.createObjectURL(blob);
-        var linkElement = document.createElement('a');
-        linkElement.download = fileName;
-        linkElement.href = objectUrl_1;
-        linkElement.dataset.downloadurl = fileType + ":" + linkElement.download + ":" + linkElement.href;
-        linkElement.style.display = "none";
-        document.body.appendChild(linkElement);
-        linkElement.click();
-        document.body.removeChild(linkElement);
-        setTimeout(function () {
-            URL.revokeObjectURL(objectUrl_1);
-        }, 5000);
-    }
-}
-function downloadSvgOutput(output) {
-    downloadTextFile("tessellation.svg", output);
-}
-exports.downloadSvgOutput = downloadSvgOutput;
-function getQueryStringValue(name) {
-    if (typeof URLSearchParams !== "undefined") {
-        var params = new URLSearchParams(window.location.search);
-        return params.get(name);
-    }
-    if (window.location.search.length > 0) {
-        var search = window.location.search.slice(1);
-        var words = search.split("&");
-        for (var _i = 0, words_1 = words; _i < words_1.length; _i++) {
-            var word = words_1[_i];
-            var wantedPrefix = name + "=";
-            if (word.indexOf(wantedPrefix) === 0) {
-                var rawValue = word.substring(wantedPrefix.length);
-                return decodeURIComponent(rawValue);
-            }
-        }
-    }
-    return null;
-}
-exports.getQueryStringValue = getQueryStringValue;
-function setQueryStringValue(name, value) {
-    if (typeof URLSearchParams !== "undefined") {
-        var params = new URLSearchParams(window.location.search);
-        if (value === null) {
-            params.delete(name);
-        }
-        else {
-            params.set(name, value);
-        }
-        window.location.search = params.toString();
-    }
-}
-exports.setQueryStringValue = setQueryStringValue;
-
-
-/***/ }),
-
 /***/ "./src/ts/misc/zoom.ts":
 /*!*****************************!*\
   !*** ./src/ts/misc/zoom.ts ***!
@@ -2172,212 +1849,6 @@ exports.Zoom = Zoom;
 
 /***/ }),
 
-/***/ "./src/ts/parameters.ts":
-/*!******************************!*\
-  !*** ./src/ts/parameters.ts ***!
-  \******************************/
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.Parameters = exports.EPlotter = void 0;
-var color_1 = __webpack_require__(/*! ./misc/color */ "./src/ts/misc/color.ts");
-var web_1 = __webpack_require__(/*! ./misc/web */ "./src/ts/misc/web.ts");
-__webpack_require__(/*! ./page-interface-generated */ "./src/ts/page-interface-generated.ts");
-var controlId = {
-    PRIMITIVE_TABS_ID: "primitive-tabs-id",
-    DEPTH_RANGE_ID: "depth-range-id",
-    BALANCE_RANGE_ID: "balance-range-id",
-    ZOOMING_SPEED_RANGE_ID: "zooming-speed-range-id",
-    MULTITHREADED_CHECKBOX_ID: "multithreaded-checkbox-id",
-    RESET_BUTTON_ID: "reset-button-id",
-    PLOTTER_TABS_ID: "plotter-tabs-id",
-    SCALING_RANGE_ID: "scaling-range-id",
-    COLOR_VARIATION_RANGE_ID: "color-variation-range-id",
-    BLENDING_CHECKBOX_ID: "blending-checkbox-id",
-    SHOW_INDICATORS_CHECKBOX_ID: "show-indicators-checkbox-id",
-    DISPLAY_LINES_CHECKBOX_ID: "display-lines-checkbox-id",
-    THICKNESS_RANGE_ID: "thickness-range-id",
-    LINES_COLOR_PICKER_ID: "lines-color-picker-id",
-    DOWNLOAD_BUTTON: "result-download-id",
-};
-var EPlotter;
-(function (EPlotter) {
-    EPlotter["WEBGL"] = "webgl";
-    EPlotter["CANVAS2D"] = "canvas2d";
-})(EPlotter || (EPlotter = {}));
-exports.EPlotter = EPlotter;
-var plotterQueryStringParamName = "plotter";
-var multithreadedQueryStringParamName = "multithread";
-function isMultithreaded() {
-    return web_1.getQueryStringValue(multithreadedQueryStringParamName) === "1";
-}
-function getPlotter() {
-    if (isMultithreaded()) {
-        return EPlotter.WEBGL;
-    }
-    else if (web_1.getQueryStringValue(plotterQueryStringParamName) === EPlotter.CANVAS2D) {
-        return EPlotter.CANVAS2D;
-    }
-    else {
-        return EPlotter.WEBGL;
-    }
-}
-var Parameters = (function () {
-    function Parameters() {
-    }
-    Object.defineProperty(Parameters, "primitiveType", {
-        get: function () {
-            return Page.Tabs.getValues(controlId.PRIMITIVE_TABS_ID)[0];
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Parameters, "depth", {
-        get: function () {
-            return Page.Range.getValue(controlId.DEPTH_RANGE_ID);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Parameters, "balance", {
-        get: function () {
-            return Page.Range.getValue(controlId.BALANCE_RANGE_ID);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Parameters, "zoomingSpeed", {
-        get: function () {
-            return Page.Range.getValue(controlId.ZOOMING_SPEED_RANGE_ID);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Parameters, "scaling", {
-        get: function () {
-            return Page.Range.getValue(controlId.SCALING_RANGE_ID);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Parameters, "colorVariation", {
-        get: function () {
-            return 255 * Page.Range.getValue(controlId.COLOR_VARIATION_RANGE_ID);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Parameters, "blending", {
-        get: function () {
-            return Page.Checkbox.isChecked(controlId.BLENDING_CHECKBOX_ID);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Parameters, "displayLines", {
-        get: function () {
-            return Page.Checkbox.isChecked(controlId.DISPLAY_LINES_CHECKBOX_ID);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Parameters, "isThicknessEnabled", {
-        get: function () {
-            return Parameters.plotter === EPlotter.CANVAS2D;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Parameters, "thickness", {
-        get: function () {
-            if (Parameters.isThicknessEnabled) {
-                return Page.Range.getValue(controlId.THICKNESS_RANGE_ID);
-            }
-            else {
-                return 0;
-            }
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Parameters, "linesColor", {
-        get: function () {
-            var color = Page.ColorPicker.getValue(controlId.LINES_COLOR_PICKER_ID);
-            return new color_1.Color(color.r, color.g, color.b);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Parameters, "mousePositionInPixels", {
-        get: function () {
-            var canvasSize = Page.Canvas.getSize();
-            var mousePosition = Page.Canvas.getMousePosition();
-            return {
-                x: window.devicePixelRatio * canvasSize[0] * mousePosition[0],
-                y: window.devicePixelRatio * canvasSize[1] * mousePosition[1],
-            };
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Parameters.resetObservers = [];
-    Parameters.recomputeColorsObservers = [];
-    Parameters.redrawObservers = [];
-    Parameters.downloadObservers = [];
-    Parameters.debugMode = (web_1.getQueryStringValue("debug") === "1");
-    Parameters.multithreaded = isMultithreaded();
-    Parameters.plotter = getPlotter();
-    return Parameters;
-}());
-exports.Parameters = Parameters;
-function callObservers(observers) {
-    for (var _i = 0, observers_1 = observers; _i < observers_1.length; _i++) {
-        var observer = observers_1[_i];
-        observer();
-    }
-}
-var callRedraw = function () { callObservers(Parameters.redrawObservers); };
-var callReset = function () {
-    callObservers(Parameters.resetObservers);
-    callRedraw();
-};
-Page.Range.addObserver(controlId.BALANCE_RANGE_ID, callReset);
-Page.Button.addObserver(controlId.RESET_BUTTON_ID, callReset);
-Page.Canvas.Observers.canvasResize.push(callReset);
-Page.Tabs.addObserver(controlId.PRIMITIVE_TABS_ID, callReset);
-Page.Range.addObserver(controlId.COLOR_VARIATION_RANGE_ID, function () {
-    callObservers(Parameters.recomputeColorsObservers);
-    callRedraw();
-});
-Page.Range.addObserver(controlId.SCALING_RANGE_ID, callRedraw);
-Page.Checkbox.addObserver(controlId.DISPLAY_LINES_CHECKBOX_ID, callRedraw);
-Page.Canvas.Observers.canvasResize.push(callRedraw);
-Page.Range.addObserver(controlId.THICKNESS_RANGE_ID, callRedraw);
-Page.ColorPicker.addObserver(controlId.LINES_COLOR_PICKER_ID, callRedraw);
-Page.FileControl.addDownloadObserver(controlId.DOWNLOAD_BUTTON, function () { callObservers(Parameters.downloadObservers); });
-Page.Controls.setVisibility(controlId.THICKNESS_RANGE_ID, Parameters.isThicknessEnabled);
-function updateIndicatorsVisibility() {
-    Page.Canvas.setIndicatorsVisibility(Page.Checkbox.isChecked(controlId.SHOW_INDICATORS_CHECKBOX_ID));
-}
-Page.Checkbox.addObserver(controlId.SHOW_INDICATORS_CHECKBOX_ID, updateIndicatorsVisibility);
-updateIndicatorsVisibility();
-Page.Tabs.setValues(controlId.PLOTTER_TABS_ID, [Parameters.plotter]);
-Page.Tabs.addObserver(controlId.PLOTTER_TABS_ID, function (values) {
-    var wantedPlotter = (values[0] === EPlotter.CANVAS2D) ? EPlotter.CANVAS2D : EPlotter.WEBGL;
-    Page.Tabs.clearStoredState(controlId.PLOTTER_TABS_ID);
-    web_1.setQueryStringValue(plotterQueryStringParamName, wantedPlotter);
-});
-Page.Checkbox.setChecked(controlId.MULTITHREADED_CHECKBOX_ID, Parameters.multithreaded);
-Page.Checkbox.addObserver(controlId.MULTITHREADED_CHECKBOX_ID, function (checked) {
-    Page.Checkbox.clearStoredState(controlId.MULTITHREADED_CHECKBOX_ID);
-    web_1.setQueryStringValue(multithreadedQueryStringParamName, checked ? "1" : null);
-});
-Page.Controls.setVisibility(controlId.PLOTTER_TABS_ID, !Parameters.multithreaded);
-
-
-/***/ }),
-
 /***/ "./src/ts/plotter/geometry-id.ts":
 /*!***************************************!*\
   !*** ./src/ts/plotter/geometry-id.ts ***!
@@ -2411,109 +1882,6 @@ var GeometryId = (function () {
     return GeometryId;
 }());
 exports.GeometryId = GeometryId;
-
-
-/***/ }),
-
-/***/ "./src/ts/plotter/plotter-canvas-2d.ts":
-/*!*********************************************!*\
-  !*** ./src/ts/plotter/plotter-canvas-2d.ts ***!
-  \*********************************************/
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.PlotterCanvas2D = void 0;
-var plotter_canvas_1 = __webpack_require__(/*! ./plotter-canvas */ "./src/ts/plotter/plotter-canvas.ts");
-__webpack_require__(/*! ../page-interface-generated */ "./src/ts/page-interface-generated.ts");
-var PlotterCanvas2D = (function (_super) {
-    __extends(PlotterCanvas2D, _super);
-    function PlotterCanvas2D() {
-        var _this = _super.call(this) || this;
-        _this.context = _this.canvas.getContext("2d", { alpha: false });
-        return _this;
-    }
-    Object.defineProperty(PlotterCanvas2D.prototype, "isReady", {
-        get: function () {
-            return true;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    PlotterCanvas2D.prototype.initialize = function (backgroundColor, zoom, scaling) {
-        this.context.setTransform(1, 0, 0, 1, 0, 0);
-        this.context.fillStyle = backgroundColor.toHexaString();
-        this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        this.context.translate(+0.5 * this.width, +0.5 * this.height);
-        this.context.scale(scaling, scaling);
-        this.context.translate(-0.5 * this.width, -0.5 * this.height);
-        var zoomTranslate = zoom.translate;
-        this.context.translate(zoomTranslate.x, zoomTranslate.y);
-        var zoomScale = zoom.scale;
-        this.context.translate(+0.5 * this.width, +0.5 * this.height);
-        this.context.scale(zoomScale, zoomScale);
-        this.context.translate(-0.5 * this.width, -0.5 * this.height);
-    };
-    PlotterCanvas2D.prototype.finalize = function () { };
-    PlotterCanvas2D.prototype.drawLines = function (batchOfLines, thickness, color, alpha) {
-        if (alpha > 0 && batchOfLines) {
-            this.context.fillStyle = "none";
-            this.context.strokeStyle = (alpha >= 1) ? color.toHexaString() : color.toRgbaString(alpha);
-            var halfWidth = 0.5 * this.width;
-            var halfHeight = 0.5 * this.height;
-            for (var _i = 0, _a = batchOfLines.items; _i < _a.length; _i++) {
-                var line = _a[_i];
-                this.context.lineWidth = thickness * this.cssPixel;
-                this.context.beginPath();
-                if (line.length >= 2) {
-                    this.context.moveTo(line[0].x + halfWidth, line[0].y + halfHeight);
-                    for (var iP = 1; iP < line.length; iP++) {
-                        this.context.lineTo(line[iP].x + halfWidth, line[iP].y + halfHeight);
-                    }
-                }
-                this.context.stroke();
-                this.context.closePath();
-            }
-        }
-    };
-    PlotterCanvas2D.prototype.drawPolygons = function (batchOfPolygons, alpha) {
-        if (alpha > 0 && batchOfPolygons) {
-            this.context.strokeStyle = "none";
-            var halfWidth = 0.5 * this.width;
-            var halfHeight = 0.5 * this.height;
-            for (var _i = 0, _a = batchOfPolygons.items; _i < _a.length; _i++) {
-                var polygon = _a[_i];
-                if (polygon.vertices.length >= 3) {
-                    this.context.fillStyle = (alpha >= 1) ? polygon.color.toHexaString() : polygon.color.toRgbaString(alpha);
-                    this.context.beginPath();
-                    this.context.moveTo(polygon.vertices[0].x + halfWidth, polygon.vertices[0].y + halfHeight);
-                    for (var iP = 1; iP < polygon.vertices.length; iP++) {
-                        this.context.lineTo(polygon.vertices[iP].x + halfWidth, polygon.vertices[iP].y + halfHeight);
-                    }
-                    this.context.closePath();
-                    this.context.fill();
-                }
-            }
-        }
-    };
-    return PlotterCanvas2D;
-}(plotter_canvas_1.PlotterCanvas));
-exports.PlotterCanvas2D = PlotterCanvas2D;
 
 
 /***/ }),
@@ -3014,101 +2382,6 @@ var PlotterWebGLBasic = (function (_super) {
     return PlotterWebGLBasic;
 }(plotter_canvas_1.PlotterCanvas));
 exports.PlotterWebGLBasic = PlotterWebGLBasic;
-
-
-/***/ }),
-
-/***/ "./src/ts/plotter/plotter-webgl.ts":
-/*!*****************************************!*\
-  !*** ./src/ts/plotter/plotter-webgl.ts ***!
-  \*****************************************/
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.PlotterWebGL = void 0;
-var plotter_webgl_basic_1 = __webpack_require__(/*! ./plotter-webgl-basic */ "./src/ts/plotter/plotter-webgl-basic.ts");
-var PlotterWebGL = (function (_super) {
-    __extends(PlotterWebGL, _super);
-    function PlotterWebGL() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.pendingLinesList = [];
-        _this.pendingPolygonsList = [];
-        return _this;
-    }
-    PlotterWebGL.prototype.finalize = function () {
-        if (this.pendingPolygonsList.length > 0) {
-            for (var _i = 0, _a = this.pendingPolygonsList; _i < _a.length; _i++) {
-                var pendingPolygons = _a[_i];
-                if (!this.registerPolygonsVboPartForDrawing(pendingPolygons.batchOfPolygons.geometryId, pendingPolygons.alpha)) {
-                    this.buildAndUploadPolygonsVBO();
-                    break;
-                }
-            }
-            this.pendingPolygonsList = [];
-        }
-        if (this.pendingLinesList.length > 0) {
-            for (var _b = 0, _c = this.pendingLinesList; _b < _c.length; _b++) {
-                var pendingLines = _c[_b];
-                if (!this.registerLinesVboPartForDrawing(pendingLines.batchOfLines.geometryId, pendingLines.color, pendingLines.alpha)) {
-                    this.buildAndUploadLinesVBO();
-                    break;
-                }
-            }
-            this.pendingLinesList = [];
-        }
-        _super.prototype.finalize.call(this);
-    };
-    PlotterWebGL.prototype.drawLines = function (batchOfLines, _thickness, color, alpha) {
-        this.pendingLinesList.push({ batchOfLines: batchOfLines, color: color, alpha: alpha });
-    };
-    PlotterWebGL.prototype.drawPolygons = function (batchOfPolygons, alpha) {
-        this.pendingPolygonsList.push({ batchOfPolygons: batchOfPolygons, alpha: alpha });
-    };
-    PlotterWebGL.prototype.buildAndUploadLinesVBO = function () {
-        var pendingBatchesOfLines = [];
-        for (var _i = 0, _a = this.pendingLinesList; _i < _a.length; _i++) {
-            var pendingLines = _a[_i];
-            pendingBatchesOfLines.push(pendingLines.batchOfLines);
-        }
-        var linesVboBuffer = plotter_webgl_basic_1.PlotterWebGLBasic.buildLinesVboBuffer(pendingBatchesOfLines);
-        this.uploadLinesVbo(linesVboBuffer);
-        for (var _b = 0, _c = this.pendingLinesList; _b < _c.length; _b++) {
-            var pendingLines = _c[_b];
-            this.registerLinesVboPartForDrawing(pendingLines.batchOfLines.geometryId, pendingLines.color, pendingLines.alpha);
-        }
-    };
-    PlotterWebGL.prototype.buildAndUploadPolygonsVBO = function () {
-        var pendingBatchesOfPolygons = [];
-        for (var _i = 0, _a = this.pendingPolygonsList; _i < _a.length; _i++) {
-            var pendingPolygons = _a[_i];
-            pendingBatchesOfPolygons.push(pendingPolygons.batchOfPolygons);
-        }
-        var polygonsVboBuffer = plotter_webgl_basic_1.PlotterWebGLBasic.buildPolygonsVboBuffer(pendingBatchesOfPolygons);
-        this.uploadPolygonsVbo(polygonsVboBuffer);
-        for (var _b = 0, _c = this.pendingPolygonsList; _b < _c.length; _b++) {
-            var pendingPolygons = _c[_b];
-            this.registerPolygonsVboPartForDrawing(pendingPolygons.batchOfPolygons.geometryId, pendingPolygons.alpha);
-        }
-    };
-    return PlotterWebGL;
-}(plotter_webgl_basic_1.PlotterWebGLBasic));
-exports.PlotterWebGL = PlotterWebGL;
 
 
 /***/ }),
@@ -3640,172 +2913,6 @@ var EPrimitiveType;
 exports.EPrimitiveType = EPrimitiveType;
 
 
-/***/ }),
-
-/***/ "./src/ts/testing/main-testing.ts":
-/*!****************************************!*\
-  !*** ./src/ts/testing/main-testing.ts ***!
-  \****************************************/
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.main = void 0;
-var parameters_1 = __webpack_require__(/*! ../parameters */ "./src/ts/parameters.ts");
-var plotter_canvas_2d_1 = __webpack_require__(/*! ../plotter/plotter-canvas-2d */ "./src/ts/plotter/plotter-canvas-2d.ts");
-var plotter_webgl_1 = __webpack_require__(/*! ../plotter/plotter-webgl */ "./src/ts/plotter/plotter-webgl.ts");
-var test_engine_1 = __webpack_require__(/*! ./test-engine */ "./src/ts/testing/test-engine.ts");
-function createPlotter() {
-    if (parameters_1.Parameters.plotter === parameters_1.EPlotter.CANVAS2D) {
-        return new plotter_canvas_2d_1.PlotterCanvas2D();
-    }
-    else {
-        return new plotter_webgl_1.PlotterWebGL();
-    }
-}
-function main() {
-    var plotter = createPlotter();
-    var testEngine = new test_engine_1.TestEngine();
-    parameters_1.Parameters.resetObservers.push(function () {
-        plotter.resizeCanvas();
-        testEngine.reset();
-    });
-    function mainLoop() {
-        testEngine.update();
-        if (plotter.isReady) {
-            plotter.resizeCanvas();
-            testEngine.draw(plotter);
-        }
-        requestAnimationFrame(mainLoop);
-    }
-    mainLoop();
-}
-exports.main = main;
-
-
-/***/ }),
-
-/***/ "./src/ts/testing/test-engine.ts":
-/*!***************************************!*\
-  !*** ./src/ts/testing/test-engine.ts ***!
-  \***************************************/
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.TestEngine = void 0;
-var color_1 = __webpack_require__(/*! ../misc/color */ "./src/ts/misc/color.ts");
-var rectangle_1 = __webpack_require__(/*! ../misc/rectangle */ "./src/ts/misc/rectangle.ts");
-var zoom_1 = __webpack_require__(/*! ../misc/zoom */ "./src/ts/misc/zoom.ts");
-var parameters_1 = __webpack_require__(/*! ../parameters */ "./src/ts/parameters.ts");
-var geometry_id_1 = __webpack_require__(/*! ../plotter/geometry-id */ "./src/ts/plotter/geometry-id.ts");
-var primitive_base_1 = __webpack_require__(/*! ../primitives/primitive-base */ "./src/ts/primitives/primitive-base.ts");
-var primitive_quads_1 = __webpack_require__(/*! ../primitives/primitive-quads */ "./src/ts/primitives/primitive-quads.ts");
-var primitive_triangles_1 = __webpack_require__(/*! ../primitives/primitive-triangles */ "./src/ts/primitives/primitive-triangles.ts");
-var primitive_type_enum_1 = __webpack_require__(/*! ../primitives/primitive-type-enum */ "./src/ts/primitives/primitive-type-enum.ts");
-__webpack_require__(/*! ../page-interface-generated */ "./src/ts/page-interface-generated.ts");
-var TestEngine = (function () {
-    function TestEngine() {
-        var _this = this;
-        this.testWindowBaseWidth = 300;
-        this.testWindowBaseHeight = 120;
-        this.zoom = 1;
-        this.lastPrimitiveVisibilityStatus = null;
-        this.lastLineIntersectingStatus = null;
-        this.testWindow = new rectangle_1.Rectangle(0, 0, 0, 0);
-        Page.Canvas.Observers.mouseWheel.push(function (delta) {
-            _this.zoom += 0.1 * delta;
-            if (_this.zoom < 0.1) {
-                _this.zoom = 0.1;
-            }
-            else if (_this.zoom > 3) {
-                _this.zoom = 3;
-            }
-        });
-        this.batchForPrimitive = {
-            items: [],
-            geometryId: geometry_id_1.GeometryId.new(),
-        };
-        this.line = [{ x: -50, y: -50 }, { x: 70, y: 50 }];
-        this.batchForLine = {
-            items: [this.line],
-            geometryId: geometry_id_1.GeometryId.new(),
-        };
-        this.batchForWindow = {
-            items: [],
-            geometryId: geometry_id_1.GeometryId.new(),
-        };
-        this.reset();
-    }
-    TestEngine.prototype.reset = function () {
-        var color = color_1.Color.RED;
-        var primitiveType = parameters_1.Parameters.primitiveType;
-        if (primitiveType === primitive_type_enum_1.EPrimitiveType.QUADS) {
-            this.primitive = new primitive_quads_1.PrimitiveQuads({ x: -150 * Math.random(), y: -150 * Math.random() }, { x: +150 * Math.random(), y: -150 * Math.random() }, { x: -150 * Math.random(), y: +150 * Math.random() }, { x: +150 * Math.random(), y: +150 * Math.random() }, color);
-        }
-        else {
-            this.primitive = new primitive_triangles_1.PrimitiveTriangles({ x: -100 - 50 * Math.random(), y: -100 - 50 * Math.random() }, { x: +100 + 50 * Math.random(), y: -100 - 50 * Math.random() }, { x: +100 + 50 * (Math.random() - 0.5), y: +100 + 50 * Math.random() }, color);
-        }
-        this.batchForPrimitive.items.length = 0;
-        this.batchForPrimitive.items.push(this.primitive);
-        this.batchForPrimitive.geometryId.registerChange();
-        this.lastPrimitiveVisibilityStatus = null;
-        this.lastLineIntersectingStatus = null;
-    };
-    TestEngine.prototype.update = function () {
-        this.updateTestWindow();
-        var newPrimitiveVisibilityStatus = this.primitive.computeVisibility(this.testWindow);
-        if (this.lastPrimitiveVisibilityStatus !== newPrimitiveVisibilityStatus) {
-            if (newPrimitiveVisibilityStatus === primitive_base_1.EVisibility.COVERS_VIEW) {
-                console.log("Primitive coverage: COVERS_VIEW");
-            }
-            else if (newPrimitiveVisibilityStatus === primitive_base_1.EVisibility.OUT_OF_VIEW) {
-                console.log("Primitive coverage: OUT_OF_VIEW");
-            }
-            else {
-                console.log("Primitive coverage: VISIBLE");
-            }
-            this.lastPrimitiveVisibilityStatus = newPrimitiveVisibilityStatus;
-        }
-        var newLineIntersectionStatus = this.testWindow.lineIntersectsBoundaries(this.line[0], this.line[1]);
-        if (this.lastLineIntersectingStatus !== newLineIntersectionStatus) {
-            console.log("Line intersection: " + newLineIntersectionStatus);
-            this.lastLineIntersectingStatus = newLineIntersectionStatus;
-        }
-        return true;
-    };
-    TestEngine.prototype.draw = function (plotter) {
-        plotter.initialize(color_1.Color.BLACK, zoom_1.Zoom.noZoom(), 1);
-        plotter.drawPolygons(this.batchForPrimitive, 1);
-        plotter.drawLines(this.batchForLine, 1, color_1.Color.GREEN, 1);
-        plotter.drawLines(this.batchForWindow, 1, color_1.Color.WHITE, 1);
-        plotter.finalize();
-    };
-    TestEngine.prototype.updateTestWindow = function () {
-        var canvasSize = Page.Canvas.getSize();
-        var mousePosition = parameters_1.Parameters.mousePositionInPixels;
-        mousePosition.x -= 0.5 * canvasSize[0];
-        mousePosition.y -= 0.5 * canvasSize[1];
-        var testWindowWidth = this.zoom * this.testWindowBaseWidth;
-        var testWindowHeight = this.zoom * this.testWindowBaseHeight;
-        this.testWindow.topLeft.x = mousePosition.x - 0.5 * testWindowWidth;
-        this.testWindow.topLeft.y = mousePosition.y - 0.5 * testWindowHeight;
-        this.testWindow.bottomRight.x = mousePosition.x + 0.5 * testWindowWidth;
-        this.testWindow.bottomRight.y = mousePosition.y + 0.5 * testWindowHeight;
-        this.batchForWindow.items[0] = [
-            this.testWindow.topLeft,
-            { x: this.testWindow.right, y: this.testWindow.top },
-            this.testWindow.bottomRight,
-            { x: this.testWindow.left, y: this.testWindow.bottom },
-            this.testWindow.topLeft,
-        ];
-        this.batchForWindow.geometryId.registerChange();
-    };
-    return TestEngine;
-}());
-exports.TestEngine = TestEngine;
-
-
 /***/ })
 
 /******/ 	});
@@ -3839,8 +2946,8 @@ exports.TestEngine = TestEngine;
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
 /******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __webpack_require__("./src/ts/main.ts");
+/******/ 	var __webpack_exports__ = __webpack_require__("./src/ts/engine/worker/worker.ts");
 /******/ 	
 /******/ })()
 ;
-//# sourceMappingURL=main.js.map
+//# sourceMappingURL=worker.js.map

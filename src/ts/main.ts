@@ -1,38 +1,36 @@
-import { Engine } from "./engine/engine";
+import { IEngine } from "./engine/engine-interface";
+import { EngineMonothreaded } from "./engine/engine-monothreaded";
+import { EngineMultithreaded } from "./engine/engine-multithreaded";
+import { Color } from "./misc/color";
 import { FrametimeMonitor } from "./misc/frame-time-monitor";
 import { IPoint } from "./misc/point";
-import { downloadTextFile } from "./misc/web";
 import { Zoom } from "./misc/zoom";
 import { EPlotter, Parameters } from "./parameters";
-import { PlotterBase } from "./plotter/plotter-base";
+import { PlotterCanvas } from "./plotter/plotter-canvas";
 import { PlotterCanvas2D } from "./plotter/plotter-canvas-2d";
-import { PlotterSVG } from "./plotter/plotter-svg";
 import { PlotterWebGL } from "./plotter/plotter-webgl";
+import { PlotterWebGLBasic } from "./plotter/plotter-webgl-basic";
 import * as Testing from "./testing/main-testing";
 
 import "./page-interface-generated";
 
 
-function createPlotter(): PlotterBase {
-    if (Parameters.plotter === EPlotter.CANVAS2D) {
-        return new PlotterCanvas2D();
-    } else {
-        return new PlotterWebGL();
+function main<TPlotter extends PlotterCanvas>(engine: IEngine<TPlotter>, plotter: TPlotter): void {
+    const backgroundColor = Color.BLACK;
+
+    function linesColor(): Color | undefined {
+        if (Parameters.displayLines) {
+            return Parameters.linesColor;
+        }
+        return undefined;
     }
-}
 
-function main(): void {
-    const plotter = createPlotter();
-    const engine = new Engine();
-
-    Parameters.recomputeColorsObservers.push(() => { engine.recomputeColors(); });
+    Parameters.recomputeColorsObservers.push(() => {
+        engine.recomputeColors(Parameters.colorVariation);
+    });
 
     Parameters.downloadObservers.push(() => {
-        const svgPlotter = new PlotterSVG();
-        engine.draw(svgPlotter);
-        const fileName = "subdivisions.svg";
-        const svgString = svgPlotter.output();
-        downloadTextFile(fileName, svgString);
+        engine.downloadAsSvg(plotter.width, plotter.height, Parameters.scaling, backgroundColor, linesColor());
     });
 
     function getCurrentMousePosition(): IPoint {
@@ -46,12 +44,12 @@ function main(): void {
         if (Page.Canvas.isMouseDown()) {
             lastZoomCenter = getCurrentMousePosition();
         }
-        return new Zoom(lastZoomCenter, 1 + dt * Parameters.zoomingSpeed);
+        return Zoom.buildZoom(lastZoomCenter, 1 + dt * Parameters.zoomingSpeed);
     }
 
     function reset(): void {
         plotter.resizeCanvas();
-        engine.reset(plotter.viewport);
+        engine.reset(plotter.viewport, Parameters.primitiveType);
         lastZoomCenter = { x: 0, y: 0 };
     }
     Parameters.resetObservers.push(reset);
@@ -78,13 +76,14 @@ function main(): void {
         const dt = Math.min(MAX_DT, 0.001 * millisecondsSinceLastFrame);
         const instantZoom = buildInstantZoom(dt);
 
-        if (engine.update(plotter.viewport, instantZoom) || instantZoom.isNotNull()) {
+        const updatedChangedSomething = engine.update(plotter.viewport, instantZoom, Parameters.depth, Parameters.balance, Parameters.colorVariation);
+        if (updatedChangedSomething || instantZoom.isNotNull()) {
             needToRedraw = true;
         }
 
         if (needToRedraw && plotter.isReady) {
             plotter.resizeCanvas();
-            engine.draw(plotter);
+            engine.draw(plotter, Parameters.scaling, backgroundColor, linesColor());
             needToRedraw = false;
         }
 
@@ -96,5 +95,24 @@ function main(): void {
 if (Parameters.debugMode) {
     Testing.main();
 } else {
-    main();
+    if (Parameters.multithreaded) {
+        if (!EngineMultithreaded.isSupported) {
+            Page.Demopage.setErrorMessage("worker-not-supported", "Your browser does not the multithreaded mode because it does not support Web Workers.");
+        }
+
+        const engine = new EngineMultithreaded();
+        const plotter = new PlotterWebGLBasic();
+        main<typeof plotter>(engine, plotter);
+    } else {
+        const engine = new EngineMonothreaded();
+        if (Parameters.plotter === EPlotter.CANVAS2D) {
+            const plotter = new PlotterCanvas2D();
+            main<typeof plotter>(engine, plotter);
+        } else {
+            const plotter = new PlotterWebGL();
+            main<typeof plotter>(engine, plotter);
+        }
+    }
+
+    Page.Canvas.setIndicatorText("multithreaded", Parameters.multithreaded ? "yes" : "no");
 }

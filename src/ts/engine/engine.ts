@@ -2,13 +2,14 @@ import { Color } from "../misc/color";
 import { Rectangle } from "../misc/rectangle";
 import { Throttle } from "../misc/throttle";
 import { Zoom } from "../misc/zoom";
-import { EPrimitive, Parameters } from "../parameters";
 import { GeometryId } from "../plotter/geometry-id";
-import { BatchOfLines, IBatch, PlotterBase } from "../plotter/plotter-base";
+import { BatchOfLines, IBatch } from "../plotter/types";
 import { EVisibility, PrimitiveBase } from "../primitives/primitive-base";
 import { PrimitiveQuads } from "../primitives/primitive-quads";
-import { PrimitiveTriangles } from "../primitives/primitives-triangles";
-import { PrimitiveTrianglesNested } from "../primitives/primitives-triangles-nested";
+import { PrimitiveTriangles } from "../primitives/primitive-triangles";
+import { PrimitiveTrianglesNested } from "../primitives/primitive-triangles-nested";
+import { EPrimitiveType } from "../primitives/primitive-type-enum";
+import { IEngineMetrics } from "./engine-metrics";
 
 import "../page-interface-generated";
 
@@ -18,91 +19,37 @@ type BatchOfPrimitives = IBatch<PrimitiveBase>;
 interface ILayer {
     primitives: BatchOfPrimitives;
     outlines: BatchOfLines;
+    readonly birthTimestamp: number;
 }
 
-class Engine {
+abstract class Engine {
     private rootPrimitive: PrimitiveBase;
-    private layers: ILayer[];
+    protected layers: ILayer[];
 
-    private lastLayerBirthTimestamp: number;
-
-    public readonly cumulatedZoom: Zoom;
+    protected cumulatedZoom: Zoom;
     private readonly maintainanceThrottle: Throttle;
 
     public constructor() {
-        this.reset(new Rectangle(0, 512, 0, 512));
+        this.reset(new Rectangle(0, 512, 0, 512), EPrimitiveType.TRIANGLES);
         this.cumulatedZoom = Zoom.noZoom();
         this.maintainanceThrottle = new Throttle(100);
     }
 
-    public update(viewport: Rectangle, instantZoom: Zoom): boolean {
+    public update(viewport: Rectangle, instantZoom: Zoom, wantedDepth: number, subdivisionBalance: number, colorVariation: number): boolean {
         let somethingChanged = false;
 
-        this.cumulatedZoom.combineWith(instantZoom);
-
-        const maintainance = () => {
-            somethingChanged = this.applyCumulatedZoom() || somethingChanged;
-            somethingChanged = this.adjustLayersCount() || somethingChanged;
-            somethingChanged = this.handleRecycling(viewport) || somethingChanged;
-
-            if (somethingChanged) {
-                for (const layer of this.layers) {
-                    layer.primitives.geometryId.registerChange();
-                    layer.outlines.geometryId.registerChange();
-                }
-            }
-
-            this.updateIndicators();
-        };
+        this.cumulatedZoom = Zoom.multiply(instantZoom, this.cumulatedZoom);
 
         // don't do maintainance too often because it is costly
-        this.maintainanceThrottle.runIfAvailable(maintainance);
+        this.maintainanceThrottle.runIfAvailable(() => {
+            somethingChanged = this.maintainance(viewport, wantedDepth, subdivisionBalance, colorVariation);
+        });
 
         return somethingChanged;
     }
 
-    public draw(plotter: PlotterBase): void {
-        if (this.layers.length < 1) {
-            return;
-        }
-
-        let lastSolidLayer = this.layers.length - 1;
-        let emergingLayerAlpha = 0;
-        if (Parameters.blending && this.layers.length > 1) {
-            if (Parameters.zoomingSpeed > 0) {
-                const emergingTimeOfLastLayer = 1000 / Math.pow((1 + Parameters.zoomingSpeed), 2);
-                const ageOfLastLayer = performance.now() - this.lastLayerBirthTimestamp;
-                if (ageOfLastLayer < emergingTimeOfLastLayer) {
-                    // last layer is still blending in
-                    lastSolidLayer--;
-                    emergingLayerAlpha = ageOfLastLayer / emergingTimeOfLastLayer;
-                }
-            }
-        }
-        const emergingLayer = lastSolidLayer + 1;
-
-        plotter.initialize();
-        plotter.clearCanvas(Color.BLACK);
-
-        plotter.drawPolygons(this.layers[lastSolidLayer].primitives, 1);
-        if (emergingLayer < this.layers.length) {
-            plotter.drawPolygons(this.layers[emergingLayer].primitives, emergingLayerAlpha);
-        }
-
-        if (Parameters.displayLines) {
-            for (let iLayer = 0; iLayer < this.layers.length; iLayer++) {
-                const thickness = Engine.getLineThicknessForLayer(iLayer, this.layers.length);
-                const alpha = (iLayer === emergingLayer) ? emergingLayerAlpha : 1;
-                plotter.drawLines(this.layers[iLayer].outlines, thickness, Parameters.linesColor, alpha);
-            }
-        }
-
-        plotter.finalize(this.cumulatedZoom);
-    }
-
-    public reset(viewport: Rectangle): void {
-        const primitiveType = Parameters.primitive;
-        if (primitiveType === EPrimitive.QUADS) {
+    public reset(viewport: Rectangle, primitiveType: EPrimitiveType): void {
+        if (primitiveType === EPrimitiveType.QUADS) {
             this.rootPrimitive = new PrimitiveQuads(
                 { x: viewport.left, y: viewport.top },
                 { x: viewport.right, y: viewport.top },
@@ -110,7 +57,7 @@ class Engine {
                 { x: viewport.right, y: viewport.bottom },
                 this.computeRootPrimitiveColor(),
             );
-        } else if (primitiveType === EPrimitive.TRIANGLES) {
+        } else if (primitiveType === EPrimitiveType.TRIANGLES) {
             this.rootPrimitive = new PrimitiveTriangles(
                 { x: viewport.left, y: viewport.bottom },
                 { x: viewport.right, y: viewport.bottom },
@@ -126,16 +73,71 @@ class Engine {
             );
         }
 
-        this.rebuildLayersCollections();
-        this.updateIndicators();
+        this.layers = [{
+            primitives: {
+                items: [this.rootPrimitive],
+                geometryId: GeometryId.new(),
+            },
+            outlines: {
+                items: [this.rootPrimitive.getOutline()],
+                geometryId: GeometryId.new(),
+            },
+            birthTimestamp: performance.now(),
+        }];
+
+        this.onNewMetrics(this.computeMetrics());
     }
 
-    public recomputeColors(): void {
-        this.rootPrimitive.color = this.computeRootPrimitiveColor();
+    public recomputeColors(colorVariation: number): void {
+        const newColor = this.computeRootPrimitiveColor();
+        this.rootPrimitive.setColor(newColor, colorVariation);
+
         // The colors of the primitive in the VBO so we need to reupload it.
         for (const layer of this.layers) {
             layer.primitives.geometryId.registerChange();
         }
+    }
+
+    protected maintainance(viewport: Rectangle, wantedDepth: number, subdivisionBalance: number, colorVariation: number): boolean {
+        let somethingChanged = false;
+        somethingChanged = this.applyCumulatedZoom() || somethingChanged;
+        somethingChanged = this.adjustLayersCount(wantedDepth, subdivisionBalance, colorVariation) || somethingChanged;
+        somethingChanged = this.handleRecycling(viewport) || somethingChanged;
+
+        if (somethingChanged) {
+            for (const layer of this.layers) {
+                layer.primitives.geometryId.registerChange();
+                layer.outlines.geometryId.registerChange();
+            }
+
+            this.onNewMetrics(this.computeMetrics());
+        }
+        return somethingChanged;
+    }
+
+    protected abstract onNewMetrics(newMetrics: IEngineMetrics): void;
+
+    private computeMetrics(): IEngineMetrics {
+        const treeDepth = this.rootPrimitive.treeDepth();
+        const lastLayerPrimitivesCount = this.layers[this.layers.length - 1].primitives.items.length;
+        let totalPrimitivesCount = 0;
+        let segmentsCount = 0;
+
+        for (const layer of this.layers) {
+            totalPrimitivesCount += layer.primitives.items.length;
+
+            for (const line of layer.outlines.items) {
+                const nbLinePoints = line.length;
+                segmentsCount += (nbLinePoints > 1) ? (nbLinePoints - 1) : 0;
+            }
+        }
+
+        return {
+            treeDepth,
+            lastLayerPrimitivesCount,
+            totalPrimitivesCount,
+            segmentsCount,
+        };
     }
 
     private computeRootPrimitiveColor(): Color {
@@ -172,40 +174,31 @@ class Engine {
             appliedZoom = true;
         }
 
-        // reset the cumulated zooming
-        this.cumulatedZoom.reset();
+        this.cumulatedZoom = Zoom.noZoom();
 
         return appliedZoom;
     }
 
     private handleRecycling(viewport: Rectangle): boolean {
         if (this.rootPrimitive.computeVisibility(viewport) === EVisibility.OUT_OF_VIEW) {
-            this.reset(viewport);
+            this.reset(viewport, this.primitiveType);
             return true;
         } else {
-            const lastLayer = this.layers[this.layers.length - 1];
-            const nbPrimitivesLastLayer = lastLayer.primitives.items.length;
-
             const prunedPrimitives = this.prunePrimitivesOutOfView(this.rootPrimitive, viewport);
             const changedRootPrimitive = this.changeRootPrimitiveInNeeded();
 
             if (prunedPrimitives) {
                 this.rebuildLayersCollections();
-
-                if (Parameters.verbose) {
-                    console.log(`went from ${nbPrimitivesLastLayer} to ${lastLayer.primitives.items.length}`);
-                }
                 return true;
             }
 
             return changedRootPrimitive || prunedPrimitives;
         }
-        return false;
     }
 
-    private adjustLayersCount(): boolean {
+    private adjustLayersCount(wantedDepth: number, subdivisionBalance: number, colorVariation: number): boolean {
         const lastLayer = this.layers[this.layers.length - 1];
-        const idealPrimitivesCountForLastLayer = Math.pow(2, Parameters.depth - 1);
+        const idealPrimitivesCountForLastLayer = Math.pow(2, wantedDepth - 1);
         const currentPrimitivesCountForLastLayer = lastLayer.primitives.items.length;
 
         const subdivisionFactor = this.rootPrimitive.subdivisionFactor;
@@ -221,15 +214,15 @@ class Engine {
             };
 
             for (const primitive of lastLayer.primitives.items) {
-                primitive.subdivide();
+                primitive.subdivide(subdivisionBalance, colorVariation);
                 Array.prototype.push.apply(primitivesOfNewLayer.items, primitive.getDirectChildren() as PrimitiveBase[]);
                 outlinesOfNewLayer.items.push(primitive.subdivision);
             }
 
-            this.lastLayerBirthTimestamp = performance.now();
             this.layers.push({
                 primitives: primitivesOfNewLayer,
                 outlines: outlinesOfNewLayer,
+                birthTimestamp: performance.now()
             });
         } else if (currentPrimitivesCountForLastLayer >= subdivisionFactor * idealPrimitivesCountForLastLayer) {
             // remove last subdivision
@@ -244,23 +237,11 @@ class Engine {
         return true;
     }
 
-    private static getLineThicknessForLayer(layerId: number, totalLayersCount: number): number {
-        let variablePart = 0;
-        if (layerId > 0) {
-            variablePart = Parameters.thickness * (totalLayersCount - 1 - layerId) / (totalLayersCount - 1);
-        }
-        return 1 + variablePart;
-    }
-
     private changeRootPrimitiveInNeeded(): boolean {
         const directChildrenOfRoot = this.rootPrimitive.getDirectChildren();
         if (directChildrenOfRoot.length === 1) {
             this.rootPrimitive = directChildrenOfRoot[0] as PrimitiveBase;
             this.layers.shift();
-
-            if (Parameters.verbose) {
-                console.log("root changed");
-            }
             return true;
         }
         return false;
@@ -287,12 +268,9 @@ class Engine {
     }
 
     private rebuildLayersCollections(): void {
-        const treeDepth = this.rootPrimitive.treeDepth();
-
-        this.layers = [];
-        for (let iDepth = 0; iDepth < treeDepth; iDepth++) {
+        for (let iLayer = 0; iLayer < this.layers.length; iLayer++) {
             const primitives: BatchOfPrimitives = {
-                items: this.rootPrimitive.getChildrenOfDepth(iDepth) as PrimitiveBase[],
+                items: this.rootPrimitive.getChildrenOfDepth(iLayer) as PrimitiveBase[],
                 geometryId: GeometryId.new(),
             };
 
@@ -301,39 +279,22 @@ class Engine {
                 items: [],
                 geometryId: GeometryId.new(),
             };
-            if (iDepth === 0) {
+            if (iLayer === 0) {
                 outlines.items.push(this.rootPrimitive.getOutline());
             } else {
-                const primitivesOfParentLayer = this.layers[iDepth - 1].primitives;
+                const primitivesOfParentLayer = this.layers[iLayer - 1].primitives;
                 for (const primitive of primitivesOfParentLayer.items) {
                     outlines.items.push(primitive.subdivision);
                 }
             }
 
-            this.layers.push({
-                primitives,
-                outlines,
-            });
+            this.layers[iLayer].primitives = primitives;
+            this.layers[iLayer].outlines = outlines;
         }
     }
 
-    private updateIndicators(): void {
-        Page.Canvas.setIndicatorText("tree-depth", this.rootPrimitive.treeDepth().toString());
-
-        Page.Canvas.setIndicatorText("primitives-count", this.layers[this.layers.length - 1].primitives.items.length.toString());
-
-        let totalPrimitivesCount = 0;
-        let segmentsCount = 0;
-        for (const layer of this.layers) {
-            totalPrimitivesCount += layer.primitives.items.length;
-
-            for (const line of layer.outlines.items) {
-                const nbLinePoints = line.length;
-                segmentsCount += (nbLinePoints > 1) ? (nbLinePoints - 1) : 0;
-            }
-        }
-        Page.Canvas.setIndicatorText("tree-nodes-count", totalPrimitivesCount.toString());
-        Page.Canvas.setIndicatorText("segments-count", segmentsCount.toString());
+    private get primitiveType(): EPrimitiveType {
+        return this.rootPrimitive.primitiveType;
     }
 }
 
