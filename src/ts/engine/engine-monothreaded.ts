@@ -1,5 +1,8 @@
 import { Color } from "../misc/color";
+import { Rectangle } from "../misc/rectangle";
+import { Throttle } from "../misc/throttle";
 import { downloadSvgOutput } from "../misc/web";
+import { Zoom } from "../misc/zoom";
 import { Parameters } from "../parameters";
 import { IPlotter } from "../plotter/plotter-interface";
 import { PlotterSVG } from "../plotter/plotter-svg";
@@ -9,6 +12,21 @@ import { IEngineMetrics, updateEngineMetricsIndicators } from "./engine-metrics"
 
 
 class EngineMonothreaded extends Engine implements IEngine<IPlotter> {
+    private cumulatedZoom: Zoom = Zoom.noZoom();
+    private readonly maintainanceThrottle: Throttle = new Throttle(100);
+
+    public update(viewport: Rectangle, instantZoom: Zoom, wantedDepth: number, subdivisionBalance: number, colorVariation: number): boolean {
+        this.cumulatedZoom = Zoom.multiply(instantZoom, this.cumulatedZoom);
+
+        // don't do maintainance too often because it is costly
+        let changedSomething = false;
+        this.maintainanceThrottle.runIfAvailable(() => {
+            changedSomething = this.performUpdate(this.cumulatedZoom, viewport, wantedDepth, subdivisionBalance, colorVariation);
+            this.cumulatedZoom = Zoom.noZoom();
+        });
+        return changedSomething;
+    }
+
     public draw(plotter: IPlotter, scaling: number, backgroundColor: Color, linesColor?: Color): void {
         if (this.layers.length < 1) {
             return;

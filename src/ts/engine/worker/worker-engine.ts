@@ -8,6 +8,7 @@ import { BatchOfLines } from "../../plotter/types";
 import { IVboBuffer } from "../../plotter/vbo-types";
 import { EPrimitiveType } from "../../primitives/primitive-type-enum";
 import * as MessagesToMain from "./messages/from-worker/messages";
+import { Zoom } from "../../misc/zoom";
 
 
 class WorkerEngine extends Engine {
@@ -32,14 +33,13 @@ class WorkerEngine extends Engine {
         MessagesToMain.DownloadAsSvgOutput.sendMessage(svgOutput);
     }
 
-    protected maintainance(viewport: Rectangle, wantedDepth: number, subdivisionBalance: number, colorVariation: number): boolean {
-        const zoomBeforeMaintainance = this.cumulatedZoom.copy();
-        const result = super.maintainance(viewport, wantedDepth, subdivisionBalance, colorVariation);
+    public performUpdate(zoomToApply: Zoom, viewport: Rectangle, wantedDepth: number, subdivisionBalance: number, colorVariation: number): boolean {
+        const changedSomething = super.performUpdate(zoomToApply, viewport, wantedDepth, subdivisionBalance, colorVariation);
 
         const polygonsVboBuffer = this.computePolygonsVboBuffer();
         const linesVboBuffer = this.computeLinesVboBuffer();
-        MessagesToMain.MaintainanceOutput.sendMessage(polygonsVboBuffer, linesVboBuffer, zoomBeforeMaintainance);
-        return result;
+        MessagesToMain.MaintainanceOutput.sendMessage(polygonsVboBuffer, linesVboBuffer, zoomToApply);
+        return changedSomething;
     }
 
     protected onNewMetrics(newMetrics: IEngineMetrics): void {
@@ -64,7 +64,7 @@ class WorkerEngine extends Engine {
 
     private drawAsSvg(width: number, height: number, scaling: number, backgroundColor: Color, linesColor?: Color): string {
         const svgPlotter = new PlotterSVG(width, height);
-        svgPlotter.initialize(backgroundColor, this.cumulatedZoom, scaling);
+        svgPlotter.initialize(backgroundColor, Zoom.noZoom(), scaling);
 
         svgPlotter.drawPolygons(this.layers[this.layers.length - 1].primitives, 1);
 

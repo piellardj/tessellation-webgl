@@ -8,8 +8,8 @@ import { WorkerEngine } from "./worker-engine";
 
 const engine = new WorkerEngine();
 
-MessagesFromMain.Update.addListener((viewport: Rectangle, instantZoom: Zoom, wantedDepth: number, subdivisionBalance: number, colorVariation: number) => {
-    engine.update(viewport, instantZoom, wantedDepth, subdivisionBalance, colorVariation);
+MessagesFromMain.PerformUpdate.addListener((zoomToApply: Zoom, viewport: Rectangle, wantedDepth: number, subdivisionBalance: number, colorVariation: number) => {
+    engine.performUpdate(zoomToApply, viewport, wantedDepth, subdivisionBalance, colorVariation);
 });
 
 MessagesFromMain.Reset.addListener((viewport: Rectangle, primitiveType: EPrimitiveType) => {

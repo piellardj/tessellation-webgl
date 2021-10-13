@@ -5,7 +5,7 @@ enum EVerb {
     RECOMPUTE_COLORS_OUTPUT = "recompute-colors-output",
     DOWNLOAD_AS_SVG = "download-svg",
     DOWNLOAD_AS_SVG_OUTPUT = "download-as-svg-output",
-    UPDATE = "update",
+    PERFORM_UPDATE = "perform-update",
     NEW_METRICS = "new-metrics",
     MAINTAINANCE_OUTPUT = "maintenance-output",
 }

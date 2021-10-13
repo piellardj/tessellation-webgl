@@ -1,13 +1,14 @@
 import { Color } from "../misc/color";
 import { Rectangle } from "../misc/rectangle";
+import { Throttle } from "../misc/throttle";
 import { downloadSvgOutput } from "../misc/web";
 import { Zoom } from "../misc/zoom";
 import { IVboBuffer, PlotterWebGLBasic } from "../plotter/plotter-webgl-basic";
 import { EPrimitiveType } from "../primitives/primitive-type-enum";
-import * as MessagesFromWorker from "./worker/messages/from-worker/messages";
-import * as MessagesToWorker from "./worker/messages/to-worker/messages";
 import { IEngine } from "./engine-interface";
 import { IEngineMetrics, updateEngineMetricsIndicators } from "./engine-metrics";
+import * as MessagesFromWorker from "./worker/messages/from-worker/messages";
+import * as MessagesToWorker from "./worker/messages/to-worker/messages";
 
 import "../page-interface-generated";
 
@@ -21,7 +22,8 @@ class EngineMultithreaded implements IEngine<PlotterWebGLBasic> {
     private linesVboBuffer: IVboBuffer;
     private hasSomethingNewToDraw: boolean = true;
 
-    private cumulatedZoom: Zoom;
+    private cumulatedZoom: Zoom = Zoom.noZoom();
+    private readonly maintainanceThrottle: Throttle = new Throttle(100);
 
     public constructor() {
         this.worker = new Worker(`script/worker.js?v=${Page.version}`);
@@ -54,14 +56,14 @@ class EngineMultithreaded implements IEngine<PlotterWebGLBasic> {
             this.linesVboBuffer = linesVboBuffer;
             this.hasSomethingNewToDraw = true;
         });
-
-        this.cumulatedZoom = Zoom.noZoom();
     }
 
     public update(viewport: Rectangle, instantZoom: Zoom, wantedDepth: number, subdivisionBalance: number, colorVariation: number): boolean {
         this.cumulatedZoom = Zoom.multiply(instantZoom, this.cumulatedZoom);
 
-        MessagesToWorker.Update.sendMessage(this.worker, viewport, instantZoom, wantedDepth, subdivisionBalance, colorVariation);
+        this.maintainanceThrottle.runIfAvailable(() => {
+            MessagesToWorker.PerformUpdate.sendMessage(this.worker, this.cumulatedZoom, viewport, wantedDepth, subdivisionBalance, colorVariation);
+        });
         return this.hasSomethingNewToDraw;
     }
 

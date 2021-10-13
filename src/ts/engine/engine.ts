@@ -1,6 +1,5 @@
 import { Color } from "../misc/color";
 import { Rectangle } from "../misc/rectangle";
-import { Throttle } from "../misc/throttle";
 import { Zoom } from "../misc/zoom";
 import { GeometryId } from "../plotter/geometry-id";
 import { BatchOfLines, IBatch } from "../plotter/types";
@@ -26,26 +25,8 @@ abstract class Engine {
     private rootPrimitive: PrimitiveBase;
     protected layers: ILayer[];
 
-    protected cumulatedZoom: Zoom;
-    private readonly maintainanceThrottle: Throttle;
-
     public constructor() {
         this.reset(new Rectangle(0, 512, 0, 512), EPrimitiveType.TRIANGLES);
-        this.cumulatedZoom = Zoom.noZoom();
-        this.maintainanceThrottle = new Throttle(100);
-    }
-
-    public update(viewport: Rectangle, instantZoom: Zoom, wantedDepth: number, subdivisionBalance: number, colorVariation: number): boolean {
-        let somethingChanged = false;
-
-        this.cumulatedZoom = Zoom.multiply(instantZoom, this.cumulatedZoom);
-
-        // don't do maintainance too often because it is costly
-        this.maintainanceThrottle.runIfAvailable(() => {
-            somethingChanged = this.maintainance(viewport, wantedDepth, subdivisionBalance, colorVariation);
-        });
-
-        return somethingChanged;
     }
 
     public reset(viewport: Rectangle, primitiveType: EPrimitiveType): void {
@@ -98,9 +79,9 @@ abstract class Engine {
         }
     }
 
-    protected maintainance(viewport: Rectangle, wantedDepth: number, subdivisionBalance: number, colorVariation: number): boolean {
+    public performUpdate(zoomToApply: Zoom, viewport: Rectangle, wantedDepth: number, subdivisionBalance: number, colorVariation: number): boolean {
         let somethingChanged = false;
-        somethingChanged = this.applyCumulatedZoom() || somethingChanged;
+        somethingChanged = this.applyZoom(zoomToApply) || somethingChanged;
         somethingChanged = this.adjustLayersCount(wantedDepth, subdivisionBalance, colorVariation) || somethingChanged;
         somethingChanged = this.handleRecycling(viewport) || somethingChanged;
 
@@ -112,6 +93,7 @@ abstract class Engine {
 
             this.onNewMetrics(this.computeMetrics());
         }
+
         return somethingChanged;
     }
 
@@ -166,15 +148,13 @@ abstract class Engine {
         return bestColor;
     }
 
-    private applyCumulatedZoom(): boolean {
+    private applyZoom(zoomToApply: Zoom): boolean {
         let appliedZoom = false;
 
-        if (this.cumulatedZoom.isNotNull()) {
-            this.rootPrimitive.zoom(this.cumulatedZoom, true);
+        if (zoomToApply.isNotNull()) {
+            this.rootPrimitive.zoom(zoomToApply, true);
             appliedZoom = true;
         }
-
-        this.cumulatedZoom = Zoom.noZoom();
 
         return appliedZoom;
     }

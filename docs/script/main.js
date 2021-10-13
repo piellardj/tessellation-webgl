@@ -46,7 +46,9 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.EngineMonothreaded = void 0;
+var throttle_1 = __webpack_require__(/*! ../misc/throttle */ "./src/ts/misc/throttle.ts");
 var web_1 = __webpack_require__(/*! ../misc/web */ "./src/ts/misc/web.ts");
+var zoom_1 = __webpack_require__(/*! ../misc/zoom */ "./src/ts/misc/zoom.ts");
 var parameters_1 = __webpack_require__(/*! ../parameters */ "./src/ts/parameters.ts");
 var plotter_svg_1 = __webpack_require__(/*! ../plotter/plotter-svg */ "./src/ts/plotter/plotter-svg.ts");
 var engine_1 = __webpack_require__(/*! ./engine */ "./src/ts/engine/engine.ts");
@@ -54,8 +56,21 @@ var engine_metrics_1 = __webpack_require__(/*! ./engine-metrics */ "./src/ts/eng
 var EngineMonothreaded = (function (_super) {
     __extends(EngineMonothreaded, _super);
     function EngineMonothreaded() {
-        return _super !== null && _super.apply(this, arguments) || this;
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.cumulatedZoom = zoom_1.Zoom.noZoom();
+        _this.maintainanceThrottle = new throttle_1.Throttle(100);
+        return _this;
     }
+    EngineMonothreaded.prototype.update = function (viewport, instantZoom, wantedDepth, subdivisionBalance, colorVariation) {
+        var _this = this;
+        this.cumulatedZoom = zoom_1.Zoom.multiply(instantZoom, this.cumulatedZoom);
+        var changedSomething = false;
+        this.maintainanceThrottle.runIfAvailable(function () {
+            changedSomething = _this.performUpdate(_this.cumulatedZoom, viewport, wantedDepth, subdivisionBalance, colorVariation);
+            _this.cumulatedZoom = zoom_1.Zoom.noZoom();
+        });
+        return changedSomething;
+    };
     EngineMonothreaded.prototype.draw = function (plotter, scaling, backgroundColor, linesColor) {
         if (this.layers.length < 1) {
             return;
@@ -145,10 +160,13 @@ var MessagesFromWorker = __importStar(__webpack_require__(/*! ./worker/messages/
 var MessagesToWorker = __importStar(__webpack_require__(/*! ./worker/messages/to-worker/messages */ "./src/ts/engine/worker/messages/to-worker/messages.ts"));
 var engine_metrics_1 = __webpack_require__(/*! ./engine-metrics */ "./src/ts/engine/engine-metrics.ts");
 __webpack_require__(/*! ../page-interface-generated */ "./src/ts/page-interface-generated.ts");
+var throttle_1 = __webpack_require__(/*! ../misc/throttle */ "./src/ts/misc/throttle.ts");
 var EngineMultithreaded = (function () {
     function EngineMultithreaded() {
         var _this = this;
         this.hasSomethingNewToDraw = true;
+        this.cumulatedZoom = zoom_1.Zoom.noZoom();
+        this.maintainanceThrottle = new throttle_1.Throttle(100);
         this.worker = new Worker("script/worker.js?v=" + Page.version);
         MessagesFromWorker.NewMetrics.addListener(this.worker, function (engineMetrics) {
             engine_metrics_1.updateEngineMetricsIndicators(engineMetrics);
@@ -177,8 +195,11 @@ var EngineMultithreaded = (function () {
         this.cumulatedZoom = zoom_1.Zoom.noZoom();
     }
     EngineMultithreaded.prototype.update = function (viewport, instantZoom, wantedDepth, subdivisionBalance, colorVariation) {
+        var _this = this;
         this.cumulatedZoom = zoom_1.Zoom.multiply(instantZoom, this.cumulatedZoom);
-        MessagesToWorker.Update.sendMessage(this.worker, viewport, instantZoom, wantedDepth, subdivisionBalance, colorVariation);
+        this.maintainanceThrottle.runIfAvailable(function () {
+            MessagesToWorker.PerformUpdate.sendMessage(_this.worker, _this.cumulatedZoom, viewport, wantedDepth, subdivisionBalance, colorVariation);
+        });
         return this.hasSomethingNewToDraw;
     };
     EngineMultithreaded.prototype.draw = function (plotter, scaling, backgroundColor, linesColor) {
@@ -246,8 +267,6 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Engine = void 0;
 var color_1 = __webpack_require__(/*! ../misc/color */ "./src/ts/misc/color.ts");
 var rectangle_1 = __webpack_require__(/*! ../misc/rectangle */ "./src/ts/misc/rectangle.ts");
-var throttle_1 = __webpack_require__(/*! ../misc/throttle */ "./src/ts/misc/throttle.ts");
-var zoom_1 = __webpack_require__(/*! ../misc/zoom */ "./src/ts/misc/zoom.ts");
 var geometry_id_1 = __webpack_require__(/*! ../plotter/geometry-id */ "./src/ts/plotter/geometry-id.ts");
 var primitive_base_1 = __webpack_require__(/*! ../primitives/primitive-base */ "./src/ts/primitives/primitive-base.ts");
 var primitive_quads_1 = __webpack_require__(/*! ../primitives/primitive-quads */ "./src/ts/primitives/primitive-quads.ts");
@@ -258,18 +277,7 @@ __webpack_require__(/*! ../page-interface-generated */ "./src/ts/page-interface-
 var Engine = (function () {
     function Engine() {
         this.reset(new rectangle_1.Rectangle(0, 512, 0, 512), primitive_type_enum_1.EPrimitiveType.TRIANGLES);
-        this.cumulatedZoom = zoom_1.Zoom.noZoom();
-        this.maintainanceThrottle = new throttle_1.Throttle(100);
     }
-    Engine.prototype.update = function (viewport, instantZoom, wantedDepth, subdivisionBalance, colorVariation) {
-        var _this = this;
-        var somethingChanged = false;
-        this.cumulatedZoom = zoom_1.Zoom.multiply(instantZoom, this.cumulatedZoom);
-        this.maintainanceThrottle.runIfAvailable(function () {
-            somethingChanged = _this.maintainance(viewport, wantedDepth, subdivisionBalance, colorVariation);
-        });
-        return somethingChanged;
-    };
     Engine.prototype.reset = function (viewport, primitiveType) {
         if (primitiveType === primitive_type_enum_1.EPrimitiveType.QUADS) {
             this.rootPrimitive = new primitive_quads_1.PrimitiveQuads({ x: viewport.left, y: viewport.top }, { x: viewport.right, y: viewport.top }, { x: viewport.left, y: viewport.bottom }, { x: viewport.right, y: viewport.bottom }, this.computeRootPrimitiveColor());
@@ -301,9 +309,9 @@ var Engine = (function () {
             layer.primitives.geometryId.registerChange();
         }
     };
-    Engine.prototype.maintainance = function (viewport, wantedDepth, subdivisionBalance, colorVariation) {
+    Engine.prototype.performUpdate = function (zoomToApply, viewport, wantedDepth, subdivisionBalance, colorVariation) {
         var somethingChanged = false;
-        somethingChanged = this.applyCumulatedZoom() || somethingChanged;
+        somethingChanged = this.applyZoom(zoomToApply) || somethingChanged;
         somethingChanged = this.adjustLayersCount(wantedDepth, subdivisionBalance, colorVariation) || somethingChanged;
         somethingChanged = this.handleRecycling(viewport) || somethingChanged;
         if (somethingChanged) {
@@ -362,13 +370,12 @@ var Engine = (function () {
         }
         return bestColor;
     };
-    Engine.prototype.applyCumulatedZoom = function () {
+    Engine.prototype.applyZoom = function (zoomToApply) {
         var appliedZoom = false;
-        if (this.cumulatedZoom.isNotNull()) {
-            this.rootPrimitive.zoom(this.cumulatedZoom, true);
+        if (zoomToApply.isNotNull()) {
+            this.rootPrimitive.zoom(zoomToApply, true);
             appliedZoom = true;
         }
-        this.cumulatedZoom = zoom_1.Zoom.noZoom();
         return appliedZoom;
     };
     Engine.prototype.handleRecycling = function (viewport) {
@@ -814,7 +821,7 @@ var EVerb;
     EVerb["RECOMPUTE_COLORS_OUTPUT"] = "recompute-colors-output";
     EVerb["DOWNLOAD_AS_SVG"] = "download-svg";
     EVerb["DOWNLOAD_AS_SVG_OUTPUT"] = "download-as-svg-output";
-    EVerb["UPDATE"] = "update";
+    EVerb["UPDATE"] = "perform-update";
     EVerb["NEW_METRICS"] = "new-metrics";
     EVerb["MAINTAINANCE_OUTPUT"] = "maintenance-output";
 })(EVerb || (EVerb = {}));
@@ -918,15 +925,51 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.Update = exports.Reset = exports.RecomputeColors = exports.DownloadAsSvg = void 0;
+exports.PerformUpdate = exports.Reset = exports.RecomputeColors = exports.DownloadAsSvg = void 0;
 var DownloadAsSvg = __importStar(__webpack_require__(/*! ./download-as-svg-message */ "./src/ts/engine/worker/messages/to-worker/download-as-svg-message.ts"));
 exports.DownloadAsSvg = DownloadAsSvg;
+var PerformUpdate = __importStar(__webpack_require__(/*! ./perform-update-message */ "./src/ts/engine/worker/messages/to-worker/perform-update-message.ts"));
+exports.PerformUpdate = PerformUpdate;
 var RecomputeColors = __importStar(__webpack_require__(/*! ./recompute-color-message */ "./src/ts/engine/worker/messages/to-worker/recompute-color-message.ts"));
 exports.RecomputeColors = RecomputeColors;
 var Reset = __importStar(__webpack_require__(/*! ./reset-message */ "./src/ts/engine/worker/messages/to-worker/reset-message.ts"));
 exports.Reset = Reset;
-var Update = __importStar(__webpack_require__(/*! ./update-message */ "./src/ts/engine/worker/messages/to-worker/update-message.ts"));
-exports.Update = Update;
+
+
+/***/ }),
+
+/***/ "./src/ts/engine/worker/messages/to-worker/perform-update-message.ts":
+/*!***************************************************************************!*\
+  !*** ./src/ts/engine/worker/messages/to-worker/perform-update-message.ts ***!
+  \***************************************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.sendMessage = exports.addListener = void 0;
+var rectangle_1 = __webpack_require__(/*! ../../../../misc/rectangle */ "./src/ts/misc/rectangle.ts");
+var zoom_1 = __webpack_require__(/*! ../../../../misc/zoom */ "./src/ts/misc/zoom.ts");
+var message_1 = __webpack_require__(/*! ../message */ "./src/ts/engine/worker/messages/message.ts");
+var verb = message_1.EVerb.UPDATE;
+function sendMessage(worker, zoomToApply, viewport, wantedDepth, subdivisionBalance, colorVariation) {
+    var messageData = {
+        zoomToApply: zoomToApply,
+        viewport: viewport,
+        wantedDepth: wantedDepth,
+        subdivisionBalance: subdivisionBalance,
+        colorVariation: colorVariation,
+    };
+    message_1.sendMessageToWorker(worker, verb, messageData);
+}
+exports.sendMessage = sendMessage;
+function addListener(listener) {
+    message_1.addListenerFromWorker(verb, function (data) {
+        var viewport = rectangle_1.Rectangle.rehydrate(data.viewport);
+        var zoomToApply = zoom_1.Zoom.rehydrate(data.zoomToApply);
+        listener(zoomToApply, viewport, data.wantedDepth, data.subdivisionBalance, data.colorVariation);
+    });
+}
+exports.addListener = addListener;
 
 
 /***/ }),
@@ -983,42 +1026,6 @@ function addListener(listener) {
     message_1.addListenerFromWorker(verb, function (data) {
         var viewport = rectangle_1.Rectangle.rehydrate(data.viewport);
         listener(viewport, data.primitiveType);
-    });
-}
-exports.addListener = addListener;
-
-
-/***/ }),
-
-/***/ "./src/ts/engine/worker/messages/to-worker/update-message.ts":
-/*!*******************************************************************!*\
-  !*** ./src/ts/engine/worker/messages/to-worker/update-message.ts ***!
-  \*******************************************************************/
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.sendMessage = exports.addListener = void 0;
-var rectangle_1 = __webpack_require__(/*! ../../../../misc/rectangle */ "./src/ts/misc/rectangle.ts");
-var zoom_1 = __webpack_require__(/*! ../../../../misc/zoom */ "./src/ts/misc/zoom.ts");
-var message_1 = __webpack_require__(/*! ../message */ "./src/ts/engine/worker/messages/message.ts");
-var verb = message_1.EVerb.UPDATE;
-function sendMessage(worker, viewport, instantZoom, wantedDepth, subdivisionBalance, colorVariation) {
-    var messageData = {
-        viewport: viewport,
-        instantZoom: instantZoom,
-        wantedDepth: wantedDepth,
-        subdivisionBalance: subdivisionBalance,
-        colorVariation: colorVariation,
-    };
-    message_1.sendMessageToWorker(worker, verb, messageData);
-}
-exports.sendMessage = sendMessage;
-function addListener(listener) {
-    message_1.addListenerFromWorker(verb, function (data) {
-        var viewport = rectangle_1.Rectangle.rehydrate(data.viewport);
-        var instantZoom = zoom_1.Zoom.rehydrate(data.instantZoom);
-        listener(viewport, instantZoom, data.wantedDepth, data.subdivisionBalance, data.colorVariation);
     });
 }
 exports.addListener = addListener;
