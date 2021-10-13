@@ -50,9 +50,9 @@ abstract class Engine {
                     layer.primitives.geometryId.registerChange();
                     layer.outlines.geometryId.registerChange();
                 }
-            }
 
-            this.updateIndicators();
+                this.onGeometryChange();
+            }
         };
 
         // don't do maintainance too often because it is costly
@@ -97,7 +97,8 @@ abstract class Engine {
             },
             birthTimestamp: performance.now(),
         }];
-        this.updateIndicators();
+
+        this.onGeometryChange();
     }
 
     public recomputeColors(colorVariation: number): void {
@@ -108,6 +109,8 @@ abstract class Engine {
         for (const layer of this.layers) {
             layer.primitives.geometryId.registerChange();
         }
+
+        this.onGeometryChange();
     }
 
     protected computeMetrics(): IEngineMetrics {
@@ -133,7 +136,7 @@ abstract class Engine {
         };
     }
 
-    protected abstract updateIndicators(): void;
+    protected abstract onGeometryChange(): void;
 
     private computeRootPrimitiveColor(): Color {
         const minLuminosity = 0.3;

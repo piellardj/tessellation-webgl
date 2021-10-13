@@ -5,6 +5,10 @@ class GeometryId {
         return new GeometryId(nextFreeId++, 0);
     }
 
+    public static rehydrate(dehydrated: GeometryId): GeometryId {
+        return new GeometryId(dehydrated.id, dehydrated.version);
+    }
+
     public copy(): GeometryId {
         return new GeometryId(this.id, this.version);
     }

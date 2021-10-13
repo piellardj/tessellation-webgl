@@ -5,6 +5,7 @@ enum EVerb {
     UPDATE = "update",
     NEW_METRICS = "new-metrics",
     NEW_SVG_OUTPUT = "new-svg-output",
+    NEW_GEOMETRY = "new-geometry",
 }
 
 interface IMessageData<TData> {

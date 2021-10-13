@@ -392,6 +392,8 @@ class PlotterWebGLBasic extends PlotterCanvas {
 }
 
 export {
+    IVboBuffer,
+    IVboPart,
     PlotterWebGLBasic,
 };
 

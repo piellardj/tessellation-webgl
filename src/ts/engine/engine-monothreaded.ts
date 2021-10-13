@@ -55,7 +55,11 @@ class EngineMonothreaded extends Engine implements IEngine<IPlotter> {
         downloadSvgOutput(svgString);
     }
 
-    protected updateIndicators(): void {
+    protected onGeometryChange(): void {
+        this.updateIndicators();
+    }
+
+    private updateIndicators(): void {
         const metrics = this.computeMetrics();
         updateEngineMetricsIndicators(metrics);
     }
