@@ -22,6 +22,8 @@ class EngineMultithreaded implements IEngine<PlotterWebGLBasic> {
     private linesVboBuffer: IVboBuffer;
     private hasSomethingNewToDraw: boolean = true;
 
+    private readonly cumulatedZoom: Zoom;
+
     public constructor() {
         this.worker = new Worker(`script/worker.js?v=${Page.version}`);
 
@@ -34,13 +36,18 @@ class EngineMultithreaded implements IEngine<PlotterWebGLBasic> {
         });
 
         MessagesFromWorker.NewGeometry.addListener(this.worker, (polygonsVboBuffer: IVboBuffer, linesVboBuffer: IVboBuffer) => {
+            this.cumulatedZoom.reset();
             this.polygonsVboBuffer = polygonsVboBuffer;
             this.linesVboBuffer = linesVboBuffer;
             this.hasSomethingNewToDraw = true;
         });
+
+        this.cumulatedZoom = Zoom.noZoom();
     }
 
     public update(viewport: Rectangle, instantZoom: Zoom, wantedDepth: number, subdivisionBalance: number, colorVariation: number): boolean {
+        this.cumulatedZoom.combineWith(instantZoom);
+
         MessagesToWorker.Update.sendMessage(this.worker, viewport, instantZoom, wantedDepth, subdivisionBalance, colorVariation);
         return this.hasSomethingNewToDraw;
     }
@@ -48,7 +55,7 @@ class EngineMultithreaded implements IEngine<PlotterWebGLBasic> {
     public draw(plotter: PlotterWebGLBasic, scaling: number, backgroundColor: Color, linesColor?: Color): void {
         this.hasSomethingNewToDraw = false;
 
-        plotter.initialize(backgroundColor, Zoom.noZoom(), scaling);
+        plotter.initialize(backgroundColor, this.cumulatedZoom, scaling);
 
         if (this.polygonsVboBuffer) {
             let needToReupload = false;
