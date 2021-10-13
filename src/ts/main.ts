@@ -109,4 +109,6 @@ if (Parameters.debugMode) {
             main<typeof plotter>(engine, plotter);
         }
     }
+
+    Page.Canvas.setIndicatorText("multithreaded", Parameters.multithreaded ? "yes" : "no");
 }

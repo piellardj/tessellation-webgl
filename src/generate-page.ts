@@ -43,6 +43,10 @@ const data = {
             id: "segments-count",
             label: "Segments count"
         },
+        {
+            id: "multithreaded",
+            label: "Multithreaded"
+        },
     ],
     canvas: {
         width: 512,
