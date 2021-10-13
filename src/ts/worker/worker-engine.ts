@@ -7,7 +7,6 @@ import * as MessagesToMain from "./messages/from-worker/messages";
 
 
 class WorkerEngine extends Engine {
-
     public downloadAsSvg(width: number, height: number, scaling: number, backgroundColor: Color, linesColor?: Color): void {
         const svgOutput = this.drawAsSvg(width, height, scaling, backgroundColor, linesColor);
         MessagesToMain.NewSvgOutput.sendMessage(svgOutput);
