@@ -44,7 +44,7 @@ function main<TPlotter extends PlotterCanvas>(engine: IEngine<TPlotter>, plotter
         if (Page.Canvas.isMouseDown()) {
             lastZoomCenter = getCurrentMousePosition();
         }
-        return new Zoom(lastZoomCenter, 1 + dt * Parameters.zoomingSpeed);
+        return Zoom.buildZoom(lastZoomCenter, 1 + dt * Parameters.zoomingSpeed);
     }
 
     function reset(): void {

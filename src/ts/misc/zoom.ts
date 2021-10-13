@@ -2,15 +2,31 @@ import { IPoint } from "./point";
 
 class Zoom {
     public static noZoom(): Zoom {
-        return new Zoom({ x: 0, y: 0 }, 1);
+        return new Zoom(1, 0, 0);
     }
 
     public static rehydrate(dehydrated: Zoom): Zoom {
-        const result = new Zoom({ x: 0, y: 0 }, 1); // whatever
-        result.a = dehydrated.a;
-        result.b = dehydrated.b;
-        result.c = dehydrated.c;
-        return result;
+        return new Zoom(dehydrated.a, dehydrated.b, dehydrated.c);
+    }
+
+    public static multiply(z1: Zoom, z2: Zoom): Zoom {
+        /* Multiply the two matrices OTHER x THIS
+                        | a2 0  b2 |
+                        | 0  a2 c2 |
+                        | 0  0  1  |
+            | a1 0  b1 |
+            | 0  a1 c1 |
+            | 0  0  1  |
+         */
+        return new Zoom(
+            z1.a * z2.a,
+            z1.a * z2.b + z1.b,
+            z1.a * z2.c + z1.c
+        );
+    }
+
+    public static buildZoom(center: IPoint, scaling: number): Zoom {
+        return new Zoom(scaling, center.x * (1 - scaling), center.y * (1 - scaling));
     }
 
     /* The 2D zoom is stored as a 3x3 matrix in the form
@@ -18,48 +34,24 @@ class Zoom {
      * | 0 a c |
      * | 0 0 1 |
      */
-    private a: number;
-    private b: number;
-    private c: number;
-
-    public constructor(center: IPoint, scaling: number) {
-        this.a = scaling;
-        this.b = center.x * (1 - scaling);
-        this.c = center.y * (1 - scaling);
-    }
-
-    public reset(): void {
-        this.a = 1;
-        this.b = 0;
-        this.c = 0;
+    private constructor(
+        private readonly a: number,
+        private readonly b: number,
+        private readonly c: number) {
     }
 
     public isNotNull(): boolean {
         const isIdentity = (this.a === 1) && (this.b === 0) && (this.c === 0);
         return !isIdentity;
     }
+
     public applyToPoint(point: IPoint): void {
         point.x = this.a * point.x + this.b;
         point.y = this.a * point.y + this.c;
     }
 
-    public combineWith(other: Zoom): void {
-        /* Apply the other zoom after this zoom
-         * multiply the two matrices OTHER x THIS
-                        | a1 0  b1 |
-                        | 0  a1 c1 |
-                        | 0  0  1  |
-            | a2 0  b2 |
-            | 0  a2 c2 |
-            | 0  0  1  |
-         */
-        const newA = other.a * this.a;
-        const newB = other.a * this.b + other.b;
-        const newC = other.a * this.c + other.c;
-
-        this.a = newA;
-        this.b = newB;
-        this.c = newC;
+    public copy(): Zoom {
+        return new Zoom(this.a, this.b, this.c);
     }
 
     public get scale(): number {

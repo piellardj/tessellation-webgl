@@ -26,7 +26,7 @@ abstract class Engine {
     private rootPrimitive: PrimitiveBase;
     protected layers: ILayer[];
 
-    protected readonly cumulatedZoom: Zoom;
+    protected cumulatedZoom: Zoom;
     private readonly maintainanceThrottle: Throttle;
 
     public constructor() {
@@ -38,7 +38,7 @@ abstract class Engine {
     public update(viewport: Rectangle, instantZoom: Zoom, wantedDepth: number, subdivisionBalance: number, colorVariation: number): boolean {
         let somethingChanged = false;
 
-        this.cumulatedZoom.combineWith(instantZoom);
+        this.cumulatedZoom = Zoom.multiply(instantZoom, this.cumulatedZoom);
 
         const maintainance = () => {
             somethingChanged = this.applyCumulatedZoom() || somethingChanged;
@@ -172,8 +172,7 @@ abstract class Engine {
             appliedZoom = true;
         }
 
-        // reset the cumulated zooming
-        this.cumulatedZoom.reset();
+        this.cumulatedZoom = Zoom.noZoom();
 
         return appliedZoom;
     }

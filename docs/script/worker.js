@@ -31,7 +31,7 @@ var Engine = (function () {
     Engine.prototype.update = function (viewport, instantZoom, wantedDepth, subdivisionBalance, colorVariation) {
         var _this = this;
         var somethingChanged = false;
-        this.cumulatedZoom.combineWith(instantZoom);
+        this.cumulatedZoom = zoom_1.Zoom.multiply(instantZoom, this.cumulatedZoom);
         var maintainance = function () {
             somethingChanged = _this.applyCumulatedZoom() || somethingChanged;
             somethingChanged = _this.adjustLayersCount(wantedDepth, subdivisionBalance, colorVariation) || somethingChanged;
@@ -132,7 +132,7 @@ var Engine = (function () {
             this.rootPrimitive.zoom(this.cumulatedZoom, true);
             appliedZoom = true;
         }
-        this.cumulatedZoom.reset();
+        this.cumulatedZoom = zoom_1.Zoom.noZoom();
         return appliedZoom;
     };
     Engine.prototype.handleRecycling = function (viewport) {
@@ -1185,25 +1185,22 @@ exports.Throttle = Throttle;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Zoom = void 0;
 var Zoom = (function () {
-    function Zoom(center, scaling) {
-        this.a = scaling;
-        this.b = center.x * (1 - scaling);
-        this.c = center.y * (1 - scaling);
+    function Zoom(a, b, c) {
+        this.a = a;
+        this.b = b;
+        this.c = c;
     }
     Zoom.noZoom = function () {
-        return new Zoom({ x: 0, y: 0 }, 1);
+        return new Zoom(1, 0, 0);
     };
     Zoom.rehydrate = function (dehydrated) {
-        var result = new Zoom({ x: 0, y: 0 }, 1);
-        result.a = dehydrated.a;
-        result.b = dehydrated.b;
-        result.c = dehydrated.c;
-        return result;
+        return new Zoom(dehydrated.a, dehydrated.b, dehydrated.c);
     };
-    Zoom.prototype.reset = function () {
-        this.a = 1;
-        this.b = 0;
-        this.c = 0;
+    Zoom.multiply = function (z1, z2) {
+        return new Zoom(z1.a * z2.a, z1.a * z2.b + z1.b, z1.a * z2.c + z1.c);
+    };
+    Zoom.buildZoom = function (center, scaling) {
+        return new Zoom(scaling, center.x * (1 - scaling), center.y * (1 - scaling));
     };
     Zoom.prototype.isNotNull = function () {
         var isIdentity = (this.a === 1) && (this.b === 0) && (this.c === 0);
@@ -1213,13 +1210,8 @@ var Zoom = (function () {
         point.x = this.a * point.x + this.b;
         point.y = this.a * point.y + this.c;
     };
-    Zoom.prototype.combineWith = function (other) {
-        var newA = other.a * this.a;
-        var newB = other.a * this.b + other.b;
-        var newC = other.a * this.c + other.c;
-        this.a = newA;
-        this.b = newB;
-        this.c = newC;
+    Zoom.prototype.copy = function () {
+        return new Zoom(this.a, this.b, this.c);
     };
     Object.defineProperty(Zoom.prototype, "scale", {
         get: function () {
