@@ -40,23 +40,10 @@ abstract class Engine {
 
         this.cumulatedZoom = Zoom.multiply(instantZoom, this.cumulatedZoom);
 
-        const maintainance = () => {
-            somethingChanged = this.applyCumulatedZoom() || somethingChanged;
-            somethingChanged = this.adjustLayersCount(wantedDepth, subdivisionBalance, colorVariation) || somethingChanged;
-            somethingChanged = this.handleRecycling(viewport) || somethingChanged;
-
-            if (somethingChanged) {
-                for (const layer of this.layers) {
-                    layer.primitives.geometryId.registerChange();
-                    layer.outlines.geometryId.registerChange();
-                }
-
-                this.onGeometryChange();
-            }
-        };
-
         // don't do maintainance too often because it is costly
-        this.maintainanceThrottle.runIfAvailable(maintainance);
+        this.maintainanceThrottle.runIfAvailable(() => {
+            somethingChanged = this.maintenance(viewport, wantedDepth, subdivisionBalance, colorVariation);
+        });
 
         return somethingChanged;
     }
@@ -111,6 +98,23 @@ abstract class Engine {
         }
 
         this.onGeometryChange();
+    }
+
+    protected maintenance(viewport: Rectangle, wantedDepth: number, subdivisionBalance: number, colorVariation: number): boolean {
+        let somethingChanged = false;
+        somethingChanged = this.applyCumulatedZoom() || somethingChanged;
+        somethingChanged = this.adjustLayersCount(wantedDepth, subdivisionBalance, colorVariation) || somethingChanged;
+        somethingChanged = this.handleRecycling(viewport) || somethingChanged;
+
+        if (somethingChanged) {
+            for (const layer of this.layers) {
+                layer.primitives.geometryId.registerChange();
+                layer.outlines.geometryId.registerChange();
+            }
+
+            this.onGeometryChange();
+        }
+        return somethingChanged;
     }
 
     protected computeMetrics(): IEngineMetrics {

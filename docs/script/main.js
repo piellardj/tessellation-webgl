@@ -257,20 +257,9 @@ var Engine = (function () {
         var _this = this;
         var somethingChanged = false;
         this.cumulatedZoom = zoom_1.Zoom.multiply(instantZoom, this.cumulatedZoom);
-        var maintainance = function () {
-            somethingChanged = _this.applyCumulatedZoom() || somethingChanged;
-            somethingChanged = _this.adjustLayersCount(wantedDepth, subdivisionBalance, colorVariation) || somethingChanged;
-            somethingChanged = _this.handleRecycling(viewport) || somethingChanged;
-            if (somethingChanged) {
-                for (var _i = 0, _a = _this.layers; _i < _a.length; _i++) {
-                    var layer = _a[_i];
-                    layer.primitives.geometryId.registerChange();
-                    layer.outlines.geometryId.registerChange();
-                }
-                _this.onGeometryChange();
-            }
-        };
-        this.maintainanceThrottle.runIfAvailable(maintainance);
+        this.maintainanceThrottle.runIfAvailable(function () {
+            somethingChanged = _this.maintenance(viewport, wantedDepth, subdivisionBalance, colorVariation);
+        });
         return somethingChanged;
     };
     Engine.prototype.reset = function (viewport, primitiveType) {
@@ -304,6 +293,21 @@ var Engine = (function () {
             layer.primitives.geometryId.registerChange();
         }
         this.onGeometryChange();
+    };
+    Engine.prototype.maintenance = function (viewport, wantedDepth, subdivisionBalance, colorVariation) {
+        var somethingChanged = false;
+        somethingChanged = this.applyCumulatedZoom() || somethingChanged;
+        somethingChanged = this.adjustLayersCount(wantedDepth, subdivisionBalance, colorVariation) || somethingChanged;
+        somethingChanged = this.handleRecycling(viewport) || somethingChanged;
+        if (somethingChanged) {
+            for (var _i = 0, _a = this.layers; _i < _a.length; _i++) {
+                var layer = _a[_i];
+                layer.primitives.geometryId.registerChange();
+                layer.outlines.geometryId.registerChange();
+            }
+            this.onGeometryChange();
+        }
+        return somethingChanged;
     };
     Engine.prototype.computeMetrics = function () {
         var treeDepth = this.rootPrimitive.treeDepth();
