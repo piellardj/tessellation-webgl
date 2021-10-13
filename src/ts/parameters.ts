@@ -171,6 +171,7 @@ Page.Checkbox.addObserver(controlId.MULTITHREADED_CHECKBOX_ID, (checked: boolean
     setQueryStringValue(multithreadedQueryStringParamName, checked ? "1" : null);
 });
 Page.Controls.setVisibility(controlId.PLOTTER_TABS_ID, !Parameters.multithreaded);
+Page.Controls.setVisibility(controlId.BLENDING_CHECKBOX_ID, !Parameters.multithreaded);
 
 export {
     EPlotter,
