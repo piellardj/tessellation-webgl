@@ -1,4 +1,4 @@
-import { IEngineMetrics } from "../../../engine/engine-metrics";
+import { IEngineMetrics } from "../../../engine-metrics";
 import { addListenerToWorker, EVerb, sendMessageFromWorker } from "../message";
 
 

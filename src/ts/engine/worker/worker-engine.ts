@@ -1,12 +1,12 @@
-import { Engine } from "../engine/engine";
-import { IEngineMetrics } from "../engine/engine-metrics";
-import { Color } from "../misc/color";
-import { Rectangle } from "../misc/rectangle";
-import { PlotterSVG } from "../plotter/plotter-svg";
-import { PlotterWebGLBasic } from "../plotter/plotter-webgl-basic";
-import { BatchOfLines } from "../plotter/types";
-import { IVboBuffer } from "../plotter/vbo-types";
-import { EPrimitiveType } from "../primitives/primitive-type-enum";
+import { Engine } from "../engine";
+import { IEngineMetrics } from "../engine-metrics";
+import { Color } from "../../misc/color";
+import { Rectangle } from "../../misc/rectangle";
+import { PlotterSVG } from "../../plotter/plotter-svg";
+import { PlotterWebGLBasic } from "../../plotter/plotter-webgl-basic";
+import { BatchOfLines } from "../../plotter/types";
+import { IVboBuffer } from "../../plotter/vbo-types";
+import { EPrimitiveType } from "../../primitives/primitive-type-enum";
 import * as MessagesToMain from "./messages/from-worker/messages";
 
 

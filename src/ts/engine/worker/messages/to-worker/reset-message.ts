@@ -1,5 +1,5 @@
-import { Rectangle } from "../../../misc/rectangle";
-import { EPrimitiveType } from "../../../primitives/primitive-type-enum";
+import { Rectangle } from "../../../../misc/rectangle";
+import { EPrimitiveType } from "../../../../primitives/primitive-type-enum";
 import { addListenerFromWorker, EVerb, sendMessageToWorker } from "../message";
 
 

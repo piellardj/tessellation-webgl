@@ -4,8 +4,8 @@ import { downloadSvgOutput } from "../misc/web";
 import { Zoom } from "../misc/zoom";
 import { IVboBuffer, PlotterWebGLBasic } from "../plotter/plotter-webgl-basic";
 import { EPrimitiveType } from "../primitives/primitive-type-enum";
-import * as MessagesFromWorker from "../worker/messages/from-worker/messages";
-import * as MessagesToWorker from "../worker/messages/to-worker/messages";
+import * as MessagesFromWorker from "./worker/messages/from-worker/messages";
+import * as MessagesToWorker from "./worker/messages/to-worker/messages";
 import { IEngine } from "./engine-interface";
 import { IEngineMetrics, updateEngineMetricsIndicators } from "./engine-metrics";
 

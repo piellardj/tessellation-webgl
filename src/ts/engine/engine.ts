@@ -32,7 +32,7 @@ abstract class Engine {
     public constructor() {
         this.reset(new Rectangle(0, 512, 0, 512), EPrimitiveType.TRIANGLES);
         this.cumulatedZoom = Zoom.noZoom();
-        this.maintainanceThrottle = new Throttle(500);
+        this.maintainanceThrottle = new Throttle(100);
     }
 
     public update(viewport: Rectangle, instantZoom: Zoom, wantedDepth: number, subdivisionBalance: number, colorVariation: number): boolean {

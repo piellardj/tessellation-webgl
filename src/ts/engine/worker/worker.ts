@@ -1,7 +1,7 @@
-import { Color } from "../misc/color";
-import { Rectangle } from "../misc/rectangle";
-import { Zoom } from "../misc/zoom";
-import { EPrimitiveType } from "../primitives/primitive-type-enum";
+import { Color } from "../../misc/color";
+import { Rectangle } from "../../misc/rectangle";
+import { Zoom } from "../../misc/zoom";
+import { EPrimitiveType } from "../../primitives/primitive-type-enum";
 import * as MessagesFromMain from "./messages/to-worker/messages";
 import { WorkerEngine } from "./worker-engine";
 

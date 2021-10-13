@@ -1,9 +1,9 @@
-import { IVboBuffer } from "../../../plotter/plotter-webgl-basic";
-import { rehydrateVboBuffer } from "../../../plotter/vbo-types";
+import { IVboBuffer } from "../../../../plotter/plotter-webgl-basic";
+import { rehydrateVboBuffer } from "../../../../plotter/vbo-types";
 import { addListenerToWorker, EVerb, sendMessageFromWorker } from "../message";
 
 
-const verb = EVerb.RESET_OUTPUT;
+const verb = EVerb.RECOMPUTE_COLORS_OUTPUT;
 
 interface IMessageData {
     readonly polygonsVboBuffer: IVboBuffer;

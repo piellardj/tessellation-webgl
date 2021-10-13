@@ -1,4 +1,4 @@
-import { Color } from "../../../misc/color";
+import { Color } from "../../../../misc/color";
 import { addListenerFromWorker, EVerb, sendMessageToWorker } from "../message";
 
 

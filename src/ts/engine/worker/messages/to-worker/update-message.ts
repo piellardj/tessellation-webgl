@@ -1,5 +1,5 @@
-import { Rectangle } from "../../../misc/rectangle";
-import { Zoom } from "../../../misc/zoom";
+import { Rectangle } from "../../../../misc/rectangle";
+import { Zoom } from "../../../../misc/zoom";
 import { addListenerFromWorker, EVerb, sendMessageToWorker } from "../message";
 
 
