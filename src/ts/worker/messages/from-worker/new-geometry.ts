@@ -16,7 +16,11 @@ function sendMessage(polygonsVboBuffer: IVboBuffer, linesVboBuffer: IVboBuffer):
         linesVboBuffer,
     };
 
-    sendMessageFromWorker(verb, messageData);
+    const transfer: ArrayBuffer[] = [
+        polygonsVboBuffer.buffer.buffer,
+        linesVboBuffer.buffer.buffer,
+    ];
+    sendMessageFromWorker(verb, messageData, transfer);
 }
 
 function rehydrateVboBuffer(vboBuffer: IVboBuffer): IVboBuffer {

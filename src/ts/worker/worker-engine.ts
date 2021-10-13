@@ -37,6 +37,10 @@ class WorkerEngine extends Engine {
         const linesVboBuffer = PlotterWebGLBasic.buildLinesVboBuffer(batchesOfLines);
 
         MessagesToMain.NewGeometry.sendMessage(polygonsVboBuffer, linesVboBuffer);
+
+        if (polygonsVboBuffer.buffer.length !== 0) {
+            console.warn("Buffer was copied and not transferred...");
+        }
     }
 
     private drawAsSvg(width: number, height: number, scaling: number, backgroundColor: Color, linesColor?: Color): string {

@@ -13,12 +13,12 @@ interface IMessageData<TData> {
     data: TData;
 }
 
-function sendMessage<TData>(target: any, verb: EVerb, data: TData): void {
+function sendMessage<TData>(target: any, verb: EVerb, data: TData, transfer?: Transferable[]): void {
     const messageData: IMessageData<TData> = {
         verb,
         data,
     };
-    target.postMessage(messageData);
+    target.postMessage(messageData, transfer);
 }
 
 function addListener<TData>(context: any, verb: EVerb, callback: (data: TData) => unknown): void {
@@ -36,8 +36,8 @@ function addListenerToWorker<TData>(worker: Worker, verb: EVerb, callback: (data
     addListener<TData>(worker, verb, callback);
 }
 
-function sendMessageFromWorker<TData>(verb: EVerb, data: TData): void {
-    sendMessage<TData>(self, verb, data);
+function sendMessageFromWorker<TData>(verb: EVerb, data: TData, transfer?: Transferable[]): void {
+    sendMessage<TData>(self, verb, data, transfer);
 }
 function addListenerFromWorker<TData>(verb: EVerb, callback: (data: TData) => unknown): void {
     addListener<TData>(self as any, verb, callback);

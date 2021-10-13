@@ -42,8 +42,8 @@ var Engine = (function () {
                     layer.primitives.geometryId.registerChange();
                     layer.outlines.geometryId.registerChange();
                 }
+                _this.onGeometryChange();
             }
-            _this.updateIndicators();
         };
         this.maintainanceThrottle.runIfAvailable(maintainance);
         return somethingChanged;
@@ -69,7 +69,7 @@ var Engine = (function () {
                 },
                 birthTimestamp: performance.now(),
             }];
-        this.updateIndicators();
+        this.onGeometryChange();
     };
     Engine.prototype.recomputeColors = function (colorVariation) {
         var newColor = this.computeRootPrimitiveColor();
@@ -78,6 +78,7 @@ var Engine = (function () {
             var layer = _a[_i];
             layer.primitives.geometryId.registerChange();
         }
+        this.onGeometryChange();
     };
     Engine.prototype.computeMetrics = function () {
         var treeDepth = this.rootPrimitive.treeDepth();
@@ -351,6 +352,525 @@ exports.TreeNode = TreeNode;
 
 /***/ }),
 
+/***/ "./src/ts/gl-utils/gl-canvas.ts":
+/*!**************************************!*\
+  !*** ./src/ts/gl-utils/gl-canvas.ts ***!
+  \**************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.gl = exports.initGL = exports.adjustSize = void 0;
+__webpack_require__(/*! ../page-interface-generated */ "./src/ts/page-interface-generated.ts");
+var gl = null;
+exports.gl = gl;
+function initGL(flags) {
+    function setError(message) {
+        Page.Demopage.setErrorMessage("webgl-support", message);
+    }
+    var canvas = Page.Canvas.getCanvas();
+    exports.gl = gl = canvas.getContext("webgl", flags);
+    if (gl == null) {
+        exports.gl = gl = canvas.getContext("experimental-webgl", flags);
+        if (gl == null) {
+            setError("Your browser or device does not seem to support WebGL.");
+            return false;
+        }
+        setError("Your browser or device only supports experimental WebGL.\nThe simulation may not run as expected.");
+    }
+    gl.disable(gl.CULL_FACE);
+    gl.disable(gl.DEPTH_TEST);
+    gl.disable(gl.BLEND);
+    gl.clearColor(0, 0, 0, 1);
+    return true;
+}
+exports.initGL = initGL;
+function adjustSize(hidpi) {
+    if (hidpi === void 0) { hidpi = false; }
+    var cssPixel = (hidpi) ? window.devicePixelRatio : 1;
+    var canvas = gl.canvas;
+    var width = Math.floor(canvas.clientWidth * cssPixel);
+    var height = Math.floor(canvas.clientHeight * cssPixel);
+    if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+    }
+}
+exports.adjustSize = adjustSize;
+
+
+/***/ }),
+
+/***/ "./src/ts/gl-utils/gl-resource.ts":
+/*!****************************************!*\
+  !*** ./src/ts/gl-utils/gl-resource.ts ***!
+  \****************************************/
+/***/ (function(__unused_webpack_module, exports) {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.GLResource = void 0;
+var GLResource = (function () {
+    function GLResource(gl) {
+        this._gl = gl;
+    }
+    GLResource.prototype.gl = function () {
+        return this._gl;
+    };
+    return GLResource;
+}());
+exports.GLResource = GLResource;
+
+
+/***/ }),
+
+/***/ "./src/ts/gl-utils/shader-manager.ts":
+/*!*******************************************!*\
+  !*** ./src/ts/gl-utils/shader-manager.ts ***!
+  \*******************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.deleteShader = exports.registerShader = exports.getShader = exports.buildShader = void 0;
+var gl_canvas_1 = __webpack_require__(/*! ./gl-canvas */ "./src/ts/gl-utils/gl-canvas.ts");
+var shader_1 = __webpack_require__(/*! ./shader */ "./src/ts/gl-utils/shader.ts");
+var ShaderSources = __importStar(__webpack_require__(/*! ./shader-sources */ "./src/ts/gl-utils/shader-sources.ts"));
+var cachedShaders = {};
+function getShader(name) {
+    return cachedShaders[name].shader;
+}
+exports.getShader = getShader;
+function buildShader(infos, callback) {
+    var sourcesPending = 2;
+    var sourcesFailed = 0;
+    function loadedSource(success) {
+        function processSource(source) {
+            return source.replace(/#INJECT\(([^)]*)\)/mg, function (match, name) {
+                if (infos.injected[name]) {
+                    return infos.injected[name];
+                }
+                return match;
+            });
+        }
+        sourcesPending--;
+        if (!success) {
+            sourcesFailed++;
+        }
+        if (sourcesPending === 0) {
+            var shader = null;
+            if (sourcesFailed === 0) {
+                var vert = ShaderSources.getSource(infos.vertexFilename);
+                var frag = ShaderSources.getSource(infos.fragmentFilename);
+                var processedVert = processSource(vert);
+                var processedFrag = processSource(frag);
+                shader = new shader_1.Shader(gl_canvas_1.gl, processedVert, processedFrag);
+            }
+            callback(shader);
+        }
+    }
+    ShaderSources.loadSource(infos.vertexFilename, loadedSource);
+    ShaderSources.loadSource(infos.fragmentFilename, loadedSource);
+}
+exports.buildShader = buildShader;
+function registerShader(name, infos, callback) {
+    function callAndClearCallbacks(cached) {
+        for (var _i = 0, _a = cached.callbacks; _i < _a.length; _i++) {
+            var cachedCallback = _a[_i];
+            cachedCallback(!cached.failed, cached.shader);
+        }
+        cached.callbacks = [];
+    }
+    if (typeof cachedShaders[name] === "undefined") {
+        cachedShaders[name] = {
+            callbacks: [callback],
+            failed: false,
+            infos: infos,
+            pending: true,
+            shader: null,
+        };
+        var cached_1 = cachedShaders[name];
+        buildShader(infos, function (builtShader) {
+            cached_1.pending = false;
+            cached_1.failed = builtShader === null;
+            cached_1.shader = builtShader;
+            callAndClearCallbacks(cached_1);
+        });
+    }
+    else {
+        var cached = cachedShaders[name];
+        if (cached.pending === true) {
+            cached.callbacks.push(callback);
+        }
+        else {
+            callAndClearCallbacks(cached);
+        }
+    }
+}
+exports.registerShader = registerShader;
+function deleteShader(name) {
+    if (typeof cachedShaders[name] !== "undefined") {
+        if (cachedShaders[name].shader !== null) {
+            cachedShaders[name].shader.freeGLResources();
+        }
+        delete cachedShaders[name];
+    }
+}
+exports.deleteShader = deleteShader;
+
+
+/***/ }),
+
+/***/ "./src/ts/gl-utils/shader-sources.ts":
+/*!*******************************************!*\
+  !*** ./src/ts/gl-utils/shader-sources.ts ***!
+  \*******************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.loadSource = exports.getSource = void 0;
+__webpack_require__(/*! ../page-interface-generated */ "./src/ts/page-interface-generated.ts");
+var cachedSources = {};
+function loadSource(filename, callback) {
+    function callAndClearCallbacks(cached) {
+        for (var _i = 0, _a = cached.callbacks; _i < _a.length; _i++) {
+            var cachedCallback = _a[_i];
+            cachedCallback(!cached.failed);
+        }
+        cached.callbacks = [];
+    }
+    if (typeof cachedSources[filename] === "undefined") {
+        cachedSources[filename] = {
+            callbacks: [callback],
+            failed: false,
+            pending: true,
+            text: null,
+        };
+        var cached_1 = cachedSources[filename];
+        var url = "./shaders/" + filename;
+        if (typeof Page.version !== "undefined") {
+            url += "?v=" + Page.version;
+        }
+        var xhr_1 = new XMLHttpRequest();
+        xhr_1.open("GET", url, true);
+        xhr_1.onload = function () {
+            if (xhr_1.readyState === 4) {
+                cached_1.pending = false;
+                if (xhr_1.status === 200) {
+                    cached_1.text = xhr_1.responseText;
+                    cached_1.failed = false;
+                }
+                else {
+                    console.error("Cannot load '" + filename + "' shader source: " + xhr_1.statusText);
+                    cached_1.failed = true;
+                }
+                callAndClearCallbacks(cached_1);
+            }
+        };
+        xhr_1.onerror = function () {
+            console.error("Cannot load '" + filename + "' shader source: " + xhr_1.statusText);
+            cached_1.pending = false;
+            cached_1.failed = true;
+            callAndClearCallbacks(cached_1);
+        };
+        xhr_1.send(null);
+    }
+    else {
+        var cached = cachedSources[filename];
+        if (cached.pending === true) {
+            cached.callbacks.push(callback);
+        }
+        else {
+            cached.callbacks = [callback];
+            callAndClearCallbacks(cached);
+        }
+    }
+}
+exports.loadSource = loadSource;
+function getSource(filename) {
+    return cachedSources[filename].text;
+}
+exports.getSource = getSource;
+
+
+/***/ }),
+
+/***/ "./src/ts/gl-utils/shader.ts":
+/*!***********************************!*\
+  !*** ./src/ts/gl-utils/shader.ts ***!
+  \***********************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Shader = void 0;
+var gl_resource_1 = __webpack_require__(/*! ./gl-resource */ "./src/ts/gl-utils/gl-resource.ts");
+function notImplemented() {
+    alert("NOT IMPLEMENTED YET");
+}
+function bindUniformFloat(gl, location, value) {
+    if (Array.isArray(value)) {
+        gl.uniform1fv(location, value);
+    }
+    else {
+        gl.uniform1f(location, value);
+    }
+}
+function bindUniformFloat2v(gl, location, value) {
+    gl.uniform2fv(location, value);
+}
+function bindUniformFloat3v(gl, location, value) {
+    gl.uniform3fv(location, value);
+}
+function bindUniformFloat4v(gl, location, value) {
+    gl.uniform4fv(location, value);
+}
+function bindUniformInt(gl, location, value) {
+    if (Array.isArray(value)) {
+        gl.uniform1iv(location, value);
+    }
+    else {
+        gl.uniform1iv(location, value);
+    }
+}
+function bindUniformInt2v(gl, location, value) {
+    gl.uniform2iv(location, value);
+}
+function bindUniformInt3v(gl, location, value) {
+    gl.uniform3iv(location, value);
+}
+function bindUniformInt4v(gl, location, value) {
+    gl.uniform4iv(location, value);
+}
+function bindUniformBool(gl, location, value) {
+    gl.uniform1i(location, +value);
+}
+function bindUniformBool2v(gl, location, value) {
+    gl.uniform2iv(location, value);
+}
+function bindUniformBool3v(gl, location, value) {
+    gl.uniform3iv(location, value);
+}
+function bindUniformBool4v(gl, location, value) {
+    gl.uniform4iv(location, value);
+}
+function bindUniformFloatMat2(gl, location, value) {
+    gl.uniformMatrix2fv(location, false, value);
+}
+function bindUniformFloatMat3(gl, location, value) {
+    gl.uniformMatrix3fv(location, false, value);
+}
+function bindUniformFloatMat4(gl, location, value) {
+    gl.uniformMatrix4fv(location, false, value);
+}
+function bindSampler2D(gl, location, unitNb, value) {
+    gl.uniform1i(location, unitNb);
+    gl.activeTexture(gl["TEXTURE" + unitNb]);
+    gl.bindTexture(gl.TEXTURE_2D, value);
+}
+function bindSamplerCube(gl, location, unitNb, value) {
+    gl.uniform1i(location, unitNb);
+    gl.activeTexture(gl["TEXTURE" + unitNb]);
+    gl.bindTexture(gl.TEXTURE_CUBE_MAP, value);
+}
+var types = {
+    0x8B50: { str: "FLOAT_VEC2", binder: bindUniformFloat2v },
+    0x8B51: { str: "FLOAT_VEC3", binder: bindUniformFloat3v },
+    0x8B52: { str: "FLOAT_VEC4", binder: bindUniformFloat4v },
+    0x8B53: { str: "INT_VEC2", binder: bindUniformInt2v },
+    0x8B54: { str: "INT_VEC3", binder: bindUniformInt3v },
+    0x8B55: { str: "INT_VEC4", binder: bindUniformInt4v },
+    0x8B56: { str: "BOOL", binder: bindUniformBool },
+    0x8B57: { str: "BOOL_VEC2", binder: bindUniformBool2v },
+    0x8B58: { str: "BOOL_VEC3", binder: bindUniformBool3v },
+    0x8B59: { str: "BOOL_VEC4", binder: bindUniformBool4v },
+    0x8B5A: { str: "FLOAT_MAT2", binder: bindUniformFloatMat2 },
+    0x8B5B: { str: "FLOAT_MAT3", binder: bindUniformFloatMat3 },
+    0x8B5C: { str: "FLOAT_MAT4", binder: bindUniformFloatMat4 },
+    0x8B5E: { str: "SAMPLER_2D", binder: bindSampler2D },
+    0x8B60: { str: "SAMPLER_CUBE", binder: bindSamplerCube },
+    0x1400: { str: "BYTE", binder: notImplemented },
+    0x1401: { str: "UNSIGNED_BYTE", binder: notImplemented },
+    0x1402: { str: "SHORT", binder: notImplemented },
+    0x1403: { str: "UNSIGNED_SHORT", binder: notImplemented },
+    0x1404: { str: "INT", binder: bindUniformInt },
+    0x1405: { str: "UNSIGNED_INT", binder: notImplemented },
+    0x1406: { str: "FLOAT", binder: bindUniformFloat },
+};
+var ShaderProgram = (function (_super) {
+    __extends(ShaderProgram, _super);
+    function ShaderProgram(gl, vertexSource, fragmentSource) {
+        var _this = this;
+        function createShader(type, source) {
+            var shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            var compileSuccess = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+            if (!compileSuccess) {
+                console.error(gl.getShaderInfoLog(shader));
+                console.log(source);
+                gl.deleteShader(shader);
+                return null;
+            }
+            return shader;
+        }
+        _this = _super.call(this, gl) || this;
+        _this.id = null;
+        _this.uCount = 0;
+        _this.aCount = 0;
+        var vertexShader = createShader(gl.VERTEX_SHADER, vertexSource);
+        var fragmentShader = createShader(gl.FRAGMENT_SHADER, fragmentSource);
+        var id = gl.createProgram();
+        gl.attachShader(id, vertexShader);
+        gl.attachShader(id, fragmentShader);
+        gl.linkProgram(id);
+        var linkSuccess = gl.getProgramParameter(id, gl.LINK_STATUS);
+        if (!linkSuccess) {
+            console.error(gl.getProgramInfoLog(id));
+            gl.deleteProgram(id);
+        }
+        else {
+            _this.id = id;
+            _this.introspection();
+        }
+        return _this;
+    }
+    ShaderProgram.prototype.freeGLResources = function () {
+        _super.prototype.gl.call(this).deleteProgram(this.id);
+        this.id = null;
+    };
+    ShaderProgram.prototype.use = function () {
+        _super.prototype.gl.call(this).useProgram(this.id);
+    };
+    ShaderProgram.prototype.bindUniforms = function () {
+        var _this = this;
+        var gl = _super.prototype.gl.call(this);
+        var currTextureUnitNb = 0;
+        Object.keys(this.u).forEach(function (uName) {
+            var uniform = _this.u[uName];
+            if (uniform.value !== null) {
+                if (uniform.type === 0x8B5E || uniform.type === 0x8B60) {
+                    var unitNb = currTextureUnitNb;
+                    types[uniform.type].binder(gl, uniform.loc, unitNb, uniform.value);
+                    currTextureUnitNb++;
+                }
+                else {
+                    types[uniform.type].binder(gl, uniform.loc, uniform.value);
+                }
+            }
+        });
+    };
+    ShaderProgram.prototype.bindAttributes = function () {
+        var _this = this;
+        Object.keys(this.a).forEach(function (aName) {
+            var attribute = _this.a[aName];
+            if (attribute.VBO !== null) {
+                attribute.VBO.bind(attribute.loc);
+            }
+        });
+    };
+    ShaderProgram.prototype.bindUniformsAndAttributes = function () {
+        this.bindUniforms();
+        this.bindAttributes();
+    };
+    ShaderProgram.prototype.introspection = function () {
+        var gl = _super.prototype.gl.call(this);
+        this.uCount = gl.getProgramParameter(this.id, gl.ACTIVE_UNIFORMS);
+        this.u = {};
+        for (var i = 0; i < this.uCount; i++) {
+            var uniform = gl.getActiveUniform(this.id, i);
+            var name_1 = uniform.name;
+            this.u[name_1] = {
+                loc: gl.getUniformLocation(this.id, name_1),
+                size: uniform.size,
+                type: uniform.type,
+                value: null,
+            };
+        }
+        this.aCount = gl.getProgramParameter(this.id, gl.ACTIVE_ATTRIBUTES);
+        this.a = {};
+        for (var i = 0; i < this.aCount; i++) {
+            var attribute = gl.getActiveAttrib(this.id, i);
+            var name_2 = attribute.name;
+            this.a[name_2] = {
+                VBO: null,
+                loc: gl.getAttribLocation(this.id, name_2),
+                size: attribute.size,
+                type: attribute.type,
+            };
+        }
+    };
+    return ShaderProgram;
+}(gl_resource_1.GLResource));
+exports.Shader = ShaderProgram;
+
+
+/***/ }),
+
+/***/ "./src/ts/gl-utils/viewport.ts":
+/*!*************************************!*\
+  !*** ./src/ts/gl-utils/viewport.ts ***!
+  \*************************************/
+/***/ (function(__unused_webpack_module, exports) {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Viewport = void 0;
+var Viewport = (function () {
+    function Viewport(left, lower, width, height) {
+        this.left = left;
+        this.lower = lower;
+        this.width = width;
+        this.height = height;
+    }
+    Viewport.setFullCanvas = function (gl) {
+        gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+    };
+    Viewport.prototype.set = function (gl) {
+        gl.viewport(this.lower, this.left, this.width, this.height);
+    };
+    return Viewport;
+}());
+exports.Viewport = Viewport;
+
+
+/***/ }),
+
 /***/ "./src/ts/misc/arithmetics.ts":
 /*!************************************!*\
   !*** ./src/ts/misc/arithmetics.ts ***!
@@ -474,6 +994,35 @@ var Color = (function () {
     return Color;
 }());
 exports.Color = Color;
+
+
+/***/ }),
+
+/***/ "./src/ts/misc/loader.ts":
+/*!*******************************!*\
+  !*** ./src/ts/misc/loader.ts ***!
+  \*******************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.registerLoadingObject = exports.registerLoadedObject = void 0;
+__webpack_require__(/*! ../page-interface-generated */ "./src/ts/page-interface-generated.ts");
+var loadingObjects = {};
+function registerLoadingObject(id) {
+    if (Object.keys(loadingObjects).length === 0) {
+        Page.Canvas.showLoader(true);
+    }
+    loadingObjects[id] = false;
+}
+exports.registerLoadingObject = registerLoadingObject;
+function registerLoadedObject(id) {
+    delete loadingObjects[id];
+    if (Object.keys(loadingObjects).length === 0) {
+        Page.Canvas.showLoader(false);
+    }
+}
+exports.registerLoadedObject = registerLoadedObject;
 
 
 /***/ }),
@@ -722,6 +1271,9 @@ var GeometryId = (function () {
     GeometryId.new = function () {
         return new GeometryId(nextFreeId++, 0);
     };
+    GeometryId.rehydrate = function (dehydrated) {
+        return new GeometryId(dehydrated.id, dehydrated.version);
+    };
     GeometryId.prototype.copy = function () {
         return new GeometryId(this.id, this.version);
     };
@@ -734,6 +1286,62 @@ var GeometryId = (function () {
     return GeometryId;
 }());
 exports.GeometryId = GeometryId;
+
+
+/***/ }),
+
+/***/ "./src/ts/plotter/plotter-canvas.ts":
+/*!******************************************!*\
+  !*** ./src/ts/plotter/plotter-canvas.ts ***!
+  \******************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.PlotterCanvas = void 0;
+var rectangle_1 = __webpack_require__(/*! ../misc/rectangle */ "./src/ts/misc/rectangle.ts");
+__webpack_require__(/*! ../page-interface-generated */ "./src/ts/page-interface-generated.ts");
+var PlotterCanvas = (function () {
+    function PlotterCanvas() {
+        var _a;
+        this.canvas = Page.Canvas.getCanvas();
+        this.cssPixel = (_a = window.devicePixelRatio) !== null && _a !== void 0 ? _a : 1;
+        this.resizeCanvas();
+    }
+    Object.defineProperty(PlotterCanvas.prototype, "viewport", {
+        get: function () {
+            return new rectangle_1.Rectangle(-0.5 * this._width, 0.5 * this._width, -0.5 * this._height, 0.5 * this._height);
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(PlotterCanvas.prototype, "width", {
+        get: function () {
+            return this._width;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(PlotterCanvas.prototype, "height", {
+        get: function () {
+            return this._height;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    PlotterCanvas.prototype.resizeCanvas = function () {
+        var actualWidth = Math.floor(this.cssPixel * this.canvas.clientWidth);
+        var actualHeight = Math.floor(this.cssPixel * this.canvas.clientHeight);
+        if (this.canvas.width !== actualWidth || this.canvas.height !== actualHeight) {
+            this.canvas.width = actualWidth;
+            this.canvas.height = actualHeight;
+        }
+        this._width = this.canvas.width;
+        this._height = this.canvas.height;
+    };
+    return PlotterCanvas;
+}());
+exports.PlotterCanvas = PlotterCanvas;
 
 
 /***/ }),
@@ -819,6 +1427,365 @@ var PlotterSVG = (function () {
     return PlotterSVG;
 }());
 exports.PlotterSVG = PlotterSVG;
+
+
+/***/ }),
+
+/***/ "./src/ts/plotter/plotter-webgl-basic.ts":
+/*!***********************************************!*\
+  !*** ./src/ts/plotter/plotter-webgl-basic.ts ***!
+  \***********************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.PlotterWebGLBasic = void 0;
+var color_1 = __webpack_require__(/*! ../misc/color */ "./src/ts/misc/color.ts");
+var Loader = __importStar(__webpack_require__(/*! ../misc/loader */ "./src/ts/misc/loader.ts"));
+var plotter_canvas_1 = __webpack_require__(/*! ./plotter-canvas */ "./src/ts/plotter/plotter-canvas.ts");
+var GLCanvas = __importStar(__webpack_require__(/*! ../gl-utils/gl-canvas */ "./src/ts/gl-utils/gl-canvas.ts"));
+var gl_canvas_1 = __webpack_require__(/*! ../gl-utils/gl-canvas */ "./src/ts/gl-utils/gl-canvas.ts");
+var ShaderManager = __importStar(__webpack_require__(/*! ../gl-utils/shader-manager */ "./src/ts/gl-utils/shader-manager.ts"));
+var viewport_1 = __webpack_require__(/*! ../gl-utils/viewport */ "./src/ts/gl-utils/viewport.ts");
+__webpack_require__(/*! ../page-interface-generated */ "./src/ts/page-interface-generated.ts");
+var PlotterWebGLBasic = (function (_super) {
+    __extends(PlotterWebGLBasic, _super);
+    function PlotterWebGLBasic() {
+        var _this = _super.call(this) || this;
+        var webglFlags = {
+            alpha: false,
+            antialias: true,
+            depth: false,
+            stencil: false,
+            preserveDrawingBuffer: false,
+        };
+        if (!GLCanvas.initGL(webglFlags)) {
+            return _this;
+        }
+        gl_canvas_1.gl.disable(gl_canvas_1.gl.CULL_FACE);
+        gl_canvas_1.gl.enable(gl_canvas_1.gl.BLEND);
+        gl_canvas_1.gl.blendFunc(gl_canvas_1.gl.SRC_ALPHA, gl_canvas_1.gl.ONE_MINUS_SRC_ALPHA);
+        gl_canvas_1.gl.disable(gl_canvas_1.gl.DEPTH_TEST);
+        gl_canvas_1.gl.disable(gl_canvas_1.gl.STENCIL_TEST);
+        PlotterWebGLBasic.asyncLoadShader("shaderLines.vert", "shaderLines.frag", function (shader) {
+            _this.shaderLines = shader;
+        });
+        PlotterWebGLBasic.asyncLoadShader("shaderPolygons.vert", "shaderPolygons.frag", function (shader) {
+            _this.shaderPolygons = shader;
+        });
+        _this.linesVbo = {
+            id: gl_canvas_1.gl.createBuffer(),
+            vboParts: [],
+        };
+        _this.polygonsVbo = {
+            id: gl_canvas_1.gl.createBuffer(),
+            vboParts: [],
+        };
+        return _this;
+    }
+    PlotterWebGLBasic.buildLinesVboBuffer = function (batchesOfLines) {
+        var bufferParts = [];
+        var totalNbVertices = 0;
+        for (var _i = 0, batchesOfLines_1 = batchesOfLines; _i < batchesOfLines_1.length; _i++) {
+            var batchOfLines = batchesOfLines_1[_i];
+            var indexOfFirstVertice = totalNbVertices;
+            var batchVerticesCount = 0;
+            for (var _a = 0, _b = batchOfLines.items; _a < _b.length; _a++) {
+                var line = _b[_a];
+                if (line.length >= 2) {
+                    batchVerticesCount += 2 + 2 * (line.length - 2);
+                }
+            }
+            totalNbVertices += batchVerticesCount;
+            bufferParts.push({
+                indexOfFirstVertice: indexOfFirstVertice,
+                verticesCount: batchVerticesCount,
+                geometryId: batchOfLines.geometryId.copy(),
+            });
+        }
+        var FLOATS_PER_VERTICE = 2;
+        var buffer = new Float32Array(FLOATS_PER_VERTICE * totalNbVertices);
+        var i = 0;
+        for (var _c = 0, batchesOfLines_2 = batchesOfLines; _c < batchesOfLines_2.length; _c++) {
+            var batchOfLines = batchesOfLines_2[_c];
+            for (var _d = 0, _e = batchOfLines.items; _d < _e.length; _d++) {
+                var line = _e[_d];
+                if (line.length >= 2) {
+                    buffer[i++] = line[0].x;
+                    buffer[i++] = line[0].y;
+                    for (var iP = 1; iP < line.length - 1; iP++) {
+                        buffer[i++] = line[iP].x;
+                        buffer[i++] = line[iP].y;
+                        buffer[i++] = line[iP].x;
+                        buffer[i++] = line[iP].y;
+                    }
+                    buffer[i++] = line[line.length - 1].x;
+                    buffer[i++] = line[line.length - 1].y;
+                }
+            }
+        }
+        if (i !== buffer.length) {
+            console.log("ALERT LINES");
+        }
+        return {
+            buffer: buffer,
+            bufferParts: bufferParts,
+        };
+    };
+    PlotterWebGLBasic.buildPolygonsVboBuffer = function (batchesOfPolygons) {
+        var bufferParts = [];
+        var totalNbVertices = 0;
+        for (var _i = 0, batchesOfPolygons_1 = batchesOfPolygons; _i < batchesOfPolygons_1.length; _i++) {
+            var batchOfPolygons = batchesOfPolygons_1[_i];
+            var indexOfFirstVertice = totalNbVertices;
+            var batchVerticesCount = 0;
+            for (var _a = 0, _b = batchOfPolygons.items; _a < _b.length; _a++) {
+                var polygon = _b[_a];
+                if (polygon.vertices.length >= 3) {
+                    batchVerticesCount += 3 * (polygon.vertices.length - 2);
+                }
+            }
+            totalNbVertices += batchVerticesCount;
+            bufferParts.push({
+                indexOfFirstVertice: indexOfFirstVertice,
+                verticesCount: batchVerticesCount,
+                geometryId: batchOfPolygons.geometryId.copy(),
+            });
+        }
+        var FLOATS_PER_VERTICE = 6;
+        var buffer = new Float32Array(FLOATS_PER_VERTICE * totalNbVertices);
+        var i = 0;
+        for (var _c = 0, batchesOfPolygons_2 = batchesOfPolygons; _c < batchesOfPolygons_2.length; _c++) {
+            var batchOfPolygons = batchesOfPolygons_2[_c];
+            for (var _d = 0, _e = batchOfPolygons.items; _d < _e.length; _d++) {
+                var polygon = _e[_d];
+                if (polygon.vertices.length >= 3) {
+                    var red = polygon.color.r / 255;
+                    var green = polygon.color.g / 255;
+                    var blue = polygon.color.b / 255;
+                    for (var iP = 1; iP < polygon.vertices.length - 1; iP++) {
+                        buffer[i++] = polygon.vertices[0].x;
+                        buffer[i++] = polygon.vertices[0].y;
+                        buffer[i++] = red;
+                        buffer[i++] = green;
+                        buffer[i++] = blue;
+                        i++;
+                        buffer[i++] = polygon.vertices[iP].x;
+                        buffer[i++] = polygon.vertices[iP].y;
+                        buffer[i++] = red;
+                        buffer[i++] = green;
+                        buffer[i++] = blue;
+                        i++;
+                        buffer[i++] = polygon.vertices[iP + 1].x;
+                        buffer[i++] = polygon.vertices[iP + 1].y;
+                        buffer[i++] = red;
+                        buffer[i++] = green;
+                        buffer[i++] = blue;
+                        i++;
+                    }
+                }
+            }
+        }
+        return {
+            buffer: buffer,
+            bufferParts: bufferParts,
+        };
+    };
+    Object.defineProperty(PlotterWebGLBasic.prototype, "isReady", {
+        get: function () {
+            return !!this.shaderLines && !!this.shaderPolygons;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    PlotterWebGLBasic.prototype.initialize = function (backgroundColor, zoom, scaling) {
+        for (var _i = 0, _a = this.linesVbo.vboParts; _i < _a.length; _i++) {
+            var vboPart = _a[_i];
+            vboPart.scheduledForDrawing = false;
+        }
+        for (var _b = 0, _c = this.polygonsVbo.vboParts; _b < _c.length; _b++) {
+            var vboPart = _c[_b];
+            vboPart.scheduledForDrawing = false;
+        }
+        viewport_1.Viewport.setFullCanvas(gl_canvas_1.gl);
+        gl_canvas_1.gl.clearColor(backgroundColor.r / 255, backgroundColor.g / 255, backgroundColor.b / 255, 1);
+        gl_canvas_1.gl.clear(gl_canvas_1.gl.COLOR_BUFFER_BIT);
+        var zoomTranslate = zoom.translate;
+        var zoomAndScalingAsUniform = [zoom.scale, zoomTranslate.x, zoomTranslate.y, scaling];
+        this.shaderLines.u["uZoom"].value = zoomAndScalingAsUniform;
+        this.shaderPolygons.u["uZoom"].value = zoomAndScalingAsUniform;
+    };
+    PlotterWebGLBasic.prototype.finalize = function () {
+        this.drawPolygonsVBO();
+        this.drawLinesVBO();
+    };
+    PlotterWebGLBasic.prototype.uploadLinesVbo = function (newLinesVbo) {
+        gl_canvas_1.gl.bindBuffer(gl_canvas_1.gl.ARRAY_BUFFER, this.linesVbo.id);
+        gl_canvas_1.gl.bufferData(gl_canvas_1.gl.ARRAY_BUFFER, newLinesVbo.buffer, gl_canvas_1.gl.DYNAMIC_DRAW);
+        this.linesVbo.vboParts = [];
+        for (var _i = 0, _a = newLinesVbo.bufferParts; _i < _a.length; _i++) {
+            var bufferPart = _a[_i];
+            this.linesVbo.vboParts.push({
+                indexOfFirstVertice: bufferPart.indexOfFirstVertice,
+                verticesCount: bufferPart.verticesCount,
+                scheduledForDrawing: false,
+                geometryId: bufferPart.geometryId.copy(),
+                color: color_1.Color.GREEN,
+                alpha: 1,
+            });
+        }
+    };
+    PlotterWebGLBasic.prototype.uploadPolygonsVbo = function (newPolygonsVbo) {
+        gl_canvas_1.gl.bindBuffer(gl_canvas_1.gl.ARRAY_BUFFER, this.polygonsVbo.id);
+        gl_canvas_1.gl.bufferData(gl_canvas_1.gl.ARRAY_BUFFER, newPolygonsVbo.buffer, gl_canvas_1.gl.DYNAMIC_DRAW);
+        this.polygonsVbo.vboParts = [];
+        for (var _i = 0, _a = newPolygonsVbo.bufferParts; _i < _a.length; _i++) {
+            var bufferPart = _a[_i];
+            this.polygonsVbo.vboParts.push({
+                indexOfFirstVertice: bufferPart.indexOfFirstVertice,
+                verticesCount: bufferPart.verticesCount,
+                scheduledForDrawing: false,
+                geometryId: bufferPart.geometryId.copy(),
+                alpha: 1,
+            });
+        }
+    };
+    PlotterWebGLBasic.prototype.registerLinesVboPartForDrawing = function (vboPartId, color, alpha) {
+        var uploadedVBOPart = PlotterWebGLBasic.findUploadedVBOPart(this.linesVbo, vboPartId);
+        if (uploadedVBOPart) {
+            uploadedVBOPart.color = color;
+            uploadedVBOPart.alpha = alpha;
+            uploadedVBOPart.scheduledForDrawing = true;
+            return true;
+        }
+        return false;
+    };
+    PlotterWebGLBasic.prototype.registerPolygonsVboPartForDrawing = function (vboPartId, alpha) {
+        var uploadedVBOPart = PlotterWebGLBasic.findUploadedVBOPart(this.polygonsVbo, vboPartId);
+        if (uploadedVBOPart) {
+            uploadedVBOPart.alpha = alpha;
+            uploadedVBOPart.scheduledForDrawing = true;
+            return true;
+        }
+        return false;
+    };
+    PlotterWebGLBasic.prototype.drawLinesVBO = function () {
+        var vbpPartsScheduledForDrawing = PlotterWebGLBasic.selectVBOPartsScheduledForDrawing(this.linesVbo);
+        if (this.shaderLines && vbpPartsScheduledForDrawing.length > 0) {
+            this.shaderLines.use();
+            var aVertexLocation = this.shaderLines.a["aVertex"].loc;
+            gl_canvas_1.gl.enableVertexAttribArray(aVertexLocation);
+            gl_canvas_1.gl.bindBuffer(gl_canvas_1.gl.ARRAY_BUFFER, this.linesVbo.id);
+            gl_canvas_1.gl.vertexAttribPointer(aVertexLocation, 2, gl_canvas_1.gl.FLOAT, false, 0, 0);
+            this.shaderLines.u["uScreenSize"].value = [0.5 * this.width, -0.5 * this.height];
+            var currentVboPartId = 0;
+            while (currentVboPartId < vbpPartsScheduledForDrawing.length) {
+                var currentVboPart = vbpPartsScheduledForDrawing[currentVboPartId];
+                var indexOfFirstVertice = currentVboPart.indexOfFirstVertice;
+                var verticesCount = currentVboPart.verticesCount;
+                var nextVboPart = vbpPartsScheduledForDrawing[currentVboPartId + 1];
+                while (PlotterWebGLBasic.canLinesVboPartsBeMerged(currentVboPart, nextVboPart)) {
+                    verticesCount += nextVboPart.verticesCount;
+                    currentVboPartId++;
+                    currentVboPart = nextVboPart;
+                    nextVboPart = vbpPartsScheduledForDrawing[currentVboPartId + 1];
+                }
+                this.shaderLines.u["uColor"].value = [currentVboPart.color.r / 255, currentVboPart.color.g / 255, currentVboPart.color.b / 255, currentVboPart.alpha];
+                this.shaderLines.bindUniforms();
+                gl_canvas_1.gl.drawArrays(gl_canvas_1.gl.LINES, indexOfFirstVertice, verticesCount);
+                currentVboPartId++;
+            }
+        }
+    };
+    PlotterWebGLBasic.prototype.drawPolygonsVBO = function () {
+        var vbpPartsScheduledForDrawing = PlotterWebGLBasic.selectVBOPartsScheduledForDrawing(this.polygonsVbo);
+        if (this.shaderPolygons && vbpPartsScheduledForDrawing.length > 0) {
+            this.shaderPolygons.use();
+            var BYTES_PER_FLOAT = Float32Array.BYTES_PER_ELEMENT;
+            var aPositionLoc = this.shaderPolygons.a["aPosition"].loc;
+            var aColorLoc = this.shaderPolygons.a["aColor"].loc;
+            gl_canvas_1.gl.bindBuffer(gl_canvas_1.gl.ARRAY_BUFFER, this.polygonsVbo.id);
+            gl_canvas_1.gl.enableVertexAttribArray(aPositionLoc);
+            gl_canvas_1.gl.vertexAttribPointer(aPositionLoc, 2, gl_canvas_1.gl.FLOAT, false, BYTES_PER_FLOAT * 6, 0);
+            gl_canvas_1.gl.enableVertexAttribArray(aColorLoc);
+            gl_canvas_1.gl.vertexAttribPointer(aColorLoc, 4, gl_canvas_1.gl.FLOAT, false, BYTES_PER_FLOAT * 6, BYTES_PER_FLOAT * 2);
+            this.shaderPolygons.u["uScreenSize"].value = [0.5 * this.width, -0.5 * this.height];
+            for (var _i = 0, vbpPartsScheduledForDrawing_1 = vbpPartsScheduledForDrawing; _i < vbpPartsScheduledForDrawing_1.length; _i++) {
+                var vboPart = vbpPartsScheduledForDrawing_1[_i];
+                this.shaderPolygons.u["uAlpha"].value = vboPart.alpha;
+                this.shaderPolygons.bindUniforms();
+                gl_canvas_1.gl.drawArrays(gl_canvas_1.gl.TRIANGLES, vboPart.indexOfFirstVertice, vboPart.verticesCount);
+            }
+        }
+    };
+    PlotterWebGLBasic.selectVBOPartsScheduledForDrawing = function (partitionedVBO) {
+        return partitionedVBO.vboParts.filter(function (vboPart) { return vboPart.scheduledForDrawing; });
+    };
+    PlotterWebGLBasic.findUploadedVBOPart = function (uploadedVBO, searchedGeometryId) {
+        return uploadedVBO.vboParts.find(function (vboPart) { return vboPart.geometryId.isSameAs(searchedGeometryId); });
+    };
+    PlotterWebGLBasic.canLinesVboPartsBeMerged = function (vboPart1, vboPart2) {
+        return vboPart1 && vboPart2 &&
+            (vboPart2.indexOfFirstVertice === vboPart1.indexOfFirstVertice + vboPart1.verticesCount) &&
+            (vboPart1.color.r === vboPart2.color.r) &&
+            (vboPart1.color.g === vboPart2.color.g) &&
+            (vboPart1.color.b === vboPart2.color.b) &&
+            (vboPart1.alpha === vboPart2.alpha);
+    };
+    PlotterWebGLBasic.asyncLoadShader = function (vertexFilename, fragmentFilename, callback) {
+        var id = vertexFilename + "__" + fragmentFilename + "__" + Math.random();
+        Loader.registerLoadingObject(id);
+        ShaderManager.buildShader({
+            fragmentFilename: fragmentFilename,
+            vertexFilename: vertexFilename,
+            injected: {},
+        }, function (builtShader) {
+            Loader.registerLoadedObject(id);
+            if (builtShader !== null) {
+                callback(builtShader);
+            }
+            else {
+                Page.Demopage.setErrorMessage(name + "-shader-error", "Failed to build '" + name + "' shader.");
+            }
+        });
+    };
+    return PlotterWebGLBasic;
+}(plotter_canvas_1.PlotterCanvas));
+exports.PlotterWebGLBasic = PlotterWebGLBasic;
 
 
 /***/ }),
@@ -1349,11 +2316,64 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.NewSvgOutput = exports.NewMetrics = void 0;
+exports.NewSvgOutput = exports.NewMetrics = exports.NewGeometry = void 0;
+var NewGeometry = __importStar(__webpack_require__(/*! ./new-geometry */ "./src/ts/worker/messages/from-worker/new-geometry.ts"));
+exports.NewGeometry = NewGeometry;
 var NewMetrics = __importStar(__webpack_require__(/*! ./new-metrics */ "./src/ts/worker/messages/from-worker/new-metrics.ts"));
 exports.NewMetrics = NewMetrics;
 var NewSvgOutput = __importStar(__webpack_require__(/*! ./new-svg-output */ "./src/ts/worker/messages/from-worker/new-svg-output.ts"));
 exports.NewSvgOutput = NewSvgOutput;
+
+
+/***/ }),
+
+/***/ "./src/ts/worker/messages/from-worker/new-geometry.ts":
+/*!************************************************************!*\
+  !*** ./src/ts/worker/messages/from-worker/new-geometry.ts ***!
+  \************************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.sendMessage = exports.addListener = void 0;
+var geometry_id_1 = __webpack_require__(/*! ../../../plotter/geometry-id */ "./src/ts/plotter/geometry-id.ts");
+var message_1 = __webpack_require__(/*! ../message */ "./src/ts/worker/messages/message.ts");
+var verb = message_1.EVerb.NEW_GEOMETRY;
+function sendMessage(polygonsVboBuffer, linesVboBuffer) {
+    var messageData = {
+        polygonsVboBuffer: polygonsVboBuffer,
+        linesVboBuffer: linesVboBuffer,
+    };
+    var transfer = [
+        polygonsVboBuffer.buffer.buffer,
+        linesVboBuffer.buffer.buffer,
+    ];
+    message_1.sendMessageFromWorker(verb, messageData, transfer);
+}
+exports.sendMessage = sendMessage;
+function rehydrateVboBuffer(vboBuffer) {
+    var bufferParts = [];
+    for (var _i = 0, _a = vboBuffer.bufferParts; _i < _a.length; _i++) {
+        var dehydratedBufferPart = _a[_i];
+        bufferParts.push({
+            indexOfFirstVertice: dehydratedBufferPart.indexOfFirstVertice,
+            verticesCount: dehydratedBufferPart.verticesCount,
+            geometryId: geometry_id_1.GeometryId.rehydrate(dehydratedBufferPart.geometryId),
+        });
+    }
+    return {
+        buffer: vboBuffer.buffer,
+        bufferParts: bufferParts,
+    };
+}
+function addListener(worker, listener) {
+    message_1.addListenerToWorker(worker, verb, function (data) {
+        var polygonsVboBuffer = rehydrateVboBuffer(data.polygonsVboBuffer);
+        var linesVboBuffer = rehydrateVboBuffer(data.linesVboBuffer);
+        listener(polygonsVboBuffer, linesVboBuffer);
+    });
+}
+exports.addListener = addListener;
 
 
 /***/ }),
@@ -1431,14 +2451,15 @@ var EVerb;
     EVerb["UPDATE"] = "update";
     EVerb["NEW_METRICS"] = "new-metrics";
     EVerb["NEW_SVG_OUTPUT"] = "new-svg-output";
+    EVerb["NEW_GEOMETRY"] = "new-geometry";
 })(EVerb || (EVerb = {}));
 exports.EVerb = EVerb;
-function sendMessage(target, verb, data) {
+function sendMessage(target, verb, data, transfer) {
     var messageData = {
         verb: verb,
         data: data,
     };
-    target.postMessage(messageData);
+    target.postMessage(messageData, transfer);
 }
 function addListener(context, verb, callback) {
     context.addEventListener("message", function (event) {
@@ -1455,8 +2476,8 @@ function addListenerToWorker(worker, verb, callback) {
     addListener(worker, verb, callback);
 }
 exports.addListenerToWorker = addListenerToWorker;
-function sendMessageFromWorker(verb, data) {
-    sendMessage(self, verb, data);
+function sendMessageFromWorker(verb, data, transfer) {
+    sendMessage(self, verb, data, transfer);
 }
 exports.sendMessageFromWorker = sendMessageFromWorker;
 function addListenerFromWorker(verb, callback) {
@@ -1685,6 +2706,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.WorkerEngine = void 0;
 var engine_1 = __webpack_require__(/*! ../engine/engine */ "./src/ts/engine/engine.ts");
 var plotter_svg_1 = __webpack_require__(/*! ../plotter/plotter-svg */ "./src/ts/plotter/plotter-svg.ts");
+var plotter_webgl_basic_1 = __webpack_require__(/*! ../plotter/plotter-webgl-basic */ "./src/ts/plotter/plotter-webgl-basic.ts");
 var MessagesToMain = __importStar(__webpack_require__(/*! ./messages/from-worker/messages */ "./src/ts/worker/messages/from-worker/messages.ts"));
 var WorkerEngine = (function (_super) {
     __extends(WorkerEngine, _super);
@@ -1695,9 +2717,30 @@ var WorkerEngine = (function (_super) {
         var svgOutput = this.drawAsSvg(width, height, scaling, backgroundColor, linesColor);
         MessagesToMain.NewSvgOutput.sendMessage(svgOutput);
     };
+    WorkerEngine.prototype.onGeometryChange = function () {
+        this.sendVbos();
+        this.updateIndicators();
+    };
     WorkerEngine.prototype.updateIndicators = function () {
         var metrics = this.computeMetrics();
         MessagesToMain.NewMetrics.sendMessage(metrics);
+    };
+    WorkerEngine.prototype.sendVbos = function () {
+        var lastLayer = this.layers[this.layers.length - 1];
+        var polygonsVboBuffer = plotter_webgl_basic_1.PlotterWebGLBasic.buildPolygonsVboBuffer([{
+                items: lastLayer.primitives.items,
+                geometryId: lastLayer.primitives.geometryId.copy(),
+            }]);
+        var batchesOfLines = [];
+        for (var _i = 0, _a = this.layers; _i < _a.length; _i++) {
+            var layer = _a[_i];
+            batchesOfLines.push(layer.outlines);
+        }
+        var linesVboBuffer = plotter_webgl_basic_1.PlotterWebGLBasic.buildLinesVboBuffer(batchesOfLines);
+        MessagesToMain.NewGeometry.sendMessage(polygonsVboBuffer, linesVboBuffer);
+        if (polygonsVboBuffer.buffer.length !== 0) {
+            console.warn("Buffer was copied and not transferred...");
+        }
     };
     WorkerEngine.prototype.drawAsSvg = function (width, height, scaling, backgroundColor, linesColor) {
         var svgPlotter = new plotter_svg_1.PlotterSVG(width, height);

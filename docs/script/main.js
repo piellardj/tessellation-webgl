@@ -94,6 +94,9 @@ var EngineMonothreaded = (function (_super) {
         var svgString = svgPlotter.output();
         web_1.downloadSvgOutput(svgString);
     };
+    EngineMonothreaded.prototype.onGeometryChange = function () {
+        this.updateIndicators();
+    };
     EngineMonothreaded.prototype.updateIndicators = function () {
         var metrics = this.computeMetrics();
         engine_metrics_1.updateEngineMetricsIndicators(metrics);
@@ -141,12 +144,15 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.EngineMultithreaded = void 0;
 var web_1 = __webpack_require__(/*! ../misc/web */ "./src/ts/misc/web.ts");
+var zoom_1 = __webpack_require__(/*! ../misc/zoom */ "./src/ts/misc/zoom.ts");
 var MessagesFromWorker = __importStar(__webpack_require__(/*! ../worker/messages/from-worker/messages */ "./src/ts/worker/messages/from-worker/messages.ts"));
 var MessagesToWorker = __importStar(__webpack_require__(/*! ../worker/messages/to-worker/messages */ "./src/ts/worker/messages/to-worker/messages.ts"));
 var engine_metrics_1 = __webpack_require__(/*! ./engine-metrics */ "./src/ts/engine/engine-metrics.ts");
 __webpack_require__(/*! ../page-interface-generated */ "./src/ts/page-interface-generated.ts");
 var EngineMultithreaded = (function () {
     function EngineMultithreaded() {
+        var _this = this;
+        this.hasSomethingNewToDraw = true;
         this.worker = new Worker("script/worker.js?v=" + Page.version);
         MessagesFromWorker.NewMetrics.addListener(this.worker, function (engineMetrics) {
             engine_metrics_1.updateEngineMetricsIndicators(engineMetrics);
@@ -154,12 +160,52 @@ var EngineMultithreaded = (function () {
         MessagesFromWorker.NewSvgOutput.addListener(this.worker, function (output) {
             web_1.downloadSvgOutput(output);
         });
+        MessagesFromWorker.NewGeometry.addListener(this.worker, function (polygonsVboBuffer, linesVboBuffer) {
+            _this.polygonsVboBuffer = polygonsVboBuffer;
+            _this.linesVboBuffer = linesVboBuffer;
+            _this.hasSomethingNewToDraw = true;
+        });
     }
     EngineMultithreaded.prototype.update = function (viewport, instantZoom, wantedDepth, subdivisionBalance, colorVariation) {
         MessagesToWorker.Update.sendMessage(this.worker, viewport, instantZoom, wantedDepth, subdivisionBalance, colorVariation);
-        return true;
+        return this.hasSomethingNewToDraw;
     };
-    EngineMultithreaded.prototype.draw = function (_plotter, _scaling, _backgroundColor, _linesColor) {
+    EngineMultithreaded.prototype.draw = function (plotter, scaling, backgroundColor, linesColor) {
+        this.hasSomethingNewToDraw = false;
+        plotter.initialize(backgroundColor, zoom_1.Zoom.noZoom(), scaling);
+        if (this.polygonsVboBuffer) {
+            var needToReupload = false;
+            for (var _i = 0, _a = this.polygonsVboBuffer.bufferParts; _i < _a.length; _i++) {
+                var polygonsVboPart = _a[_i];
+                if (!plotter.registerPolygonsVboPartForDrawing(polygonsVboPart.geometryId, 1)) {
+                    needToReupload = true;
+                }
+            }
+            if (needToReupload) {
+                plotter.uploadPolygonsVbo(this.polygonsVboBuffer);
+                for (var _b = 0, _c = this.polygonsVboBuffer.bufferParts; _b < _c.length; _b++) {
+                    var polygonsVboPart = _c[_b];
+                    plotter.registerPolygonsVboPartForDrawing(polygonsVboPart.geometryId, 1);
+                }
+            }
+        }
+        if (this.linesVboBuffer && linesColor) {
+            var needToReupload = false;
+            for (var _d = 0, _e = this.linesVboBuffer.bufferParts; _d < _e.length; _d++) {
+                var linesVboPart = _e[_d];
+                if (!plotter.registerLinesVboPartForDrawing(linesVboPart.geometryId, linesColor, 1)) {
+                    needToReupload = true;
+                }
+            }
+            if (needToReupload) {
+                plotter.uploadLinesVbo(this.linesVboBuffer);
+                for (var _f = 0, _g = this.linesVboBuffer.bufferParts; _f < _g.length; _f++) {
+                    var linesVboPart = _g[_f];
+                    plotter.registerLinesVboPartForDrawing(linesVboPart.geometryId, linesColor, 1);
+                }
+            }
+        }
+        plotter.finalize();
     };
     EngineMultithreaded.prototype.reset = function (viewport, primitiveType) {
         MessagesToWorker.Reset.sendMessage(this.worker, viewport, primitiveType);
@@ -170,6 +216,7 @@ var EngineMultithreaded = (function () {
     EngineMultithreaded.prototype.downloadAsSvg = function (width, height, scaling, backgroundColor, linesColor) {
         MessagesToWorker.DownloadAsSvg.sendMessage(this.worker, width, height, scaling, backgroundColor, linesColor);
     };
+    EngineMultithreaded.isSupported = (typeof Worker !== "undefined");
     return EngineMultithreaded;
 }());
 exports.EngineMultithreaded = EngineMultithreaded;
@@ -217,8 +264,8 @@ var Engine = (function () {
                     layer.primitives.geometryId.registerChange();
                     layer.outlines.geometryId.registerChange();
                 }
+                _this.onGeometryChange();
             }
-            _this.updateIndicators();
         };
         this.maintainanceThrottle.runIfAvailable(maintainance);
         return somethingChanged;
@@ -244,7 +291,7 @@ var Engine = (function () {
                 },
                 birthTimestamp: performance.now(),
             }];
-        this.updateIndicators();
+        this.onGeometryChange();
     };
     Engine.prototype.recomputeColors = function (colorVariation) {
         var newColor = this.computeRootPrimitiveColor();
@@ -253,6 +300,7 @@ var Engine = (function () {
             var layer = _a[_i];
             layer.primitives.geometryId.registerChange();
         }
+        this.onGeometryChange();
     };
     Engine.prototype.computeMetrics = function () {
         var treeDepth = this.rootPrimitive.treeDepth();
@@ -1150,6 +1198,9 @@ if (parameters_1.Parameters.debugMode) {
 }
 else {
     if (parameters_1.Parameters.multithreaded) {
+        if (!engine_multithreaded_1.EngineMultithreaded.isSupported) {
+            Page.Demopage.setErrorMessage("worker-not-supported", "Your browser does not the multithreaded mode because it does not support Web Workers.");
+        }
         var engine = new engine_multithreaded_1.EngineMultithreaded();
         var plotter = new plotter_webgl_basic_1.PlotterWebGLBasic();
         main(engine, plotter);
@@ -1165,6 +1216,7 @@ else {
             main(engine, plotter);
         }
     }
+    Page.Canvas.setIndicatorText("multithreaded", parameters_1.Parameters.multithreaded ? "yes" : "no");
 }
 
 
@@ -1896,6 +1948,9 @@ var GeometryId = (function () {
     }
     GeometryId.new = function () {
         return new GeometryId(nextFreeId++, 0);
+    };
+    GeometryId.rehydrate = function (dehydrated) {
+        return new GeometryId(dehydrated.id, dehydrated.version);
     };
     GeometryId.prototype.copy = function () {
         return new GeometryId(this.id, this.version);
@@ -3303,11 +3358,64 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.NewSvgOutput = exports.NewMetrics = void 0;
+exports.NewSvgOutput = exports.NewMetrics = exports.NewGeometry = void 0;
+var NewGeometry = __importStar(__webpack_require__(/*! ./new-geometry */ "./src/ts/worker/messages/from-worker/new-geometry.ts"));
+exports.NewGeometry = NewGeometry;
 var NewMetrics = __importStar(__webpack_require__(/*! ./new-metrics */ "./src/ts/worker/messages/from-worker/new-metrics.ts"));
 exports.NewMetrics = NewMetrics;
 var NewSvgOutput = __importStar(__webpack_require__(/*! ./new-svg-output */ "./src/ts/worker/messages/from-worker/new-svg-output.ts"));
 exports.NewSvgOutput = NewSvgOutput;
+
+
+/***/ }),
+
+/***/ "./src/ts/worker/messages/from-worker/new-geometry.ts":
+/*!************************************************************!*\
+  !*** ./src/ts/worker/messages/from-worker/new-geometry.ts ***!
+  \************************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.sendMessage = exports.addListener = void 0;
+var geometry_id_1 = __webpack_require__(/*! ../../../plotter/geometry-id */ "./src/ts/plotter/geometry-id.ts");
+var message_1 = __webpack_require__(/*! ../message */ "./src/ts/worker/messages/message.ts");
+var verb = message_1.EVerb.NEW_GEOMETRY;
+function sendMessage(polygonsVboBuffer, linesVboBuffer) {
+    var messageData = {
+        polygonsVboBuffer: polygonsVboBuffer,
+        linesVboBuffer: linesVboBuffer,
+    };
+    var transfer = [
+        polygonsVboBuffer.buffer.buffer,
+        linesVboBuffer.buffer.buffer,
+    ];
+    message_1.sendMessageFromWorker(verb, messageData, transfer);
+}
+exports.sendMessage = sendMessage;
+function rehydrateVboBuffer(vboBuffer) {
+    var bufferParts = [];
+    for (var _i = 0, _a = vboBuffer.bufferParts; _i < _a.length; _i++) {
+        var dehydratedBufferPart = _a[_i];
+        bufferParts.push({
+            indexOfFirstVertice: dehydratedBufferPart.indexOfFirstVertice,
+            verticesCount: dehydratedBufferPart.verticesCount,
+            geometryId: geometry_id_1.GeometryId.rehydrate(dehydratedBufferPart.geometryId),
+        });
+    }
+    return {
+        buffer: vboBuffer.buffer,
+        bufferParts: bufferParts,
+    };
+}
+function addListener(worker, listener) {
+    message_1.addListenerToWorker(worker, verb, function (data) {
+        var polygonsVboBuffer = rehydrateVboBuffer(data.polygonsVboBuffer);
+        var linesVboBuffer = rehydrateVboBuffer(data.linesVboBuffer);
+        listener(polygonsVboBuffer, linesVboBuffer);
+    });
+}
+exports.addListener = addListener;
 
 
 /***/ }),
@@ -3385,14 +3493,15 @@ var EVerb;
     EVerb["UPDATE"] = "update";
     EVerb["NEW_METRICS"] = "new-metrics";
     EVerb["NEW_SVG_OUTPUT"] = "new-svg-output";
+    EVerb["NEW_GEOMETRY"] = "new-geometry";
 })(EVerb || (EVerb = {}));
 exports.EVerb = EVerb;
-function sendMessage(target, verb, data) {
+function sendMessage(target, verb, data, transfer) {
     var messageData = {
         verb: verb,
         data: data,
     };
-    target.postMessage(messageData);
+    target.postMessage(messageData, transfer);
 }
 function addListener(context, verb, callback) {
     context.addEventListener("message", function (event) {
@@ -3409,8 +3518,8 @@ function addListenerToWorker(worker, verb, callback) {
     addListener(worker, verb, callback);
 }
 exports.addListenerToWorker = addListenerToWorker;
-function sendMessageFromWorker(verb, data) {
-    sendMessage(self, verb, data);
+function sendMessageFromWorker(verb, data, transfer) {
+    sendMessage(self, verb, data, transfer);
 }
 exports.sendMessageFromWorker = sendMessageFromWorker;
 function addListenerFromWorker(verb, callback) {
