@@ -14,6 +14,8 @@ import "../page-interface-generated";
 
 
 class EngineMultithreaded implements IEngine<PlotterWebGLBasic> {
+    public static readonly isSupported: boolean = (typeof Worker !== "undefined");
+
     private readonly worker: Worker;
 
     private polygonsVboBuffer: IVboBuffer;

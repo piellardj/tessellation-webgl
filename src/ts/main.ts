@@ -96,6 +96,10 @@ if (Parameters.debugMode) {
     Testing.main();
 } else {
     if (Parameters.multithreaded) {
+        if (!EngineMultithreaded.isSupported) {
+            Page.Demopage.setErrorMessage("worker-not-supported", "Your browser does not the multithreaded mode because it does not support Web Workers.");
+        }
+
         const engine = new EngineMultithreaded();
         const plotter = new PlotterWebGLBasic();
         main<typeof plotter>(engine, plotter);
