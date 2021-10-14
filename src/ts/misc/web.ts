@@ -34,7 +34,7 @@ function getQueryStringValue(name: string): string | null {
         return params.get(name);
     }
 
-    if (window.location.search.length > 0) {
+    if (window.location.search.length > 0) { // IE11
         const search = window.location.search.slice(1); // remove leading "?"
         const words = search.split("&");
         for (const word of words) {
@@ -58,6 +58,21 @@ function setQueryStringValue(name: string, value: string | null): void {
             params.set(name, value);
         }
         window.location.search = params.toString();
+    } else { // IE11
+        const paramsArray = window.location.search.split("&");
+        const paramToAdd = `${name}=${encodeURIComponent(value)}`;
+        let paramAlreadyExists = false;
+        for (let i = 0; i < paramsArray.length; i++) {
+            if (paramsArray[i].indexOf(name + "=") === 0) {
+                paramsArray[i] = paramToAdd;
+                paramAlreadyExists = true;
+                break;
+            }
+        }
+        if (!paramAlreadyExists) {
+            paramsArray.push(paramToAdd);
+        }
+        window.location.search = paramsArray.join("&");
     }
 }
 

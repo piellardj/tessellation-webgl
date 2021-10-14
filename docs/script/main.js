@@ -1697,6 +1697,22 @@ function setQueryStringValue(name, value) {
         }
         window.location.search = params.toString();
     }
+    else {
+        var paramsArray = window.location.search.split("&");
+        var paramToAdd = name + "=" + encodeURIComponent(value);
+        var paramAlreadyExists = false;
+        for (var i = 0; i < paramsArray.length; i++) {
+            if (paramsArray[i].indexOf(name + "=") === 0) {
+                paramsArray[i] = paramToAdd;
+                paramAlreadyExists = true;
+                break;
+            }
+        }
+        if (!paramAlreadyExists) {
+            paramsArray.push(paramToAdd);
+        }
+        window.location.search = paramsArray.join("&");
+    }
 }
 exports.setQueryStringValue = setQueryStringValue;
 
