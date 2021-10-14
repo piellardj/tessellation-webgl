@@ -903,7 +903,19 @@ function addListener(context, verb, callback) {
         }
     });
 }
+var nowAttributeName = "performanceNow";
+var emulatePerformanceNow = false;
+if (typeof self.performance === "undefined" || typeof self.performance.now !== "function") {
+    console.log("Worker doesn't support performance.now()... Emulating it.");
+    emulatePerformanceNow = true;
+    self.performance = {
+        now: function () { return 0; },
+    };
+}
 function sendMessageToWorker(worker, verb, data) {
+    if (emulatePerformanceNow) {
+        data[nowAttributeName] = performance.now();
+    }
     sendMessage(worker, verb, data);
 }
 exports.sendMessageToWorker = sendMessageToWorker;
@@ -916,7 +928,17 @@ function sendMessageFromWorker(verb, data, transfer) {
 }
 exports.sendMessageFromWorker = sendMessageFromWorker;
 function addListenerFromWorker(verb, callback) {
-    addListener(self, verb, callback);
+    if (emulatePerformanceNow) {
+        var callbackWrapper = function (data) {
+            var performanceNow = data[nowAttributeName];
+            self.performance.now = function () { return performanceNow; };
+            callback(data);
+        };
+        addListener(self, verb, callbackWrapper);
+    }
+    else {
+        addListener(self, verb, callback);
+    }
 }
 exports.addListenerFromWorker = addListenerFromWorker;
 
@@ -1127,6 +1149,7 @@ var engine_monothreaded_1 = __webpack_require__(/*! ./engine/engine-monothreaded
 var engine_multithreaded_1 = __webpack_require__(/*! ./engine/engine-multithreaded */ "./src/ts/engine/engine-multithreaded.ts");
 var color_1 = __webpack_require__(/*! ./misc/color */ "./src/ts/misc/color.ts");
 var frame_time_monitor_1 = __webpack_require__(/*! ./misc/frame-time-monitor */ "./src/ts/misc/frame-time-monitor.ts");
+var polyfills_1 = __webpack_require__(/*! ./misc/polyfills */ "./src/ts/misc/polyfills.ts");
 var zoom_1 = __webpack_require__(/*! ./misc/zoom */ "./src/ts/misc/zoom.ts");
 var parameters_1 = __webpack_require__(/*! ./parameters */ "./src/ts/parameters.ts");
 var plotter_canvas_2d_1 = __webpack_require__(/*! ./plotter/plotter-canvas-2d */ "./src/ts/plotter/plotter-canvas-2d.ts");
@@ -1196,6 +1219,7 @@ function main(engine, plotter) {
     }
     mainLoop();
 }
+polyfills_1.registerPolyfills();
 if (parameters_1.Parameters.debugMode) {
     Testing.main();
 }
@@ -1275,25 +1299,6 @@ exports.squaredDistance = squaredDistance;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Color = void 0;
-function registerPadStartPolyfill() {
-    if (typeof String.prototype.padStart !== "function") {
-        String.prototype.padStart = function padStart(maxLength, fillString) {
-            if (this.length > maxLength) {
-                return String(this);
-            }
-            if (!fillString) {
-                fillString = " ";
-            }
-            var nbRepeats = Math.ceil((maxLength - this.length) / fillString.length);
-            var result = "";
-            for (var i = 0; i < nbRepeats; i++) {
-                result += fillString;
-            }
-            return result + this;
-        };
-    }
-}
-registerPadStartPolyfill();
 var Color = (function () {
     function Color(r, g, b) {
         this.r = r;
@@ -1427,6 +1432,54 @@ function registerLoadedObject(id) {
     }
 }
 exports.registerLoadedObject = registerLoadedObject;
+
+
+/***/ }),
+
+/***/ "./src/ts/misc/polyfills.ts":
+/*!**********************************!*\
+  !*** ./src/ts/misc/polyfills.ts ***!
+  \**********************************/
+/***/ (function(__unused_webpack_module, exports) {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.registerPolyfills = void 0;
+function registerPadStartPolyfill() {
+    if (typeof String.prototype.padStart !== "function") {
+        String.prototype.padStart = function padStart(maxLength, fillString) {
+            if (this.length > maxLength) {
+                return String(this);
+            }
+            if (!fillString) {
+                fillString = " ";
+            }
+            var nbRepeats = Math.ceil((maxLength - this.length) / fillString.length);
+            var result = "";
+            for (var i = 0; i < nbRepeats; i++) {
+                result += fillString;
+            }
+            return result + this;
+        };
+    }
+}
+function registerArrayFindPolyfill() {
+    if (typeof Array.prototype.find !== "function") {
+        Array.prototype.find = function find(predicate) {
+            for (var i = 0; i < this.length; i++) {
+                if (predicate(this[i], i, this)) {
+                    return this[i];
+                }
+            }
+            return null;
+        };
+    }
+}
+function registerPolyfills() {
+    registerPadStartPolyfill();
+    registerArrayFindPolyfill();
+}
+exports.registerPolyfills = registerPolyfills;
 
 
 /***/ }),

@@ -31,7 +31,20 @@ function addListener<TData>(context: any, verb: EVerb, callback: (data: TData) =
     });
 }
 
+const nowAttributeName = "performanceNow";
+let emulatePerformanceNow = false;
+if (typeof self.performance === "undefined" || typeof self.performance.now !== "function") {
+    console.log("Worker doesn't support performance.now()... Emulating it."); // IE11
+    emulatePerformanceNow = true;
+    (self as any).performance = {
+        now: () => 0,
+    };
+}
+
 function sendMessageToWorker<TData>(worker: Worker, verb: EVerb, data: TData): void {
+    if (emulatePerformanceNow) {
+        (data as any)[nowAttributeName] = performance.now(); // send to the worker the now() of the main thread
+    }
     sendMessage<TData>(worker, verb, data);
 }
 function addListenerToWorker<TData>(worker: Worker, verb: EVerb, callback: (data: TData) => unknown): void {
@@ -42,7 +55,16 @@ function sendMessageFromWorker<TData>(verb: EVerb, data: TData, transfer?: Trans
     sendMessage<TData>(self, verb, data, transfer);
 }
 function addListenerFromWorker<TData>(verb: EVerb, callback: (data: TData) => unknown): void {
-    addListener<TData>(self as any, verb, callback);
+    if (emulatePerformanceNow) {
+        const callbackWrapper = (data: TData) => {
+            const performanceNow = (data as any)[nowAttributeName]; // read from the worker the now() sent by the main thread
+            (self as any).performance.now = () => performanceNow;
+            callback(data);
+        };
+        addListener<TData>(self as any, verb, callbackWrapper);
+    } else {
+        addListener<TData>(self as any, verb, callback);
+    }
 }
 
 export {

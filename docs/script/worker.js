@@ -586,7 +586,19 @@ function addListener(context, verb, callback) {
         }
     });
 }
+var nowAttributeName = "performanceNow";
+var emulatePerformanceNow = false;
+if (typeof self.performance === "undefined" || typeof self.performance.now !== "function") {
+    console.log("Worker doesn't support performance.now()... Emulating it.");
+    emulatePerformanceNow = true;
+    self.performance = {
+        now: function () { return 0; },
+    };
+}
 function sendMessageToWorker(worker, verb, data) {
+    if (emulatePerformanceNow) {
+        data[nowAttributeName] = performance.now();
+    }
     sendMessage(worker, verb, data);
 }
 exports.sendMessageToWorker = sendMessageToWorker;
@@ -599,7 +611,17 @@ function sendMessageFromWorker(verb, data, transfer) {
 }
 exports.sendMessageFromWorker = sendMessageFromWorker;
 function addListenerFromWorker(verb, callback) {
-    addListener(self, verb, callback);
+    if (emulatePerformanceNow) {
+        var callbackWrapper = function (data) {
+            var performanceNow = data[nowAttributeName];
+            self.performance.now = function () { return performanceNow; };
+            callback(data);
+        };
+        addListener(self, verb, callbackWrapper);
+    }
+    else {
+        addListener(self, verb, callback);
+    }
 }
 exports.addListenerFromWorker = addListenerFromWorker;
 
@@ -989,25 +1011,6 @@ exports.squaredDistance = squaredDistance;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Color = void 0;
-function registerPadStartPolyfill() {
-    if (typeof String.prototype.padStart !== "function") {
-        String.prototype.padStart = function padStart(maxLength, fillString) {
-            if (this.length > maxLength) {
-                return String(this);
-            }
-            if (!fillString) {
-                fillString = " ";
-            }
-            var nbRepeats = Math.ceil((maxLength - this.length) / fillString.length);
-            var result = "";
-            for (var i = 0; i < nbRepeats; i++) {
-                result += fillString;
-            }
-            return result + this;
-        };
-    }
-}
-registerPadStartPolyfill();
 var Color = (function () {
     function Color(r, g, b) {
         this.r = r;
