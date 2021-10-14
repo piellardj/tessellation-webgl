@@ -4,7 +4,7 @@ import { rehydrateVboBuffer } from "../../../../plotter/vbo-types";
 import { addListenerToWorker, EVerb, sendMessageFromWorker } from "../message";
 
 
-const verb = EVerb.MAINTAINANCE_OUTPUT;
+const verb = EVerb.PERFORM_UPDATE_OUTPUT;
 
 interface IMessageData {
     readonly polygonsVboBuffer: IVboBuffer;

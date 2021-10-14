@@ -38,7 +38,7 @@ class WorkerEngine extends Engine {
 
         const polygonsVboBuffer = this.computePolygonsVboBuffer();
         const linesVboBuffer = this.computeLinesVboBuffer();
-        MessagesToMain.MaintainanceOutput.sendMessage(polygonsVboBuffer, linesVboBuffer, zoomToApply);
+        MessagesToMain.PerformUpdateOutput.sendMessage(polygonsVboBuffer, linesVboBuffer, zoomToApply);
         return changedSomething;
     }
 

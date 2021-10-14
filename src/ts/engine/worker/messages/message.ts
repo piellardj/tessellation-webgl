@@ -6,8 +6,8 @@ enum EVerb {
     DOWNLOAD_AS_SVG = "download-svg",
     DOWNLOAD_AS_SVG_OUTPUT = "download-as-svg-output",
     PERFORM_UPDATE = "perform-update",
+    PERFORM_UPDATE_OUTPUT = "perform-update-output",
     NEW_METRICS = "new-metrics",
-    MAINTAINANCE_OUTPUT = "maintenance-output",
 }
 
 interface IMessageData<TData> {

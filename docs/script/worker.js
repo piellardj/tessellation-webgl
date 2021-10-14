@@ -369,45 +369,6 @@ exports.addListener = addListener;
 
 /***/ }),
 
-/***/ "./src/ts/engine/worker/messages/from-worker/maintainance-output.ts":
-/*!**************************************************************************!*\
-  !*** ./src/ts/engine/worker/messages/from-worker/maintainance-output.ts ***!
-  \**************************************************************************/
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.sendMessage = exports.addListener = void 0;
-var zoom_1 = __webpack_require__(/*! ../../../../misc/zoom */ "./src/ts/misc/zoom.ts");
-var vbo_types_1 = __webpack_require__(/*! ../../../../plotter/vbo-types */ "./src/ts/plotter/vbo-types.ts");
-var message_1 = __webpack_require__(/*! ../message */ "./src/ts/engine/worker/messages/message.ts");
-var verb = message_1.EVerb.MAINTAINANCE_OUTPUT;
-function sendMessage(polygonsVboBuffer, linesVboBuffer, appliedZoom) {
-    var messageData = {
-        polygonsVboBuffer: polygonsVboBuffer,
-        linesVboBuffer: linesVboBuffer,
-        appliedZoom: appliedZoom,
-    };
-    var transfer = [
-        polygonsVboBuffer.buffer.buffer,
-        linesVboBuffer.buffer.buffer,
-    ];
-    message_1.sendMessageFromWorker(verb, messageData, transfer);
-}
-exports.sendMessage = sendMessage;
-function addListener(worker, listener) {
-    message_1.addListenerToWorker(worker, verb, function (data) {
-        var polygonsVboBuffer = vbo_types_1.rehydrateVboBuffer(data.polygonsVboBuffer);
-        var linesVboBuffer = vbo_types_1.rehydrateVboBuffer(data.linesVboBuffer);
-        var appliedZoom = zoom_1.Zoom.rehydrate(data.appliedZoom);
-        listener(polygonsVboBuffer, linesVboBuffer, appliedZoom);
-    });
-}
-exports.addListener = addListener;
-
-
-/***/ }),
-
 /***/ "./src/ts/engine/worker/messages/from-worker/messages.ts":
 /*!***************************************************************!*\
   !*** ./src/ts/engine/worker/messages/from-worker/messages.ts ***!
@@ -435,13 +396,13 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.ResetOutput = exports.RecomputeColorsOutput = exports.DownloadAsSvgOutput = exports.NewMetrics = exports.MaintainanceOutput = void 0;
+exports.ResetOutput = exports.RecomputeColorsOutput = exports.DownloadAsSvgOutput = exports.NewMetrics = exports.PerformUpdateOutput = void 0;
 var DownloadAsSvgOutput = __importStar(__webpack_require__(/*! ./download-as-svg-output */ "./src/ts/engine/worker/messages/from-worker/download-as-svg-output.ts"));
 exports.DownloadAsSvgOutput = DownloadAsSvgOutput;
-var MaintainanceOutput = __importStar(__webpack_require__(/*! ./maintainance-output */ "./src/ts/engine/worker/messages/from-worker/maintainance-output.ts"));
-exports.MaintainanceOutput = MaintainanceOutput;
 var NewMetrics = __importStar(__webpack_require__(/*! ./new-metrics */ "./src/ts/engine/worker/messages/from-worker/new-metrics.ts"));
 exports.NewMetrics = NewMetrics;
+var PerformUpdateOutput = __importStar(__webpack_require__(/*! ./perform-update-output */ "./src/ts/engine/worker/messages/from-worker/perform-update-output.ts"));
+exports.PerformUpdateOutput = PerformUpdateOutput;
 var RecomputeColorsOutput = __importStar(__webpack_require__(/*! ./recompute-colors-output */ "./src/ts/engine/worker/messages/from-worker/recompute-colors-output.ts"));
 exports.RecomputeColorsOutput = RecomputeColorsOutput;
 var ResetOutput = __importStar(__webpack_require__(/*! ./reset-output */ "./src/ts/engine/worker/messages/from-worker/reset-output.ts"));
@@ -471,6 +432,45 @@ exports.sendMessage = sendMessage;
 function addListener(worker, listener) {
     message_1.addListenerToWorker(worker, verb, function (data) {
         listener(data.engineMetrics);
+    });
+}
+exports.addListener = addListener;
+
+
+/***/ }),
+
+/***/ "./src/ts/engine/worker/messages/from-worker/perform-update-output.ts":
+/*!****************************************************************************!*\
+  !*** ./src/ts/engine/worker/messages/from-worker/perform-update-output.ts ***!
+  \****************************************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.sendMessage = exports.addListener = void 0;
+var zoom_1 = __webpack_require__(/*! ../../../../misc/zoom */ "./src/ts/misc/zoom.ts");
+var vbo_types_1 = __webpack_require__(/*! ../../../../plotter/vbo-types */ "./src/ts/plotter/vbo-types.ts");
+var message_1 = __webpack_require__(/*! ../message */ "./src/ts/engine/worker/messages/message.ts");
+var verb = message_1.EVerb.PERFORM_UPDATE_OUTPUT;
+function sendMessage(polygonsVboBuffer, linesVboBuffer, appliedZoom) {
+    var messageData = {
+        polygonsVboBuffer: polygonsVboBuffer,
+        linesVboBuffer: linesVboBuffer,
+        appliedZoom: appliedZoom,
+    };
+    var transfer = [
+        polygonsVboBuffer.buffer.buffer,
+        linesVboBuffer.buffer.buffer,
+    ];
+    message_1.sendMessageFromWorker(verb, messageData, transfer);
+}
+exports.sendMessage = sendMessage;
+function addListener(worker, listener) {
+    message_1.addListenerToWorker(worker, verb, function (data) {
+        var polygonsVboBuffer = vbo_types_1.rehydrateVboBuffer(data.polygonsVboBuffer);
+        var linesVboBuffer = vbo_types_1.rehydrateVboBuffer(data.linesVboBuffer);
+        var appliedZoom = zoom_1.Zoom.rehydrate(data.appliedZoom);
+        listener(polygonsVboBuffer, linesVboBuffer, appliedZoom);
     });
 }
 exports.addListener = addListener;
@@ -567,9 +567,9 @@ var EVerb;
     EVerb["RECOMPUTE_COLORS_OUTPUT"] = "recompute-colors-output";
     EVerb["DOWNLOAD_AS_SVG"] = "download-svg";
     EVerb["DOWNLOAD_AS_SVG_OUTPUT"] = "download-as-svg-output";
-    EVerb["UPDATE"] = "perform-update";
+    EVerb["PERFORM_UPDATE"] = "perform-update";
+    EVerb["PERFORM_UPDATE_OUTPUT"] = "perform-update-output";
     EVerb["NEW_METRICS"] = "new-metrics";
-    EVerb["MAINTAINANCE_OUTPUT"] = "maintenance-output";
 })(EVerb || (EVerb = {}));
 exports.EVerb = EVerb;
 function sendMessage(target, verb, data, transfer) {
@@ -696,7 +696,7 @@ exports.sendMessage = exports.addListener = void 0;
 var rectangle_1 = __webpack_require__(/*! ../../../../misc/rectangle */ "./src/ts/misc/rectangle.ts");
 var zoom_1 = __webpack_require__(/*! ../../../../misc/zoom */ "./src/ts/misc/zoom.ts");
 var message_1 = __webpack_require__(/*! ../message */ "./src/ts/engine/worker/messages/message.ts");
-var verb = message_1.EVerb.UPDATE;
+var verb = message_1.EVerb.PERFORM_UPDATE;
 function sendMessage(worker, zoomToApply, viewport, wantedDepth, subdivisionBalance, colorVariation) {
     var messageData = {
         zoomToApply: zoomToApply,
@@ -852,7 +852,7 @@ var WorkerEngine = (function (_super) {
         var changedSomething = _super.prototype.performUpdate.call(this, zoomToApply, viewport, wantedDepth, subdivisionBalance, colorVariation);
         var polygonsVboBuffer = this.computePolygonsVboBuffer();
         var linesVboBuffer = this.computeLinesVboBuffer();
-        MessagesToMain.MaintainanceOutput.sendMessage(polygonsVboBuffer, linesVboBuffer, zoomToApply);
+        MessagesToMain.PerformUpdateOutput.sendMessage(polygonsVboBuffer, linesVboBuffer, zoomToApply);
         return changedSomething;
     };
     WorkerEngine.prototype.onNewMetrics = function (newMetrics) {

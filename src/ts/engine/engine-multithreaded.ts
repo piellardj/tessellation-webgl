@@ -13,6 +13,24 @@ import * as MessagesToWorker from "./worker/messages/to-worker/messages";
 import "../page-interface-generated";
 
 
+type PendingResetCommand = {
+    viewport: Rectangle;
+    primitiveType: EPrimitiveType;
+};
+
+type PendingRecomputeColorsCommand = {
+    colorVariation: number;
+};
+
+type PendingPerformUpdateCommand = {
+    viewport: Rectangle;
+    wantedDepth: number;
+    subdivisionBalance: number;
+    colorVariation: number;
+};
+
+const LONG_COMMAND_THRESHOLD = 50; // milliseconds
+
 class EngineMultithreaded implements IEngine<PlotterWebGLBasic> {
     public static readonly isSupported: boolean = (typeof Worker !== "undefined");
 
@@ -23,7 +41,14 @@ class EngineMultithreaded implements IEngine<PlotterWebGLBasic> {
     private hasSomethingNewToDraw: boolean = true;
 
     private cumulatedZoom: Zoom = Zoom.noZoom();
-    private readonly maintainanceThrottle: Throttle = new Throttle(100);
+
+    private lastCommandSendingTimestamp: number = 0;
+    private isAwaitingCommandResult: boolean = false;
+    private readonly commandsThrottle: Throttle = new Throttle(100);
+
+    private pendingResetCommand: PendingResetCommand | null = null;
+    private pendingRecomputeColorsCommand: PendingRecomputeColorsCommand | null = null;
+    private pendingPerformUpdateCommand: PendingPerformUpdateCommand | null = null;
 
     public constructor() {
         this.worker = new Worker(`script/worker.js?v=${Page.version}`);
@@ -41,29 +66,55 @@ class EngineMultithreaded implements IEngine<PlotterWebGLBasic> {
             this.polygonsVboBuffer = polygonsVboBuffer;
             this.linesVboBuffer = linesVboBuffer;
             this.hasSomethingNewToDraw = true;
+
+            const commandDuration = performance.now() - this.lastCommandSendingTimestamp;
+            if (commandDuration > LONG_COMMAND_THRESHOLD) {
+                console.log(`"Reset" command took ${commandDuration.toFixed(0)} ms.`);
+            }
+            this.isAwaitingCommandResult = false;
+            this.sendNextCommand();
         });
 
         MessagesFromWorker.RecomputeColorsOutput.addListener(this.worker, (polygonsVboBuffer: IVboBuffer, linesVboBuffer: IVboBuffer) => {
             this.polygonsVboBuffer = polygonsVboBuffer;
             this.linesVboBuffer = linesVboBuffer;
             this.hasSomethingNewToDraw = true;
+
+            const commandDuration = performance.now() - this.lastCommandSendingTimestamp;
+            if (commandDuration > LONG_COMMAND_THRESHOLD) {
+                console.log(`"Recompute colors" command took ${commandDuration.toFixed(0)} ms.`);
+            }
+            this.isAwaitingCommandResult = false;
+            this.sendNextCommand();
         });
 
-        MessagesFromWorker.MaintainanceOutput.addListener(this.worker, (polygonsVboBuffer: IVboBuffer, linesVboBuffer: IVboBuffer, appliedZoom: Zoom) => {
+        MessagesFromWorker.PerformUpdateOutput.addListener(this.worker, (polygonsVboBuffer: IVboBuffer, linesVboBuffer: IVboBuffer, appliedZoom: Zoom) => {
             const invAppliedZoom = appliedZoom.inverse();
             this.cumulatedZoom = Zoom.multiply(this.cumulatedZoom, invAppliedZoom); // keep the advance we had on the worker
             this.polygonsVboBuffer = polygonsVboBuffer;
             this.linesVboBuffer = linesVboBuffer;
             this.hasSomethingNewToDraw = true;
+
+            const commandDuration = performance.now() - this.lastCommandSendingTimestamp;
+            if (commandDuration > LONG_COMMAND_THRESHOLD) {
+                console.log(`"Perform update" command took ${commandDuration.toFixed(0)} ms.`);
+            }
+            this.isAwaitingCommandResult = false;
+            this.sendNextCommand();
         });
     }
 
     public update(viewport: Rectangle, instantZoom: Zoom, wantedDepth: number, subdivisionBalance: number, colorVariation: number): boolean {
         this.cumulatedZoom = Zoom.multiply(instantZoom, this.cumulatedZoom);
 
-        this.maintainanceThrottle.runIfAvailable(() => {
-            MessagesToWorker.PerformUpdate.sendMessage(this.worker, this.cumulatedZoom, viewport, wantedDepth, subdivisionBalance, colorVariation);
-        });
+        this.pendingPerformUpdateCommand = {
+            viewport,
+            wantedDepth,
+            subdivisionBalance,
+            colorVariation,
+        };
+        this.sendNextCommand();
+
         return this.hasSomethingNewToDraw;
     }
 
@@ -108,15 +159,57 @@ class EngineMultithreaded implements IEngine<PlotterWebGLBasic> {
     }
 
     public reset(viewport: Rectangle, primitiveType: EPrimitiveType): void {
-        MessagesToWorker.Reset.sendMessage(this.worker, viewport, primitiveType);
+        this.pendingResetCommand = {
+            viewport,
+            primitiveType
+        };
+        this.sendNextCommand();
     }
 
     public recomputeColors(colorVariation: number): void {
-        MessagesToWorker.RecomputeColors.sendMessage(this.worker, colorVariation);
+        this.pendingRecomputeColorsCommand = {
+            colorVariation,
+        };
+
+        this.sendNextCommand();
     }
 
     public downloadAsSvg(width: number, height: number, scaling: number, backgroundColor: Color, linesColor?: Color): void {
         MessagesToWorker.DownloadAsSvg.sendMessage(this.worker, width, height, scaling, backgroundColor, linesColor);
+    }
+
+    private sendNextCommand(): void {
+        if (!this.isAwaitingCommandResult) {
+            this.commandsThrottle.runIfAvailable(() => {
+                if (this.pendingResetCommand) {
+                    const command = this.pendingResetCommand;
+                    this.pendingRecomputeColorsCommand = null;
+                    this.pendingPerformUpdateCommand = null;
+                    this.pendingResetCommand = null;
+
+                    // console.log("Sending reset command");
+                    this.lastCommandSendingTimestamp = performance.now();
+                    this.isAwaitingCommandResult = true;
+                    MessagesToWorker.Reset.sendMessage(this.worker, command.viewport, command.primitiveType);
+                } else if (this.pendingRecomputeColorsCommand) {
+                    const command = this.pendingRecomputeColorsCommand;
+                    this.pendingRecomputeColorsCommand = null;
+
+                    // console.log("Sending recompute colors command");
+                    this.lastCommandSendingTimestamp = performance.now();
+                    this.isAwaitingCommandResult = true;
+                    MessagesToWorker.RecomputeColors.sendMessage(this.worker, command.colorVariation);
+                } else if (this.pendingPerformUpdateCommand) {
+                    const command = this.pendingPerformUpdateCommand;
+                    this.pendingPerformUpdateCommand = null;
+
+                    // console.log("Sending update command");
+                    this.lastCommandSendingTimestamp = performance.now();
+                    this.isAwaitingCommandResult = true;
+                    MessagesToWorker.PerformUpdate.sendMessage(this.worker, this.cumulatedZoom, command.viewport, command.wantedDepth, command.subdivisionBalance, command.colorVariation);
+                }
+            });
+        }
     }
 }
 
