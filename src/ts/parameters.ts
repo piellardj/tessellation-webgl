@@ -9,7 +9,7 @@ import "./page-interface-generated";
 /* === IDs ============================================================ */
 const controlId = {
     PRIMITIVE_TABS_ID: "primitive-tabs-id",
-    DEPTH_RANGE_ID: "depth-range-id",
+    DENSITY_RANGE_ID: "density-range-id",
     BALANCE_RANGE_ID: "balance-range-id",
     ZOOMING_SPEED_RANGE_ID: "zooming-speed-range-id",
     MULTITHREADED_CHECKBOX_ID: "multithreaded-checkbox-id",
@@ -67,7 +67,7 @@ abstract class Parameters {
     }
 
     public static get depth(): number {
-        return Page.Range.getValue(controlId.DEPTH_RANGE_ID);
+        return Page.Range.getValue(controlId.DENSITY_RANGE_ID);
     }
 
     public static get balance(): number {

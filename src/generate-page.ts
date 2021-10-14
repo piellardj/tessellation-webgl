@@ -76,10 +76,10 @@ const data = {
                 },
                 {
                     type: Demopage.supportedControls.Range,
-                    title: "Depth",
-                    id: "depth-range-id",
+                    title: "Density",
+                    id: "density-range-id",
                     min: 1,
-                    max: 16,
+                    max: 20,
                     value: 14,
                     step: 1
                 },

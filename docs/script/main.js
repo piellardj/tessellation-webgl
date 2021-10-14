@@ -1737,7 +1737,7 @@ var web_1 = __webpack_require__(/*! ./misc/web */ "./src/ts/misc/web.ts");
 __webpack_require__(/*! ./page-interface-generated */ "./src/ts/page-interface-generated.ts");
 var controlId = {
     PRIMITIVE_TABS_ID: "primitive-tabs-id",
-    DEPTH_RANGE_ID: "depth-range-id",
+    DENSITY_RANGE_ID: "density-range-id",
     BALANCE_RANGE_ID: "balance-range-id",
     ZOOMING_SPEED_RANGE_ID: "zooming-speed-range-id",
     MULTITHREADED_CHECKBOX_ID: "multithreaded-checkbox-id",
@@ -1786,7 +1786,7 @@ var Parameters = (function () {
     });
     Object.defineProperty(Parameters, "depth", {
         get: function () {
-            return Page.Range.getValue(controlId.DEPTH_RANGE_ID);
+            return Page.Range.getValue(controlId.DENSITY_RANGE_ID);
         },
         enumerable: false,
         configurable: true
