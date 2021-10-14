@@ -1759,16 +1759,18 @@ var EPlotter;
 })(EPlotter || (EPlotter = {}));
 exports.EPlotter = EPlotter;
 var plotterQueryStringParamName = "plotter";
-var multithreadedQueryStringParamName = "multithread";
-function isMultithreaded() {
-    return web_1.getQueryStringValue(multithreadedQueryStringParamName) === "1";
+var monothreadedQueryStringParamName = "monothreaded";
+function isMonothreaded() {
+    return web_1.getQueryStringValue(monothreadedQueryStringParamName) === "1";
 }
 function getPlotter() {
-    if (isMultithreaded()) {
-        return EPlotter.WEBGL;
-    }
-    else if (web_1.getQueryStringValue(plotterQueryStringParamName) === EPlotter.CANVAS2D) {
-        return EPlotter.CANVAS2D;
+    if (isMonothreaded()) {
+        if (web_1.getQueryStringValue(plotterQueryStringParamName) === EPlotter.CANVAS2D) {
+            return EPlotter.CANVAS2D;
+        }
+        else {
+            return EPlotter.WEBGL;
+        }
     }
     else {
         return EPlotter.WEBGL;
@@ -1877,7 +1879,7 @@ var Parameters = (function () {
     Parameters.redrawObservers = [];
     Parameters.downloadObservers = [];
     Parameters.debugMode = (web_1.getQueryStringValue("debug") === "1");
-    Parameters.multithreaded = isMultithreaded();
+    Parameters.multithreaded = !isMonothreaded();
     Parameters.plotter = getPlotter();
     return Parameters;
 }());
@@ -1922,7 +1924,7 @@ Page.Tabs.addObserver(controlId.PLOTTER_TABS_ID, function (values) {
 Page.Checkbox.setChecked(controlId.MULTITHREADED_CHECKBOX_ID, Parameters.multithreaded);
 Page.Checkbox.addObserver(controlId.MULTITHREADED_CHECKBOX_ID, function (checked) {
     Page.Checkbox.clearStoredState(controlId.MULTITHREADED_CHECKBOX_ID);
-    web_1.setQueryStringValue(multithreadedQueryStringParamName, checked ? "1" : null);
+    web_1.setQueryStringValue(monothreadedQueryStringParamName, checked ? null : "1");
 });
 Page.Controls.setVisibility(controlId.PLOTTER_TABS_ID, !Parameters.multithreaded);
 Page.Controls.setVisibility(controlId.BLENDING_CHECKBOX_ID, !Parameters.multithreaded);

@@ -34,19 +34,21 @@ enum EPlotter {
 }
 
 const plotterQueryStringParamName = "plotter";
-const multithreadedQueryStringParamName = "multithread";
+const monothreadedQueryStringParamName = "monothreaded";
 
 type Observer = () => unknown;
 
-function isMultithreaded(): boolean {
-    return getQueryStringValue(multithreadedQueryStringParamName) === "1";
+function isMonothreaded(): boolean {
+    return getQueryStringValue(monothreadedQueryStringParamName) === "1";
 }
 
 function getPlotter(): EPlotter {
-    if (isMultithreaded()) {
-        return EPlotter.WEBGL;
-    } else if (getQueryStringValue(plotterQueryStringParamName) === EPlotter.CANVAS2D) {
-        return EPlotter.CANVAS2D;
+    if (isMonothreaded()) {
+        if (getQueryStringValue(plotterQueryStringParamName) === EPlotter.CANVAS2D) {
+            return EPlotter.CANVAS2D;
+        } else {
+            return EPlotter.WEBGL;
+        }
     } else {
         return EPlotter.WEBGL;
     }
@@ -59,7 +61,7 @@ abstract class Parameters {
     public static readonly downloadObservers: Observer[] = [];
 
     public static readonly debugMode: boolean = (getQueryStringValue("debug") === "1");
-    public static readonly multithreaded: boolean = isMultithreaded();
+    public static readonly multithreaded: boolean = !isMonothreaded();
     public static readonly plotter: EPlotter = getPlotter();
 
     public static get primitiveType(): EPrimitiveType {
@@ -168,7 +170,7 @@ Page.Tabs.addObserver(controlId.PLOTTER_TABS_ID, (values: string[]) => {
 Page.Checkbox.setChecked(controlId.MULTITHREADED_CHECKBOX_ID, Parameters.multithreaded);
 Page.Checkbox.addObserver(controlId.MULTITHREADED_CHECKBOX_ID, (checked: boolean) => {
     Page.Checkbox.clearStoredState(controlId.MULTITHREADED_CHECKBOX_ID);
-    setQueryStringValue(multithreadedQueryStringParamName, checked ? "1" : null);
+    setQueryStringValue(monothreadedQueryStringParamName, checked ? null : "1");
 });
 Page.Controls.setVisibility(controlId.PLOTTER_TABS_ID, !Parameters.multithreaded);
 Page.Controls.setVisibility(controlId.BLENDING_CHECKBOX_ID, !Parameters.multithreaded);

@@ -80,7 +80,7 @@ const data = {
                     id: "density-range-id",
                     min: 1,
                     max: 20,
-                    value: 14,
+                    value: 16,
                     step: 1
                 },
                 {
