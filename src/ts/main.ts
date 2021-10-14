@@ -4,6 +4,7 @@ import { EngineMultithreaded } from "./engine/engine-multithreaded";
 import { Color } from "./misc/color";
 import { FrametimeMonitor } from "./misc/frame-time-monitor";
 import { IPoint } from "./misc/point";
+import { registerPolyfills } from "./misc/polyfills";
 import { Zoom } from "./misc/zoom";
 import { EPlotter, Parameters } from "./parameters";
 import { PlotterCanvas } from "./plotter/plotter-canvas";
@@ -91,6 +92,8 @@ function main<TPlotter extends PlotterCanvas>(engine: IEngine<TPlotter>, plotter
     }
     mainLoop();
 }
+
+registerPolyfills();
 
 if (Parameters.debugMode) {
     Testing.main();

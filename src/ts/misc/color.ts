@@ -1,25 +1,3 @@
-function registerPadStartPolyfill(): void {
-    if (typeof String.prototype.padStart !== "function") {
-        String.prototype.padStart = function padStart(maxLength: number, fillString?: string): string {
-            if (this.length > maxLength) {
-                return String(this);
-            }
-
-            if (!fillString) {
-                fillString = " ";
-            }
-
-            const nbRepeats = Math.ceil((maxLength - this.length) / fillString.length);
-            let result = "";
-            for (let i = 0; i < nbRepeats; i++) {
-                result += fillString;
-            }
-            return result + this;
-        };
-    }
-}
-registerPadStartPolyfill(); // for IE11
-
 class Color {
     public static readonly BLACK: Color = new Color(0, 0, 0);
     public static readonly WHITE: Color = new Color(255, 255, 255);
