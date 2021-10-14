@@ -3,7 +3,7 @@ Tessellation is the process of partitioning space into a set of smaller polygons
 
 This project aims at colorful art by using iterative tessellation. Each scene is completely random and supports infinite zooming. You can explore anywhere you like by using the left mouse button.
 
-Unfortunately, WebGL doesn't support geometry nor tessellation shaders. I perform the tessellation itself is CPU-side and monothreaded, however for good real-time performance during zooming, a big part of the computation is delegated to the GPU.
+Unfortunately, WebGL doesn't support geometry nor tessellation shaders. I perform the tessellation itself on the CPU side (if possible, in a dedicated Web Worker for multithreading), however for good real-time performance during zooming, a big part of the computation is delegated to the GPU.
 
 See it live [here](https://piellardj.github.io/tessellation-webgl/).
 
@@ -54,6 +54,26 @@ The CPU-side computations are made of 3 things:
 - adding a new depth level in the tree by subdividing every leaf.
 
 These computations are too heavy on the CPU and memory to be performed on each frame. This is why I only perform them on a regular basis, for instance every 100 milliseconds. However, I still want the zooming animation to be smooth. So, for each frame between two heavy CPU computations, the GPU interpolates the position of each primitive according to the current zooming speed. This way of delegating computation to the GPU works very well for my needs.
+
+Even with the throttling of the computations described above, they are sometimes too heavy and cause periodic micro-freezes. Here is a graph of the CPU usage illustrating this issue:
+<div style="text-align:center">
+    <img alt="Antialiasing result" src="src/readme/monothreading_cpu_profile.jpg"/>
+    <p>
+        <i>The CPU spikes are caused by the heavy computing done every 100 ms in the monothreaded mode.</i>
+    </p>
+</div>
+
+#### Multithreading: dedicated Web Worker
+In order to avoid those micro-freezes, I decided to use a dedicated Web Worker as a way of doing multithreading. It works wonderfully and allows for a smooth experience when the monothreaded mode struggled to display a detailed scene. Here is an illustration of the distribution of the computation:
+<div style="text-align:center">
+    <img alt="Antialiasing result" src="src/readme/multithreading.jpg"/>
+    <p>
+        <i>The Web Worker does all the heavy computation. The zooming interpolation is performed at draw time by the GPU. The only job of the main thread is to handle the interface, and to upload to the GPU the data computed by the Web Worker.</i>
+    </p>
+</div>
+
+##### IE11 support
+Surprisingly, Internet Explorer 11 has pretty good support for Web Worker and runs this multithreaded project well. With IE11, the advantage of multithreading is all the more visible because the monothreaded mode is extremely laggy while the multithreaded mode runs at 60 FPS easily. The only little quirk I found is that for some reason, for IE11 `self.performance.now()` is not defined in the worker context, so I had to fake it by regularly making the main thread send a timestamp to the worker thread.
 
 #### Rendering
 This project supports 3 custom renderers:
