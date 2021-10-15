@@ -168,10 +168,10 @@ var EngineMultithreaded = (function () {
         this.cumulatedZoom = zoom_1.Zoom.noZoom();
         this.lastCommandSendingTimestamp = 0;
         this.isAwaitingCommandResult = false;
-        this.commandsThrottle = new throttle_1.Throttle(100);
         this.pendingResetCommand = null;
         this.pendingRecomputeColorsCommand = null;
         this.pendingPerformUpdateCommand = null;
+        this.performUpdateCommandThrottle = new throttle_1.Throttle(100);
         this.worker = new Worker("script/worker.js?v=" + Page.version);
         MessagesFromWorker.NewMetrics.addListener(this.worker, function (engineMetrics) {
             engine_metrics_1.updateEngineMetricsIndicators(engineMetrics);
@@ -186,7 +186,6 @@ var EngineMultithreaded = (function () {
             _this.hasSomethingNewToDraw = true;
             _this.logCommandOutput("Reset");
             _this.isAwaitingCommandResult = false;
-            _this.sendNextCommand();
         });
         MessagesFromWorker.RecomputeColorsOutput.addListener(this.worker, function (polygonsVboBuffer, linesVboBuffer) {
             _this.polygonsVboBuffer = polygonsVboBuffer;
@@ -194,7 +193,6 @@ var EngineMultithreaded = (function () {
             _this.hasSomethingNewToDraw = true;
             _this.logCommandOutput("Recompute colors");
             _this.isAwaitingCommandResult = false;
-            _this.sendNextCommand();
         });
         MessagesFromWorker.PerformUpdateOutput.addListener(this.worker, function (polygonsVboBuffer, linesVboBuffer, appliedZoom) {
             var invAppliedZoom = appliedZoom.inverse();
@@ -204,7 +202,6 @@ var EngineMultithreaded = (function () {
             _this.hasSomethingNewToDraw = true;
             _this.logCommandOutput("Perform update");
             _this.isAwaitingCommandResult = false;
-            _this.sendNextCommand();
         });
         MessagesFromWorker.PerformUpdateNoOutput.addListener(this.worker, function (appliedZoom) {
             var invAppliedZoom = appliedZoom.inverse();
@@ -212,7 +209,6 @@ var EngineMultithreaded = (function () {
             _this.hasSomethingNewToDraw = true;
             _this.logCommandOutput("Perform update (no output)");
             _this.isAwaitingCommandResult = false;
-            _this.sendNextCommand();
         });
     }
     EngineMultithreaded.prototype.update = function (viewport, instantZoom, wantedDepth, subdivisionBalance, colorVariation) {
@@ -282,31 +278,34 @@ var EngineMultithreaded = (function () {
     EngineMultithreaded.prototype.sendNextCommand = function () {
         var _this = this;
         if (!this.isAwaitingCommandResult) {
-            this.commandsThrottle.runIfAvailable(function () {
-                if (_this.pendingResetCommand) {
-                    var command = _this.pendingResetCommand;
-                    _this.pendingRecomputeColorsCommand = null;
-                    _this.pendingPerformUpdateCommand = null;
-                    _this.pendingResetCommand = null;
-                    _this.lastCommandSendingTimestamp = performance.now();
-                    _this.isAwaitingCommandResult = true;
-                    MessagesToWorker.Reset.sendMessage(_this.worker, command.viewport, command.primitiveType);
-                }
-                else if (_this.pendingRecomputeColorsCommand) {
-                    var command = _this.pendingRecomputeColorsCommand;
-                    _this.pendingRecomputeColorsCommand = null;
-                    _this.lastCommandSendingTimestamp = performance.now();
-                    _this.isAwaitingCommandResult = true;
-                    MessagesToWorker.RecomputeColors.sendMessage(_this.worker, command.colorVariation);
-                }
-                else if (_this.pendingPerformUpdateCommand) {
+            if (this.pendingResetCommand) {
+                var command = this.pendingResetCommand;
+                this.pendingRecomputeColorsCommand = null;
+                this.pendingPerformUpdateCommand = null;
+                this.pendingResetCommand = null;
+                console.log("Sending reset command");
+                this.lastCommandSendingTimestamp = performance.now();
+                this.isAwaitingCommandResult = true;
+                MessagesToWorker.Reset.sendMessage(this.worker, command.viewport, command.primitiveType);
+            }
+            else if (this.pendingRecomputeColorsCommand) {
+                var command = this.pendingRecomputeColorsCommand;
+                this.pendingRecomputeColorsCommand = null;
+                console.log("Sending recompute colors command");
+                this.lastCommandSendingTimestamp = performance.now();
+                this.isAwaitingCommandResult = true;
+                MessagesToWorker.RecomputeColors.sendMessage(this.worker, command.colorVariation);
+            }
+            else if (this.pendingPerformUpdateCommand) {
+                this.performUpdateCommandThrottle.runIfAvailable(function () {
                     var command = _this.pendingPerformUpdateCommand;
                     _this.pendingPerformUpdateCommand = null;
+                    console.log("Sending update command");
                     _this.lastCommandSendingTimestamp = performance.now();
                     _this.isAwaitingCommandResult = true;
                     MessagesToWorker.PerformUpdate.sendMessage(_this.worker, _this.cumulatedZoom, command.viewport, command.wantedDepth, command.subdivisionBalance, command.colorVariation);
-                }
-            });
+                });
+            }
         }
     };
     EngineMultithreaded.prototype.logCommandOutput = function (commandName) {

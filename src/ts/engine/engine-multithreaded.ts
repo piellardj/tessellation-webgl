@@ -42,11 +42,11 @@ class EngineMultithreaded implements IEngine<PlotterWebGLBasic> {
 
     private lastCommandSendingTimestamp: number = 0;
     private isAwaitingCommandResult: boolean = false;
-    private readonly commandsThrottle: Throttle = new Throttle(100);
 
     private pendingResetCommand: PendingResetCommand | null = null;
     private pendingRecomputeColorsCommand: PendingRecomputeColorsCommand | null = null;
     private pendingPerformUpdateCommand: PendingPerformUpdateCommand | null = null;
+    private readonly performUpdateCommandThrottle: Throttle = new Throttle(100);
 
     public constructor() {
         this.worker = new Worker(`script/worker.js?v=${Page.version}`);
@@ -67,7 +67,6 @@ class EngineMultithreaded implements IEngine<PlotterWebGLBasic> {
 
             this.logCommandOutput("Reset");
             this.isAwaitingCommandResult = false;
-            this.sendNextCommand();
         });
 
         MessagesFromWorker.RecomputeColorsOutput.addListener(this.worker, (polygonsVboBuffer: IVboBuffer, linesVboBuffer: IVboBuffer) => {
@@ -77,7 +76,6 @@ class EngineMultithreaded implements IEngine<PlotterWebGLBasic> {
 
             this.logCommandOutput("Recompute colors");
             this.isAwaitingCommandResult = false;
-            this.sendNextCommand();
         });
 
         MessagesFromWorker.PerformUpdateOutput.addListener(this.worker, (polygonsVboBuffer: IVboBuffer, linesVboBuffer: IVboBuffer, appliedZoom: Zoom) => {
@@ -89,7 +87,6 @@ class EngineMultithreaded implements IEngine<PlotterWebGLBasic> {
 
             this.logCommandOutput("Perform update");
             this.isAwaitingCommandResult = false;
-            this.sendNextCommand();
         });
 
         MessagesFromWorker.PerformUpdateNoOutput.addListener(this.worker, (appliedZoom: Zoom) => {
@@ -99,7 +96,6 @@ class EngineMultithreaded implements IEngine<PlotterWebGLBasic> {
 
             this.logCommandOutput("Perform update (no output)");
             this.isAwaitingCommandResult = false;
-            this.sendNextCommand();
         });
     }
 
@@ -179,35 +175,35 @@ class EngineMultithreaded implements IEngine<PlotterWebGLBasic> {
 
     private sendNextCommand(): void {
         if (!this.isAwaitingCommandResult) {
-            this.commandsThrottle.runIfAvailable(() => {
-                if (this.pendingResetCommand) {
-                    const command = this.pendingResetCommand;
-                    this.pendingRecomputeColorsCommand = null;
-                    this.pendingPerformUpdateCommand = null;
-                    this.pendingResetCommand = null;
+            if (this.pendingResetCommand) {
+                const command = this.pendingResetCommand;
+                this.pendingRecomputeColorsCommand = null;
+                this.pendingPerformUpdateCommand = null;
+                this.pendingResetCommand = null;
 
-                    // console.log("Sending reset command");
-                    this.lastCommandSendingTimestamp = performance.now();
-                    this.isAwaitingCommandResult = true;
-                    MessagesToWorker.Reset.sendMessage(this.worker, command.viewport, command.primitiveType);
-                } else if (this.pendingRecomputeColorsCommand) {
-                    const command = this.pendingRecomputeColorsCommand;
-                    this.pendingRecomputeColorsCommand = null;
+                console.log("Sending reset command");
+                this.lastCommandSendingTimestamp = performance.now();
+                this.isAwaitingCommandResult = true;
+                MessagesToWorker.Reset.sendMessage(this.worker, command.viewport, command.primitiveType);
+            } else if (this.pendingRecomputeColorsCommand) {
+                const command = this.pendingRecomputeColorsCommand;
+                this.pendingRecomputeColorsCommand = null;
 
-                    // console.log("Sending recompute colors command");
-                    this.lastCommandSendingTimestamp = performance.now();
-                    this.isAwaitingCommandResult = true;
-                    MessagesToWorker.RecomputeColors.sendMessage(this.worker, command.colorVariation);
-                } else if (this.pendingPerformUpdateCommand) {
+                console.log("Sending recompute colors command");
+                this.lastCommandSendingTimestamp = performance.now();
+                this.isAwaitingCommandResult = true;
+                MessagesToWorker.RecomputeColors.sendMessage(this.worker, command.colorVariation);
+            } else if (this.pendingPerformUpdateCommand) {
+                this.performUpdateCommandThrottle.runIfAvailable(() => {
                     const command = this.pendingPerformUpdateCommand;
                     this.pendingPerformUpdateCommand = null;
 
-                    // console.log("Sending update command");
+                    console.log("Sending update command");
                     this.lastCommandSendingTimestamp = performance.now();
                     this.isAwaitingCommandResult = true;
                     MessagesToWorker.PerformUpdate.sendMessage(this.worker, this.cumulatedZoom, command.viewport, command.wantedDepth, command.subdivisionBalance, command.colorVariation);
-                }
-            });
+                });
+            }
         }
     }
 
