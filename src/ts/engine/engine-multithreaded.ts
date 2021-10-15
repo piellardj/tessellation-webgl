@@ -29,8 +29,6 @@ type PendingPerformUpdateCommand = {
     colorVariation: number;
 };
 
-const LONG_COMMAND_THRESHOLD = 50; // milliseconds
-
 class EngineMultithreaded implements IEngine<PlotterWebGLBasic> {
     public static readonly isSupported: boolean = (typeof Worker !== "undefined");
 
@@ -67,10 +65,7 @@ class EngineMultithreaded implements IEngine<PlotterWebGLBasic> {
             this.linesVboBuffer = linesVboBuffer;
             this.hasSomethingNewToDraw = true;
 
-            const commandDuration = performance.now() - this.lastCommandSendingTimestamp;
-            if (commandDuration > LONG_COMMAND_THRESHOLD) {
-                console.log(`"Reset" command took ${commandDuration.toFixed(0)} ms.`);
-            }
+            this.logCommandOutput("Reset");
             this.isAwaitingCommandResult = false;
             this.sendNextCommand();
         });
@@ -80,10 +75,7 @@ class EngineMultithreaded implements IEngine<PlotterWebGLBasic> {
             this.linesVboBuffer = linesVboBuffer;
             this.hasSomethingNewToDraw = true;
 
-            const commandDuration = performance.now() - this.lastCommandSendingTimestamp;
-            if (commandDuration > LONG_COMMAND_THRESHOLD) {
-                console.log(`"Recompute colors" command took ${commandDuration.toFixed(0)} ms.`);
-            }
+            this.logCommandOutput("Recompute colors");
             this.isAwaitingCommandResult = false;
             this.sendNextCommand();
         });
@@ -95,10 +87,7 @@ class EngineMultithreaded implements IEngine<PlotterWebGLBasic> {
             this.linesVboBuffer = linesVboBuffer;
             this.hasSomethingNewToDraw = true;
 
-            const commandDuration = performance.now() - this.lastCommandSendingTimestamp;
-            if (commandDuration > LONG_COMMAND_THRESHOLD) {
-                console.log(`"Perform update" command took ${commandDuration.toFixed(0)} ms.`);
-            }
+            this.logCommandOutput("Perform update");
             this.isAwaitingCommandResult = false;
             this.sendNextCommand();
         });
@@ -209,6 +198,13 @@ class EngineMultithreaded implements IEngine<PlotterWebGLBasic> {
                     MessagesToWorker.PerformUpdate.sendMessage(this.worker, this.cumulatedZoom, command.viewport, command.wantedDepth, command.subdivisionBalance, command.colorVariation);
                 }
             });
+        }
+    }
+
+    private logCommandOutput(commandName: string): void {
+        const commandDuration = performance.now() - this.lastCommandSendingTimestamp;
+        if (commandDuration > 50) {
+            console.log(`"${commandName}" command took ${commandDuration.toFixed(0)} ms.`);
         }
     }
 }
