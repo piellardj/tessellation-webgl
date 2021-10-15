@@ -8,7 +8,7 @@ import { IPlotter } from "../plotter/plotter-interface";
 import { PlotterSVG } from "../plotter/plotter-svg";
 import { Engine } from "./engine";
 import { IEngineMetrics, updateEngineMetricsIndicators } from "./engine-metrics";
-import { computeComputeLastLayerAlpha, ISimulation } from "./simulation";
+import { computeLastLayerAlpha, ISimulation } from "./simulation";
 
 
 class SimulationMonothreaded extends Engine implements ISimulation<IPlotter> {
@@ -33,7 +33,7 @@ class SimulationMonothreaded extends Engine implements ISimulation<IPlotter> {
         }
 
         let lastSolidLayer = this.layers.length - 1;
-        const emergingLayerAlpha = computeComputeLastLayerAlpha(this.layers.length, this.layers[this.layers.length - 1].birthTimestamp);
+        const emergingLayerAlpha = computeLastLayerAlpha(this.layers.length, this.layers[this.layers.length - 1].birthTimestamp);
         if (emergingLayerAlpha < 1) {
             lastSolidLayer--;
         }

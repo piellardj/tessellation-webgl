@@ -13,7 +13,7 @@ interface ISimulation<TPlotter> {
     downloadAsSvg(width: number, height: number, scaling: number, backgroundColor: Color, linesColor?: Color): void;
 }
 
-function computeComputeLastLayerAlpha(layersCount: number, lastLayerBirthTimestamp: number): number {
+function computeLastLayerAlpha(layersCount: number, lastLayerBirthTimestamp: number): number {
     if (Parameters.blending && layersCount > 1) {
         if (Parameters.zoomingSpeed > 0) {
             const emergingTimeOfLastLayer = 1000 / Math.pow((1 + Parameters.zoomingSpeed), 2);
@@ -28,6 +28,6 @@ function computeComputeLastLayerAlpha(layersCount: number, lastLayerBirthTimesta
 }
 
 export {
-    computeComputeLastLayerAlpha,
+    computeLastLayerAlpha,
     ISimulation,
 };

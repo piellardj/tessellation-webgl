@@ -3,10 +3,10 @@ import { Rectangle } from "../misc/rectangle";
 import { Throttle } from "../misc/throttle";
 import { downloadSvgOutput } from "../misc/web";
 import { Zoom } from "../misc/zoom";
-import { IVboBuffer, PlotterWebGLBasic } from "../plotter/plotter-webgl-basic";
+import { IVboBuffer, IVboPart, PlotterWebGLBasic } from "../plotter/plotter-webgl-basic";
 import { EPrimitiveType } from "../primitives/primitive-type-enum";
-import { ISimulation } from "./simulation";
 import { IEngineMetrics, updateEngineMetricsIndicators } from "./engine-metrics";
+import { ISimulation } from "./simulation";
 import * as MessagesFromWorker from "./worker/messages/from-worker/messages";
 import * as MessagesToWorker from "./worker/messages/to-worker/messages";
 
@@ -120,33 +120,31 @@ class SimulationMultithreaded implements ISimulation<PlotterWebGLBasic> {
 
         if (this.polygonsVboBuffer) {
             let needToReupload = false;
-            for (const polygonsVboPart of this.polygonsVboBuffer.bufferParts) {
-                if (!plotter.registerPolygonsVboPartForDrawing(polygonsVboPart.geometryId, 1)) {
+            const registerPolygonBufferPart = (bufferPart: IVboPart) => {
+                if (!plotter.registerPolygonsVboPartForDrawing(bufferPart.geometryId, 1)) {
                     needToReupload = true;
                 }
-            }
+            };
 
+            this.polygonsVboBuffer.bufferParts.forEach(registerPolygonBufferPart);
             if (needToReupload) {
                 plotter.uploadPolygonsVbo(this.polygonsVboBuffer);
-                for (const polygonsVboPart of this.polygonsVboBuffer.bufferParts) {
-                    plotter.registerPolygonsVboPartForDrawing(polygonsVboPart.geometryId, 1);
-                }
+                this.polygonsVboBuffer.bufferParts.forEach(registerPolygonBufferPart);
             }
         }
 
         if (this.linesVboBuffer && linesColor) {
             let needToReupload = false;
-            for (const linesVboPart of this.linesVboBuffer.bufferParts) {
-                if (!plotter.registerLinesVboPartForDrawing(linesVboPart.geometryId, linesColor, 1)) {
+            const registerLinesBufferPart = (bufferPart: IVboPart) => {
+                if (!plotter.registerLinesVboPartForDrawing(bufferPart.geometryId, linesColor, 1)) {
                     needToReupload = true;
                 }
-            }
+            };
 
+            this.linesVboBuffer.bufferParts.forEach(registerLinesBufferPart);
             if (needToReupload) {
                 plotter.uploadLinesVbo(this.linesVboBuffer);
-                for (const linesVboPart of this.linesVboBuffer.bufferParts) {
-                    plotter.registerLinesVboPartForDrawing(linesVboPart.geometryId, linesColor, 1);
-                }
+                this.linesVboBuffer.bufferParts.forEach(registerLinesBufferPart);
             }
         }
 
