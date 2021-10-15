@@ -7,11 +7,11 @@ import { Parameters } from "../parameters";
 import { IPlotter } from "../plotter/plotter-interface";
 import { PlotterSVG } from "../plotter/plotter-svg";
 import { Engine } from "./engine";
-import { IEngine } from "./engine-interface";
 import { IEngineMetrics, updateEngineMetricsIndicators } from "./engine-metrics";
+import { ISimulation } from "./simulation";
 
 
-class EngineMonothreaded extends Engine implements IEngine<IPlotter> {
+class SimulationMonothreaded extends Engine implements ISimulation<IPlotter> {
     private cumulatedZoom: Zoom = Zoom.noZoom();
     private readonly maintainanceThrottle: Throttle = new Throttle(100);
 
@@ -57,7 +57,7 @@ class EngineMonothreaded extends Engine implements IEngine<IPlotter> {
 
         if (linesColor) {
             for (let iLayer = 0; iLayer < this.layers.length; iLayer++) {
-                const thickness = EngineMonothreaded.getLineThicknessForLayer(iLayer, this.layers.length);
+                const thickness = SimulationMonothreaded.getLineThicknessForLayer(iLayer, this.layers.length);
                 const alpha = (iLayer === emergingLayer) ? emergingLayerAlpha : 1;
                 plotter.drawLines(this.layers[iLayer].outlines, thickness, linesColor, alpha);
             }
@@ -87,6 +87,6 @@ class EngineMonothreaded extends Engine implements IEngine<IPlotter> {
 }
 
 export {
-    EngineMonothreaded,
+    SimulationMonothreaded,
 };
 

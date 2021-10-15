@@ -4,7 +4,7 @@ import { Zoom } from "../misc/zoom";
 import { EPrimitiveType } from "../primitives/primitive-type-enum";
 
 
-interface IEngine<TPlotter> {
+interface ISimulation<TPlotter> {
     update(viewport: Rectangle, instantZoom: Zoom, wantedDepth: number, subdivisionBalance: number, colorVariation: number): boolean;
     draw(plotter: TPlotter, scaling: number, backgroundColor: Color, linesColor?: Color): void;
     reset(viewport: Rectangle, primitiveType: EPrimitiveType): void;
@@ -13,5 +13,5 @@ interface IEngine<TPlotter> {
 }
 
 export {
-    IEngine,
+    ISimulation,
 };

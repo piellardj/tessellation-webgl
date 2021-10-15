@@ -22,303 +22,6 @@ exports.updateEngineMetricsIndicators = updateEngineMetricsIndicators;
 
 /***/ }),
 
-/***/ "./src/ts/engine/engine-monothreaded.ts":
-/*!**********************************************!*\
-  !*** ./src/ts/engine/engine-monothreaded.ts ***!
-  \**********************************************/
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.EngineMonothreaded = void 0;
-var throttle_1 = __webpack_require__(/*! ../misc/throttle */ "./src/ts/misc/throttle.ts");
-var web_1 = __webpack_require__(/*! ../misc/web */ "./src/ts/misc/web.ts");
-var zoom_1 = __webpack_require__(/*! ../misc/zoom */ "./src/ts/misc/zoom.ts");
-var parameters_1 = __webpack_require__(/*! ../parameters */ "./src/ts/parameters.ts");
-var plotter_svg_1 = __webpack_require__(/*! ../plotter/plotter-svg */ "./src/ts/plotter/plotter-svg.ts");
-var engine_1 = __webpack_require__(/*! ./engine */ "./src/ts/engine/engine.ts");
-var engine_metrics_1 = __webpack_require__(/*! ./engine-metrics */ "./src/ts/engine/engine-metrics.ts");
-var EngineMonothreaded = (function (_super) {
-    __extends(EngineMonothreaded, _super);
-    function EngineMonothreaded() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.cumulatedZoom = zoom_1.Zoom.noZoom();
-        _this.maintainanceThrottle = new throttle_1.Throttle(100);
-        return _this;
-    }
-    EngineMonothreaded.prototype.update = function (viewport, instantZoom, wantedDepth, subdivisionBalance, colorVariation) {
-        var _this = this;
-        this.cumulatedZoom = zoom_1.Zoom.multiply(instantZoom, this.cumulatedZoom);
-        var changedSomething = false;
-        this.maintainanceThrottle.runIfAvailable(function () {
-            changedSomething = _this.performUpdate(_this.cumulatedZoom, viewport, wantedDepth, subdivisionBalance, colorVariation);
-            _this.cumulatedZoom = zoom_1.Zoom.noZoom();
-        });
-        return changedSomething;
-    };
-    EngineMonothreaded.prototype.draw = function (plotter, scaling, backgroundColor, linesColor) {
-        if (this.layers.length < 1) {
-            return;
-        }
-        var lastSolidLayer = this.layers.length - 1;
-        var emergingLayerAlpha = 0;
-        if (parameters_1.Parameters.blending && this.layers.length > 1) {
-            if (parameters_1.Parameters.zoomingSpeed > 0) {
-                var emergingTimeOfLastLayer = 1000 / Math.pow((1 + parameters_1.Parameters.zoomingSpeed), 2);
-                var lastLayer = this.layers[this.layers.length - 1];
-                var ageOfLastLayer = performance.now() - lastLayer.birthTimestamp;
-                if (ageOfLastLayer < emergingTimeOfLastLayer) {
-                    lastSolidLayer--;
-                    emergingLayerAlpha = ageOfLastLayer / emergingTimeOfLastLayer;
-                }
-            }
-        }
-        var emergingLayer = lastSolidLayer + 1;
-        plotter.initialize(backgroundColor, this.cumulatedZoom, scaling);
-        plotter.drawPolygons(this.layers[lastSolidLayer].primitives, 1);
-        if (emergingLayer < this.layers.length) {
-            plotter.drawPolygons(this.layers[emergingLayer].primitives, emergingLayerAlpha);
-        }
-        if (linesColor) {
-            for (var iLayer = 0; iLayer < this.layers.length; iLayer++) {
-                var thickness = EngineMonothreaded.getLineThicknessForLayer(iLayer, this.layers.length);
-                var alpha = (iLayer === emergingLayer) ? emergingLayerAlpha : 1;
-                plotter.drawLines(this.layers[iLayer].outlines, thickness, linesColor, alpha);
-            }
-        }
-        plotter.finalize();
-    };
-    EngineMonothreaded.prototype.downloadAsSvg = function (width, height, scaling, backgroundColor, linesColor) {
-        var svgPlotter = new plotter_svg_1.PlotterSVG(width, height);
-        this.draw(svgPlotter, scaling, backgroundColor, linesColor);
-        var svgString = svgPlotter.output();
-        web_1.downloadSvgOutput(svgString);
-    };
-    EngineMonothreaded.prototype.onNewMetrics = function (newMetrics) {
-        engine_metrics_1.updateEngineMetricsIndicators(newMetrics);
-    };
-    EngineMonothreaded.getLineThicknessForLayer = function (layerId, totalLayersCount) {
-        var variablePart = 0;
-        if (layerId > 0) {
-            variablePart = parameters_1.Parameters.thickness * (totalLayersCount - 1 - layerId) / (totalLayersCount - 1);
-        }
-        return 1 + variablePart;
-    };
-    return EngineMonothreaded;
-}(engine_1.Engine));
-exports.EngineMonothreaded = EngineMonothreaded;
-
-
-/***/ }),
-
-/***/ "./src/ts/engine/engine-multithreaded.ts":
-/*!***********************************************!*\
-  !*** ./src/ts/engine/engine-multithreaded.ts ***!
-  \***********************************************/
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.EngineMultithreaded = void 0;
-var throttle_1 = __webpack_require__(/*! ../misc/throttle */ "./src/ts/misc/throttle.ts");
-var web_1 = __webpack_require__(/*! ../misc/web */ "./src/ts/misc/web.ts");
-var zoom_1 = __webpack_require__(/*! ../misc/zoom */ "./src/ts/misc/zoom.ts");
-var engine_metrics_1 = __webpack_require__(/*! ./engine-metrics */ "./src/ts/engine/engine-metrics.ts");
-var MessagesFromWorker = __importStar(__webpack_require__(/*! ./worker/messages/from-worker/messages */ "./src/ts/engine/worker/messages/from-worker/messages.ts"));
-var MessagesToWorker = __importStar(__webpack_require__(/*! ./worker/messages/to-worker/messages */ "./src/ts/engine/worker/messages/to-worker/messages.ts"));
-__webpack_require__(/*! ../page-interface-generated */ "./src/ts/page-interface-generated.ts");
-var EngineMultithreaded = (function () {
-    function EngineMultithreaded() {
-        var _this = this;
-        this.hasSomethingNewToDraw = true;
-        this.cumulatedZoom = zoom_1.Zoom.noZoom();
-        this.lastCommandSendingTimestamp = 0;
-        this.isAwaitingCommandResult = false;
-        this.pendingResetCommand = null;
-        this.pendingRecomputeColorsCommand = null;
-        this.pendingPerformUpdateCommand = null;
-        this.performUpdateCommandThrottle = new throttle_1.Throttle(100);
-        this.worker = new Worker("script/worker.js?v=" + Page.version);
-        MessagesFromWorker.NewMetrics.addListener(this.worker, function (engineMetrics) {
-            engine_metrics_1.updateEngineMetricsIndicators(engineMetrics);
-        });
-        MessagesFromWorker.DownloadAsSvgOutput.addListener(this.worker, function (output) {
-            web_1.downloadSvgOutput(output);
-        });
-        MessagesFromWorker.ResetOutput.addListener(this.worker, function (polygonsVboBuffer, linesVboBuffer) {
-            _this.cumulatedZoom = zoom_1.Zoom.noZoom();
-            _this.polygonsVboBuffer = polygonsVboBuffer;
-            _this.linesVboBuffer = linesVboBuffer;
-            _this.hasSomethingNewToDraw = true;
-            _this.logCommandOutput("Reset");
-            _this.isAwaitingCommandResult = false;
-        });
-        MessagesFromWorker.RecomputeColorsOutput.addListener(this.worker, function (polygonsVboBuffer, linesVboBuffer) {
-            _this.polygonsVboBuffer = polygonsVboBuffer;
-            _this.linesVboBuffer = linesVboBuffer;
-            _this.hasSomethingNewToDraw = true;
-            _this.logCommandOutput("Recompute colors");
-            _this.isAwaitingCommandResult = false;
-        });
-        MessagesFromWorker.PerformUpdateOutput.addListener(this.worker, function (polygonsVboBuffer, linesVboBuffer, appliedZoom) {
-            var invAppliedZoom = appliedZoom.inverse();
-            _this.cumulatedZoom = zoom_1.Zoom.multiply(_this.cumulatedZoom, invAppliedZoom);
-            _this.polygonsVboBuffer = polygonsVboBuffer;
-            _this.linesVboBuffer = linesVboBuffer;
-            _this.hasSomethingNewToDraw = true;
-            _this.logCommandOutput("Perform update");
-            _this.isAwaitingCommandResult = false;
-        });
-        MessagesFromWorker.PerformUpdateNoOutput.addListener(this.worker, function (appliedZoom) {
-            var invAppliedZoom = appliedZoom.inverse();
-            _this.cumulatedZoom = zoom_1.Zoom.multiply(_this.cumulatedZoom, invAppliedZoom);
-            _this.hasSomethingNewToDraw = true;
-            _this.logCommandOutput("Perform update (no output)");
-            _this.isAwaitingCommandResult = false;
-        });
-    }
-    EngineMultithreaded.prototype.update = function (viewport, instantZoom, wantedDepth, subdivisionBalance, colorVariation) {
-        this.cumulatedZoom = zoom_1.Zoom.multiply(instantZoom, this.cumulatedZoom);
-        this.pendingPerformUpdateCommand = {
-            viewport: viewport,
-            wantedDepth: wantedDepth,
-            subdivisionBalance: subdivisionBalance,
-            colorVariation: colorVariation,
-        };
-        this.sendNextCommand();
-        return this.hasSomethingNewToDraw;
-    };
-    EngineMultithreaded.prototype.draw = function (plotter, scaling, backgroundColor, linesColor) {
-        this.hasSomethingNewToDraw = false;
-        plotter.initialize(backgroundColor, this.cumulatedZoom, scaling);
-        if (this.polygonsVboBuffer) {
-            var needToReupload = false;
-            for (var _i = 0, _a = this.polygonsVboBuffer.bufferParts; _i < _a.length; _i++) {
-                var polygonsVboPart = _a[_i];
-                if (!plotter.registerPolygonsVboPartForDrawing(polygonsVboPart.geometryId, 1)) {
-                    needToReupload = true;
-                }
-            }
-            if (needToReupload) {
-                plotter.uploadPolygonsVbo(this.polygonsVboBuffer);
-                for (var _b = 0, _c = this.polygonsVboBuffer.bufferParts; _b < _c.length; _b++) {
-                    var polygonsVboPart = _c[_b];
-                    plotter.registerPolygonsVboPartForDrawing(polygonsVboPart.geometryId, 1);
-                }
-            }
-        }
-        if (this.linesVboBuffer && linesColor) {
-            var needToReupload = false;
-            for (var _d = 0, _e = this.linesVboBuffer.bufferParts; _d < _e.length; _d++) {
-                var linesVboPart = _e[_d];
-                if (!plotter.registerLinesVboPartForDrawing(linesVboPart.geometryId, linesColor, 1)) {
-                    needToReupload = true;
-                }
-            }
-            if (needToReupload) {
-                plotter.uploadLinesVbo(this.linesVboBuffer);
-                for (var _f = 0, _g = this.linesVboBuffer.bufferParts; _f < _g.length; _f++) {
-                    var linesVboPart = _g[_f];
-                    plotter.registerLinesVboPartForDrawing(linesVboPart.geometryId, linesColor, 1);
-                }
-            }
-        }
-        plotter.finalize();
-    };
-    EngineMultithreaded.prototype.reset = function (viewport, primitiveType) {
-        this.pendingResetCommand = {
-            viewport: viewport,
-            primitiveType: primitiveType
-        };
-        this.sendNextCommand();
-    };
-    EngineMultithreaded.prototype.recomputeColors = function (colorVariation) {
-        this.pendingRecomputeColorsCommand = {
-            colorVariation: colorVariation,
-        };
-        this.sendNextCommand();
-    };
-    EngineMultithreaded.prototype.downloadAsSvg = function (width, height, scaling, backgroundColor, linesColor) {
-        MessagesToWorker.DownloadAsSvg.sendMessage(this.worker, width, height, scaling, backgroundColor, linesColor);
-    };
-    EngineMultithreaded.prototype.sendNextCommand = function () {
-        var _this = this;
-        if (!this.isAwaitingCommandResult) {
-            if (this.pendingResetCommand) {
-                var command = this.pendingResetCommand;
-                this.pendingRecomputeColorsCommand = null;
-                this.pendingPerformUpdateCommand = null;
-                this.pendingResetCommand = null;
-                this.lastCommandSendingTimestamp = performance.now();
-                this.isAwaitingCommandResult = true;
-                MessagesToWorker.Reset.sendMessage(this.worker, command.viewport, command.primitiveType);
-            }
-            else if (this.pendingRecomputeColorsCommand) {
-                var command = this.pendingRecomputeColorsCommand;
-                this.pendingRecomputeColorsCommand = null;
-                this.lastCommandSendingTimestamp = performance.now();
-                this.isAwaitingCommandResult = true;
-                MessagesToWorker.RecomputeColors.sendMessage(this.worker, command.colorVariation);
-            }
-            else if (this.pendingPerformUpdateCommand) {
-                this.performUpdateCommandThrottle.runIfAvailable(function () {
-                    var command = _this.pendingPerformUpdateCommand;
-                    _this.pendingPerformUpdateCommand = null;
-                    _this.lastCommandSendingTimestamp = performance.now();
-                    _this.isAwaitingCommandResult = true;
-                    MessagesToWorker.PerformUpdate.sendMessage(_this.worker, _this.cumulatedZoom, command.viewport, command.wantedDepth, command.subdivisionBalance, command.colorVariation);
-                });
-            }
-        }
-    };
-    EngineMultithreaded.prototype.logCommandOutput = function (commandName) {
-        var commandDuration = performance.now() - this.lastCommandSendingTimestamp;
-        if (commandDuration > 50) {
-            console.log("\"" + commandName + "\" command took " + commandDuration.toFixed(0) + " ms.");
-        }
-    };
-    EngineMultithreaded.isSupported = (typeof Worker !== "undefined");
-    return EngineMultithreaded;
-}());
-exports.EngineMultithreaded = EngineMultithreaded;
-
-
-/***/ }),
-
 /***/ "./src/ts/engine/engine.ts":
 /*!*********************************!*\
   !*** ./src/ts/engine/engine.ts ***!
@@ -555,6 +258,303 @@ var Engine = (function () {
     return Engine;
 }());
 exports.Engine = Engine;
+
+
+/***/ }),
+
+/***/ "./src/ts/engine/simulation-monothreaded.ts":
+/*!**************************************************!*\
+  !*** ./src/ts/engine/simulation-monothreaded.ts ***!
+  \**************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.SimulationMonothreaded = void 0;
+var throttle_1 = __webpack_require__(/*! ../misc/throttle */ "./src/ts/misc/throttle.ts");
+var web_1 = __webpack_require__(/*! ../misc/web */ "./src/ts/misc/web.ts");
+var zoom_1 = __webpack_require__(/*! ../misc/zoom */ "./src/ts/misc/zoom.ts");
+var parameters_1 = __webpack_require__(/*! ../parameters */ "./src/ts/parameters.ts");
+var plotter_svg_1 = __webpack_require__(/*! ../plotter/plotter-svg */ "./src/ts/plotter/plotter-svg.ts");
+var engine_1 = __webpack_require__(/*! ./engine */ "./src/ts/engine/engine.ts");
+var engine_metrics_1 = __webpack_require__(/*! ./engine-metrics */ "./src/ts/engine/engine-metrics.ts");
+var SimulationMonothreaded = (function (_super) {
+    __extends(SimulationMonothreaded, _super);
+    function SimulationMonothreaded() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.cumulatedZoom = zoom_1.Zoom.noZoom();
+        _this.maintainanceThrottle = new throttle_1.Throttle(100);
+        return _this;
+    }
+    SimulationMonothreaded.prototype.update = function (viewport, instantZoom, wantedDepth, subdivisionBalance, colorVariation) {
+        var _this = this;
+        this.cumulatedZoom = zoom_1.Zoom.multiply(instantZoom, this.cumulatedZoom);
+        var changedSomething = false;
+        this.maintainanceThrottle.runIfAvailable(function () {
+            changedSomething = _this.performUpdate(_this.cumulatedZoom, viewport, wantedDepth, subdivisionBalance, colorVariation);
+            _this.cumulatedZoom = zoom_1.Zoom.noZoom();
+        });
+        return changedSomething;
+    };
+    SimulationMonothreaded.prototype.draw = function (plotter, scaling, backgroundColor, linesColor) {
+        if (this.layers.length < 1) {
+            return;
+        }
+        var lastSolidLayer = this.layers.length - 1;
+        var emergingLayerAlpha = 0;
+        if (parameters_1.Parameters.blending && this.layers.length > 1) {
+            if (parameters_1.Parameters.zoomingSpeed > 0) {
+                var emergingTimeOfLastLayer = 1000 / Math.pow((1 + parameters_1.Parameters.zoomingSpeed), 2);
+                var lastLayer = this.layers[this.layers.length - 1];
+                var ageOfLastLayer = performance.now() - lastLayer.birthTimestamp;
+                if (ageOfLastLayer < emergingTimeOfLastLayer) {
+                    lastSolidLayer--;
+                    emergingLayerAlpha = ageOfLastLayer / emergingTimeOfLastLayer;
+                }
+            }
+        }
+        var emergingLayer = lastSolidLayer + 1;
+        plotter.initialize(backgroundColor, this.cumulatedZoom, scaling);
+        plotter.drawPolygons(this.layers[lastSolidLayer].primitives, 1);
+        if (emergingLayer < this.layers.length) {
+            plotter.drawPolygons(this.layers[emergingLayer].primitives, emergingLayerAlpha);
+        }
+        if (linesColor) {
+            for (var iLayer = 0; iLayer < this.layers.length; iLayer++) {
+                var thickness = SimulationMonothreaded.getLineThicknessForLayer(iLayer, this.layers.length);
+                var alpha = (iLayer === emergingLayer) ? emergingLayerAlpha : 1;
+                plotter.drawLines(this.layers[iLayer].outlines, thickness, linesColor, alpha);
+            }
+        }
+        plotter.finalize();
+    };
+    SimulationMonothreaded.prototype.downloadAsSvg = function (width, height, scaling, backgroundColor, linesColor) {
+        var svgPlotter = new plotter_svg_1.PlotterSVG(width, height);
+        this.draw(svgPlotter, scaling, backgroundColor, linesColor);
+        var svgString = svgPlotter.output();
+        web_1.downloadSvgOutput(svgString);
+    };
+    SimulationMonothreaded.prototype.onNewMetrics = function (newMetrics) {
+        engine_metrics_1.updateEngineMetricsIndicators(newMetrics);
+    };
+    SimulationMonothreaded.getLineThicknessForLayer = function (layerId, totalLayersCount) {
+        var variablePart = 0;
+        if (layerId > 0) {
+            variablePart = parameters_1.Parameters.thickness * (totalLayersCount - 1 - layerId) / (totalLayersCount - 1);
+        }
+        return 1 + variablePart;
+    };
+    return SimulationMonothreaded;
+}(engine_1.Engine));
+exports.SimulationMonothreaded = SimulationMonothreaded;
+
+
+/***/ }),
+
+/***/ "./src/ts/engine/simulation-multithreaded.ts":
+/*!***************************************************!*\
+  !*** ./src/ts/engine/simulation-multithreaded.ts ***!
+  \***************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.SimulationMultithreaded = void 0;
+var throttle_1 = __webpack_require__(/*! ../misc/throttle */ "./src/ts/misc/throttle.ts");
+var web_1 = __webpack_require__(/*! ../misc/web */ "./src/ts/misc/web.ts");
+var zoom_1 = __webpack_require__(/*! ../misc/zoom */ "./src/ts/misc/zoom.ts");
+var engine_metrics_1 = __webpack_require__(/*! ./engine-metrics */ "./src/ts/engine/engine-metrics.ts");
+var MessagesFromWorker = __importStar(__webpack_require__(/*! ./worker/messages/from-worker/messages */ "./src/ts/engine/worker/messages/from-worker/messages.ts"));
+var MessagesToWorker = __importStar(__webpack_require__(/*! ./worker/messages/to-worker/messages */ "./src/ts/engine/worker/messages/to-worker/messages.ts"));
+__webpack_require__(/*! ../page-interface-generated */ "./src/ts/page-interface-generated.ts");
+var SimulationMultithreaded = (function () {
+    function SimulationMultithreaded() {
+        var _this = this;
+        this.hasSomethingNewToDraw = true;
+        this.cumulatedZoom = zoom_1.Zoom.noZoom();
+        this.lastCommandSendingTimestamp = 0;
+        this.isAwaitingCommandResult = false;
+        this.pendingResetCommand = null;
+        this.pendingRecomputeColorsCommand = null;
+        this.pendingPerformUpdateCommand = null;
+        this.performUpdateCommandThrottle = new throttle_1.Throttle(100);
+        this.worker = new Worker("script/worker.js?v=" + Page.version);
+        MessagesFromWorker.NewMetrics.addListener(this.worker, function (engineMetrics) {
+            engine_metrics_1.updateEngineMetricsIndicators(engineMetrics);
+        });
+        MessagesFromWorker.DownloadAsSvgOutput.addListener(this.worker, function (output) {
+            web_1.downloadSvgOutput(output);
+        });
+        MessagesFromWorker.ResetOutput.addListener(this.worker, function (polygonsVboBuffer, linesVboBuffer) {
+            _this.cumulatedZoom = zoom_1.Zoom.noZoom();
+            _this.polygonsVboBuffer = polygonsVboBuffer;
+            _this.linesVboBuffer = linesVboBuffer;
+            _this.hasSomethingNewToDraw = true;
+            _this.logCommandOutput("Reset");
+            _this.isAwaitingCommandResult = false;
+        });
+        MessagesFromWorker.RecomputeColorsOutput.addListener(this.worker, function (polygonsVboBuffer, linesVboBuffer) {
+            _this.polygonsVboBuffer = polygonsVboBuffer;
+            _this.linesVboBuffer = linesVboBuffer;
+            _this.hasSomethingNewToDraw = true;
+            _this.logCommandOutput("Recompute colors");
+            _this.isAwaitingCommandResult = false;
+        });
+        MessagesFromWorker.PerformUpdateOutput.addListener(this.worker, function (polygonsVboBuffer, linesVboBuffer, appliedZoom) {
+            var invAppliedZoom = appliedZoom.inverse();
+            _this.cumulatedZoom = zoom_1.Zoom.multiply(_this.cumulatedZoom, invAppliedZoom);
+            _this.polygonsVboBuffer = polygonsVboBuffer;
+            _this.linesVboBuffer = linesVboBuffer;
+            _this.hasSomethingNewToDraw = true;
+            _this.logCommandOutput("Perform update");
+            _this.isAwaitingCommandResult = false;
+        });
+        MessagesFromWorker.PerformUpdateNoOutput.addListener(this.worker, function (appliedZoom) {
+            var invAppliedZoom = appliedZoom.inverse();
+            _this.cumulatedZoom = zoom_1.Zoom.multiply(_this.cumulatedZoom, invAppliedZoom);
+            _this.hasSomethingNewToDraw = true;
+            _this.logCommandOutput("Perform update (no output)");
+            _this.isAwaitingCommandResult = false;
+        });
+    }
+    SimulationMultithreaded.prototype.update = function (viewport, instantZoom, wantedDepth, subdivisionBalance, colorVariation) {
+        this.cumulatedZoom = zoom_1.Zoom.multiply(instantZoom, this.cumulatedZoom);
+        this.pendingPerformUpdateCommand = {
+            viewport: viewport,
+            wantedDepth: wantedDepth,
+            subdivisionBalance: subdivisionBalance,
+            colorVariation: colorVariation,
+        };
+        this.sendNextCommand();
+        return this.hasSomethingNewToDraw;
+    };
+    SimulationMultithreaded.prototype.draw = function (plotter, scaling, backgroundColor, linesColor) {
+        this.hasSomethingNewToDraw = false;
+        plotter.initialize(backgroundColor, this.cumulatedZoom, scaling);
+        if (this.polygonsVboBuffer) {
+            var needToReupload = false;
+            for (var _i = 0, _a = this.polygonsVboBuffer.bufferParts; _i < _a.length; _i++) {
+                var polygonsVboPart = _a[_i];
+                if (!plotter.registerPolygonsVboPartForDrawing(polygonsVboPart.geometryId, 1)) {
+                    needToReupload = true;
+                }
+            }
+            if (needToReupload) {
+                plotter.uploadPolygonsVbo(this.polygonsVboBuffer);
+                for (var _b = 0, _c = this.polygonsVboBuffer.bufferParts; _b < _c.length; _b++) {
+                    var polygonsVboPart = _c[_b];
+                    plotter.registerPolygonsVboPartForDrawing(polygonsVboPart.geometryId, 1);
+                }
+            }
+        }
+        if (this.linesVboBuffer && linesColor) {
+            var needToReupload = false;
+            for (var _d = 0, _e = this.linesVboBuffer.bufferParts; _d < _e.length; _d++) {
+                var linesVboPart = _e[_d];
+                if (!plotter.registerLinesVboPartForDrawing(linesVboPart.geometryId, linesColor, 1)) {
+                    needToReupload = true;
+                }
+            }
+            if (needToReupload) {
+                plotter.uploadLinesVbo(this.linesVboBuffer);
+                for (var _f = 0, _g = this.linesVboBuffer.bufferParts; _f < _g.length; _f++) {
+                    var linesVboPart = _g[_f];
+                    plotter.registerLinesVboPartForDrawing(linesVboPart.geometryId, linesColor, 1);
+                }
+            }
+        }
+        plotter.finalize();
+    };
+    SimulationMultithreaded.prototype.reset = function (viewport, primitiveType) {
+        this.pendingResetCommand = {
+            viewport: viewport,
+            primitiveType: primitiveType
+        };
+        this.sendNextCommand();
+    };
+    SimulationMultithreaded.prototype.recomputeColors = function (colorVariation) {
+        this.pendingRecomputeColorsCommand = {
+            colorVariation: colorVariation,
+        };
+        this.sendNextCommand();
+    };
+    SimulationMultithreaded.prototype.downloadAsSvg = function (width, height, scaling, backgroundColor, linesColor) {
+        MessagesToWorker.DownloadAsSvg.sendMessage(this.worker, width, height, scaling, backgroundColor, linesColor);
+    };
+    SimulationMultithreaded.prototype.sendNextCommand = function () {
+        var _this = this;
+        if (!this.isAwaitingCommandResult) {
+            if (this.pendingResetCommand) {
+                var command = this.pendingResetCommand;
+                this.pendingRecomputeColorsCommand = null;
+                this.pendingPerformUpdateCommand = null;
+                this.pendingResetCommand = null;
+                this.lastCommandSendingTimestamp = performance.now();
+                this.isAwaitingCommandResult = true;
+                MessagesToWorker.Reset.sendMessage(this.worker, command.viewport, command.primitiveType);
+            }
+            else if (this.pendingRecomputeColorsCommand) {
+                var command = this.pendingRecomputeColorsCommand;
+                this.pendingRecomputeColorsCommand = null;
+                this.lastCommandSendingTimestamp = performance.now();
+                this.isAwaitingCommandResult = true;
+                MessagesToWorker.RecomputeColors.sendMessage(this.worker, command.colorVariation);
+            }
+            else if (this.pendingPerformUpdateCommand) {
+                this.performUpdateCommandThrottle.runIfAvailable(function () {
+                    var command = _this.pendingPerformUpdateCommand;
+                    _this.pendingPerformUpdateCommand = null;
+                    _this.lastCommandSendingTimestamp = performance.now();
+                    _this.isAwaitingCommandResult = true;
+                    MessagesToWorker.PerformUpdate.sendMessage(_this.worker, _this.cumulatedZoom, command.viewport, command.wantedDepth, command.subdivisionBalance, command.colorVariation);
+                });
+            }
+        }
+    };
+    SimulationMultithreaded.prototype.logCommandOutput = function (commandName) {
+        var commandDuration = performance.now() - this.lastCommandSendingTimestamp;
+        if (commandDuration > 50) {
+            console.log("\"" + commandName + "\" command took " + commandDuration.toFixed(0) + " ms.");
+        }
+    };
+    SimulationMultithreaded.isSupported = (typeof Worker !== "undefined");
+    return SimulationMultithreaded;
+}());
+exports.SimulationMultithreaded = SimulationMultithreaded;
 
 
 /***/ }),
@@ -801,11 +801,12 @@ var zoom_1 = __webpack_require__(/*! ../../../../misc/zoom */ "./src/ts/misc/zoo
 var vbo_types_1 = __webpack_require__(/*! ../../../../plotter/vbo-types */ "./src/ts/plotter/vbo-types.ts");
 var message_1 = __webpack_require__(/*! ../message */ "./src/ts/engine/worker/messages/message.ts");
 var verb = message_1.EVerb.PERFORM_UPDATE_OUTPUT;
-function sendMessage(polygonsVboBuffer, linesVboBuffer, appliedZoom) {
+function sendMessage(polygonsVboBuffer, linesVboBuffer, appliedZoom, lastLayerBirthTimestamp) {
     var messageData = {
         polygonsVboBuffer: polygonsVboBuffer,
         linesVboBuffer: linesVboBuffer,
         appliedZoom: appliedZoom,
+        lastLayerBirthTimestamp: lastLayerBirthTimestamp,
     };
     var transfer = [
         polygonsVboBuffer.buffer.buffer,
@@ -819,7 +820,7 @@ function addListener(worker, listener) {
         var polygonsVboBuffer = vbo_types_1.rehydrateVboBuffer(data.polygonsVboBuffer);
         var linesVboBuffer = vbo_types_1.rehydrateVboBuffer(data.linesVboBuffer);
         var appliedZoom = zoom_1.Zoom.rehydrate(data.appliedZoom);
-        listener(polygonsVboBuffer, linesVboBuffer, appliedZoom);
+        listener(polygonsVboBuffer, linesVboBuffer, appliedZoom, data.lastLayerBirthTimestamp);
     });
 }
 exports.addListener = addListener;
@@ -875,10 +876,11 @@ exports.sendMessage = exports.addListener = void 0;
 var vbo_types_1 = __webpack_require__(/*! ../../../../plotter/vbo-types */ "./src/ts/plotter/vbo-types.ts");
 var message_1 = __webpack_require__(/*! ../message */ "./src/ts/engine/worker/messages/message.ts");
 var verb = message_1.EVerb.RESET_OUTPUT;
-function sendMessage(polygonsVboBuffer, linesVboBuffer) {
+function sendMessage(polygonsVboBuffer, linesVboBuffer, lastLayerBirthTimestamp) {
     var messageData = {
         polygonsVboBuffer: polygonsVboBuffer,
         linesVboBuffer: linesVboBuffer,
+        lastLayerBirthTimestamp: lastLayerBirthTimestamp,
     };
     var transfer = [
         polygonsVboBuffer.buffer.buffer,
@@ -891,7 +893,7 @@ function addListener(worker, listener) {
     message_1.addListenerToWorker(worker, verb, function (data) {
         var polygonsVboBuffer = vbo_types_1.rehydrateVboBuffer(data.polygonsVboBuffer);
         var linesVboBuffer = vbo_types_1.rehydrateVboBuffer(data.linesVboBuffer);
-        listener(polygonsVboBuffer, linesVboBuffer);
+        listener(polygonsVboBuffer, linesVboBuffer, data.lastLayerBirthTimestamp);
     });
 }
 exports.addListener = addListener;
@@ -1178,8 +1180,8 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-var engine_monothreaded_1 = __webpack_require__(/*! ./engine/engine-monothreaded */ "./src/ts/engine/engine-monothreaded.ts");
-var engine_multithreaded_1 = __webpack_require__(/*! ./engine/engine-multithreaded */ "./src/ts/engine/engine-multithreaded.ts");
+var simulation_monothreaded_1 = __webpack_require__(/*! ./engine/simulation-monothreaded */ "./src/ts/engine/simulation-monothreaded.ts");
+var simulation_multithreaded_1 = __webpack_require__(/*! ./engine/simulation-multithreaded */ "./src/ts/engine/simulation-multithreaded.ts");
 var color_1 = __webpack_require__(/*! ./misc/color */ "./src/ts/misc/color.ts");
 var frame_time_monitor_1 = __webpack_require__(/*! ./misc/frame-time-monitor */ "./src/ts/misc/frame-time-monitor.ts");
 var polyfills_1 = __webpack_require__(/*! ./misc/polyfills */ "./src/ts/misc/polyfills.ts");
@@ -1190,7 +1192,7 @@ var plotter_webgl_1 = __webpack_require__(/*! ./plotter/plotter-webgl */ "./src/
 var plotter_webgl_basic_1 = __webpack_require__(/*! ./plotter/plotter-webgl-basic */ "./src/ts/plotter/plotter-webgl-basic.ts");
 var Testing = __importStar(__webpack_require__(/*! ./testing/main-testing */ "./src/ts/testing/main-testing.ts"));
 __webpack_require__(/*! ./page-interface-generated */ "./src/ts/page-interface-generated.ts");
-function main(engine, plotter) {
+function main(simulation, plotter) {
     var backgroundColor = color_1.Color.BLACK;
     function linesColor() {
         if (parameters_1.Parameters.displayLines) {
@@ -1199,10 +1201,10 @@ function main(engine, plotter) {
         return undefined;
     }
     parameters_1.Parameters.recomputeColorsObservers.push(function () {
-        engine.recomputeColors(parameters_1.Parameters.colorVariation);
+        simulation.recomputeColors(parameters_1.Parameters.colorVariation);
     });
     parameters_1.Parameters.downloadObservers.push(function () {
-        engine.downloadAsSvg(plotter.width, plotter.height, parameters_1.Parameters.scaling, backgroundColor, linesColor());
+        simulation.downloadAsSvg(plotter.width, plotter.height, parameters_1.Parameters.scaling, backgroundColor, linesColor());
     });
     function getCurrentMousePosition() {
         var mousePosition = parameters_1.Parameters.mousePositionInPixels;
@@ -1219,7 +1221,7 @@ function main(engine, plotter) {
     }
     function reset() {
         plotter.resizeCanvas();
-        engine.reset(plotter.viewport, parameters_1.Parameters.primitiveType);
+        simulation.reset(plotter.viewport, parameters_1.Parameters.primitiveType);
         lastZoomCenter = { x: 0, y: 0 };
     }
     parameters_1.Parameters.resetObservers.push(reset);
@@ -1239,13 +1241,13 @@ function main(engine, plotter) {
         frametimeMonitor.registerFrameTime(millisecondsSinceLastFrame);
         var dt = Math.min(MAX_DT, 0.001 * millisecondsSinceLastFrame);
         var instantZoom = buildInstantZoom(dt);
-        var updatedChangedSomething = engine.update(plotter.viewport, instantZoom, parameters_1.Parameters.depth, parameters_1.Parameters.balance, parameters_1.Parameters.colorVariation);
+        var updatedChangedSomething = simulation.update(plotter.viewport, instantZoom, parameters_1.Parameters.depth, parameters_1.Parameters.balance, parameters_1.Parameters.colorVariation);
         if (updatedChangedSomething || instantZoom.isNotNull()) {
             needToRedraw = true;
         }
         if (needToRedraw && plotter.isReady) {
             plotter.resizeCanvas();
-            engine.draw(plotter, parameters_1.Parameters.scaling, backgroundColor, linesColor());
+            simulation.draw(plotter, parameters_1.Parameters.scaling, backgroundColor, linesColor());
             needToRedraw = false;
         }
         requestAnimationFrame(mainLoop);
@@ -1258,22 +1260,22 @@ if (parameters_1.Parameters.debugMode) {
 }
 else {
     if (parameters_1.Parameters.multithreaded) {
-        if (!engine_multithreaded_1.EngineMultithreaded.isSupported) {
+        if (!simulation_multithreaded_1.SimulationMultithreaded.isSupported) {
             Page.Demopage.setErrorMessage("worker-not-supported", "Your browser does not the multithreaded mode because it does not support Web Workers.");
         }
-        var engine = new engine_multithreaded_1.EngineMultithreaded();
+        var simulation = new simulation_multithreaded_1.SimulationMultithreaded();
         var plotter = new plotter_webgl_basic_1.PlotterWebGLBasic();
-        main(engine, plotter);
+        main(simulation, plotter);
     }
     else {
-        var engine = new engine_monothreaded_1.EngineMonothreaded();
+        var simulation = new simulation_monothreaded_1.SimulationMonothreaded();
         if (parameters_1.Parameters.plotter === parameters_1.EPlotter.CANVAS2D) {
             var plotter = new plotter_canvas_2d_1.PlotterCanvas2D();
-            main(engine, plotter);
+            main(simulation, plotter);
         }
         else {
             var plotter = new plotter_webgl_1.PlotterWebGL();
-            main(engine, plotter);
+            main(simulation, plotter);
         }
     }
     Page.Canvas.setIndicatorText("multithreaded", parameters_1.Parameters.multithreaded ? "yes" : "no");

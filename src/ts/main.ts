@@ -1,6 +1,6 @@
-import { IEngine } from "./engine/engine-interface";
-import { EngineMonothreaded } from "./engine/engine-monothreaded";
-import { EngineMultithreaded } from "./engine/engine-multithreaded";
+import { SimulationMonothreaded } from "./engine/simulation-monothreaded";
+import { SimulationMultithreaded } from "./engine/simulation-multithreaded";
+import { ISimulation } from "./engine/simulation";
 import { Color } from "./misc/color";
 import { FrametimeMonitor } from "./misc/frame-time-monitor";
 import { IPoint } from "./misc/point";
@@ -16,7 +16,7 @@ import * as Testing from "./testing/main-testing";
 import "./page-interface-generated";
 
 
-function main<TPlotter extends PlotterCanvas>(engine: IEngine<TPlotter>, plotter: TPlotter): void {
+function main<TPlotter extends PlotterCanvas>(simulation: ISimulation<TPlotter>, plotter: TPlotter): void {
     const backgroundColor = Color.BLACK;
 
     function linesColor(): Color | undefined {
@@ -27,11 +27,11 @@ function main<TPlotter extends PlotterCanvas>(engine: IEngine<TPlotter>, plotter
     }
 
     Parameters.recomputeColorsObservers.push(() => {
-        engine.recomputeColors(Parameters.colorVariation);
+        simulation.recomputeColors(Parameters.colorVariation);
     });
 
     Parameters.downloadObservers.push(() => {
-        engine.downloadAsSvg(plotter.width, plotter.height, Parameters.scaling, backgroundColor, linesColor());
+        simulation.downloadAsSvg(plotter.width, plotter.height, Parameters.scaling, backgroundColor, linesColor());
     });
 
     function getCurrentMousePosition(): IPoint {
@@ -50,7 +50,7 @@ function main<TPlotter extends PlotterCanvas>(engine: IEngine<TPlotter>, plotter
 
     function reset(): void {
         plotter.resizeCanvas();
-        engine.reset(plotter.viewport, Parameters.primitiveType);
+        simulation.reset(plotter.viewport, Parameters.primitiveType);
         lastZoomCenter = { x: 0, y: 0 };
     }
     Parameters.resetObservers.push(reset);
@@ -77,14 +77,14 @@ function main<TPlotter extends PlotterCanvas>(engine: IEngine<TPlotter>, plotter
         const dt = Math.min(MAX_DT, 0.001 * millisecondsSinceLastFrame);
         const instantZoom = buildInstantZoom(dt);
 
-        const updatedChangedSomething = engine.update(plotter.viewport, instantZoom, Parameters.depth, Parameters.balance, Parameters.colorVariation);
+        const updatedChangedSomething = simulation.update(plotter.viewport, instantZoom, Parameters.depth, Parameters.balance, Parameters.colorVariation);
         if (updatedChangedSomething || instantZoom.isNotNull()) {
             needToRedraw = true;
         }
 
         if (needToRedraw && plotter.isReady) {
             plotter.resizeCanvas();
-            engine.draw(plotter, Parameters.scaling, backgroundColor, linesColor());
+            simulation.draw(plotter, Parameters.scaling, backgroundColor, linesColor());
             needToRedraw = false;
         }
 
@@ -99,21 +99,21 @@ if (Parameters.debugMode) {
     Testing.main();
 } else {
     if (Parameters.multithreaded) {
-        if (!EngineMultithreaded.isSupported) {
+        if (!SimulationMultithreaded.isSupported) {
             Page.Demopage.setErrorMessage("worker-not-supported", "Your browser does not the multithreaded mode because it does not support Web Workers.");
         }
 
-        const engine = new EngineMultithreaded();
+        const simulation = new SimulationMultithreaded();
         const plotter = new PlotterWebGLBasic();
-        main<typeof plotter>(engine, plotter);
+        main<typeof plotter>(simulation, plotter);
     } else {
-        const engine = new EngineMonothreaded();
+        const simulation = new SimulationMonothreaded();
         if (Parameters.plotter === EPlotter.CANVAS2D) {
             const plotter = new PlotterCanvas2D();
-            main<typeof plotter>(engine, plotter);
+            main<typeof plotter>(simulation, plotter);
         } else {
             const plotter = new PlotterWebGL();
-            main<typeof plotter>(engine, plotter);
+            main<typeof plotter>(simulation, plotter);
         }
     }
 
