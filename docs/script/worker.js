@@ -396,11 +396,13 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.ResetOutput = exports.RecomputeColorsOutput = exports.DownloadAsSvgOutput = exports.NewMetrics = exports.PerformUpdateOutput = void 0;
+exports.ResetOutput = exports.RecomputeColorsOutput = exports.DownloadAsSvgOutput = exports.NewMetrics = exports.PerformUpdateOutput = exports.PerformUpdateNoOutput = void 0;
 var DownloadAsSvgOutput = __importStar(__webpack_require__(/*! ./download-as-svg-output */ "./src/ts/engine/worker/messages/from-worker/download-as-svg-output.ts"));
 exports.DownloadAsSvgOutput = DownloadAsSvgOutput;
 var NewMetrics = __importStar(__webpack_require__(/*! ./new-metrics */ "./src/ts/engine/worker/messages/from-worker/new-metrics.ts"));
 exports.NewMetrics = NewMetrics;
+var PerformUpdateNoOutput = __importStar(__webpack_require__(/*! ./perform-update-no-output */ "./src/ts/engine/worker/messages/from-worker/perform-update-no-output.ts"));
+exports.PerformUpdateNoOutput = PerformUpdateNoOutput;
 var PerformUpdateOutput = __importStar(__webpack_require__(/*! ./perform-update-output */ "./src/ts/engine/worker/messages/from-worker/perform-update-output.ts"));
 exports.PerformUpdateOutput = PerformUpdateOutput;
 var RecomputeColorsOutput = __importStar(__webpack_require__(/*! ./recompute-colors-output */ "./src/ts/engine/worker/messages/from-worker/recompute-colors-output.ts"));
@@ -432,6 +434,36 @@ exports.sendMessage = sendMessage;
 function addListener(worker, listener) {
     message_1.addListenerToWorker(worker, verb, function (data) {
         listener(data.engineMetrics);
+    });
+}
+exports.addListener = addListener;
+
+
+/***/ }),
+
+/***/ "./src/ts/engine/worker/messages/from-worker/perform-update-no-output.ts":
+/*!*******************************************************************************!*\
+  !*** ./src/ts/engine/worker/messages/from-worker/perform-update-no-output.ts ***!
+  \*******************************************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.sendMessage = exports.addListener = void 0;
+var zoom_1 = __webpack_require__(/*! ../../../../misc/zoom */ "./src/ts/misc/zoom.ts");
+var message_1 = __webpack_require__(/*! ../message */ "./src/ts/engine/worker/messages/message.ts");
+var verb = message_1.EVerb.PERFORM_UPDATE_NO_OUTPUT;
+function sendMessage(appliedZoom) {
+    var messageData = {
+        appliedZoom: appliedZoom,
+    };
+    message_1.sendMessageFromWorker(verb, messageData);
+}
+exports.sendMessage = sendMessage;
+function addListener(worker, listener) {
+    message_1.addListenerToWorker(worker, verb, function (data) {
+        var appliedZoom = zoom_1.Zoom.rehydrate(data.appliedZoom);
+        listener(appliedZoom);
     });
 }
 exports.addListener = addListener;
@@ -569,6 +601,7 @@ var EVerb;
     EVerb["DOWNLOAD_AS_SVG_OUTPUT"] = "download-as-svg-output";
     EVerb["PERFORM_UPDATE"] = "perform-update";
     EVerb["PERFORM_UPDATE_OUTPUT"] = "perform-update-output";
+    EVerb["PERFORM_UPDATE_NO_OUTPUT"] = "perform-update-no-output";
     EVerb["NEW_METRICS"] = "new-metrics";
 })(EVerb || (EVerb = {}));
 exports.EVerb = EVerb;
@@ -872,9 +905,14 @@ var WorkerEngine = (function (_super) {
     };
     WorkerEngine.prototype.performUpdate = function (zoomToApply, viewport, wantedDepth, subdivisionBalance, colorVariation) {
         var changedSomething = _super.prototype.performUpdate.call(this, zoomToApply, viewport, wantedDepth, subdivisionBalance, colorVariation);
-        var polygonsVboBuffer = this.computePolygonsVboBuffer();
-        var linesVboBuffer = this.computeLinesVboBuffer();
-        MessagesToMain.PerformUpdateOutput.sendMessage(polygonsVboBuffer, linesVboBuffer, zoomToApply);
+        if (changedSomething) {
+            var polygonsVboBuffer = this.computePolygonsVboBuffer();
+            var linesVboBuffer = this.computeLinesVboBuffer();
+            MessagesToMain.PerformUpdateOutput.sendMessage(polygonsVboBuffer, linesVboBuffer, zoomToApply);
+        }
+        else {
+            MessagesToMain.PerformUpdateNoOutput.sendMessage(zoomToApply);
+        }
         return changedSomething;
     };
     WorkerEngine.prototype.onNewMetrics = function (newMetrics) {

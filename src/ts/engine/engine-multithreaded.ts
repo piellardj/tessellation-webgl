@@ -91,6 +91,16 @@ class EngineMultithreaded implements IEngine<PlotterWebGLBasic> {
             this.isAwaitingCommandResult = false;
             this.sendNextCommand();
         });
+
+        MessagesFromWorker.PerformUpdateNoOutput.addListener(this.worker, (appliedZoom: Zoom) => {
+            const invAppliedZoom = appliedZoom.inverse();
+            this.cumulatedZoom = Zoom.multiply(this.cumulatedZoom, invAppliedZoom); // keep the advance we had on the worker
+            this.hasSomethingNewToDraw = true;
+
+            this.logCommandOutput("Perform update (no output)");
+            this.isAwaitingCommandResult = false;
+            this.sendNextCommand();
+        });
     }
 
     public update(viewport: Rectangle, instantZoom: Zoom, wantedDepth: number, subdivisionBalance: number, colorVariation: number): boolean {

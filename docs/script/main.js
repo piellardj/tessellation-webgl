@@ -161,7 +161,6 @@ var engine_metrics_1 = __webpack_require__(/*! ./engine-metrics */ "./src/ts/eng
 var MessagesFromWorker = __importStar(__webpack_require__(/*! ./worker/messages/from-worker/messages */ "./src/ts/engine/worker/messages/from-worker/messages.ts"));
 var MessagesToWorker = __importStar(__webpack_require__(/*! ./worker/messages/to-worker/messages */ "./src/ts/engine/worker/messages/to-worker/messages.ts"));
 __webpack_require__(/*! ../page-interface-generated */ "./src/ts/page-interface-generated.ts");
-var LONG_COMMAND_THRESHOLD = 50;
 var EngineMultithreaded = (function () {
     function EngineMultithreaded() {
         var _this = this;
@@ -185,10 +184,7 @@ var EngineMultithreaded = (function () {
             _this.polygonsVboBuffer = polygonsVboBuffer;
             _this.linesVboBuffer = linesVboBuffer;
             _this.hasSomethingNewToDraw = true;
-            var commandDuration = performance.now() - _this.lastCommandSendingTimestamp;
-            if (commandDuration > LONG_COMMAND_THRESHOLD) {
-                console.log("\"Reset\" command took " + commandDuration.toFixed(0) + " ms.");
-            }
+            _this.logCommandOutput("Reset");
             _this.isAwaitingCommandResult = false;
             _this.sendNextCommand();
         });
@@ -196,10 +192,7 @@ var EngineMultithreaded = (function () {
             _this.polygonsVboBuffer = polygonsVboBuffer;
             _this.linesVboBuffer = linesVboBuffer;
             _this.hasSomethingNewToDraw = true;
-            var commandDuration = performance.now() - _this.lastCommandSendingTimestamp;
-            if (commandDuration > LONG_COMMAND_THRESHOLD) {
-                console.log("\"Recompute colors\" command took " + commandDuration.toFixed(0) + " ms.");
-            }
+            _this.logCommandOutput("Recompute colors");
             _this.isAwaitingCommandResult = false;
             _this.sendNextCommand();
         });
@@ -209,10 +202,15 @@ var EngineMultithreaded = (function () {
             _this.polygonsVboBuffer = polygonsVboBuffer;
             _this.linesVboBuffer = linesVboBuffer;
             _this.hasSomethingNewToDraw = true;
-            var commandDuration = performance.now() - _this.lastCommandSendingTimestamp;
-            if (commandDuration > LONG_COMMAND_THRESHOLD) {
-                console.log("\"Perform update\" command took " + commandDuration.toFixed(0) + " ms.");
-            }
+            _this.logCommandOutput("Perform update");
+            _this.isAwaitingCommandResult = false;
+            _this.sendNextCommand();
+        });
+        MessagesFromWorker.PerformUpdateNoOutput.addListener(this.worker, function (appliedZoom) {
+            var invAppliedZoom = appliedZoom.inverse();
+            _this.cumulatedZoom = zoom_1.Zoom.multiply(_this.cumulatedZoom, invAppliedZoom);
+            _this.hasSomethingNewToDraw = true;
+            _this.logCommandOutput("Perform update (no output)");
             _this.isAwaitingCommandResult = false;
             _this.sendNextCommand();
         });
@@ -309,6 +307,12 @@ var EngineMultithreaded = (function () {
                     MessagesToWorker.PerformUpdate.sendMessage(_this.worker, _this.cumulatedZoom, command.viewport, command.wantedDepth, command.subdivisionBalance, command.colorVariation);
                 }
             });
+        }
+    };
+    EngineMultithreaded.prototype.logCommandOutput = function (commandName) {
+        var commandDuration = performance.now() - this.lastCommandSendingTimestamp;
+        if (commandDuration > 50) {
+            console.log("\"" + commandName + "\" command took " + commandDuration.toFixed(0) + " ms.");
         }
     };
     EngineMultithreaded.isSupported = (typeof Worker !== "undefined");
@@ -713,11 +717,13 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.ResetOutput = exports.RecomputeColorsOutput = exports.DownloadAsSvgOutput = exports.NewMetrics = exports.PerformUpdateOutput = void 0;
+exports.ResetOutput = exports.RecomputeColorsOutput = exports.DownloadAsSvgOutput = exports.NewMetrics = exports.PerformUpdateOutput = exports.PerformUpdateNoOutput = void 0;
 var DownloadAsSvgOutput = __importStar(__webpack_require__(/*! ./download-as-svg-output */ "./src/ts/engine/worker/messages/from-worker/download-as-svg-output.ts"));
 exports.DownloadAsSvgOutput = DownloadAsSvgOutput;
 var NewMetrics = __importStar(__webpack_require__(/*! ./new-metrics */ "./src/ts/engine/worker/messages/from-worker/new-metrics.ts"));
 exports.NewMetrics = NewMetrics;
+var PerformUpdateNoOutput = __importStar(__webpack_require__(/*! ./perform-update-no-output */ "./src/ts/engine/worker/messages/from-worker/perform-update-no-output.ts"));
+exports.PerformUpdateNoOutput = PerformUpdateNoOutput;
 var PerformUpdateOutput = __importStar(__webpack_require__(/*! ./perform-update-output */ "./src/ts/engine/worker/messages/from-worker/perform-update-output.ts"));
 exports.PerformUpdateOutput = PerformUpdateOutput;
 var RecomputeColorsOutput = __importStar(__webpack_require__(/*! ./recompute-colors-output */ "./src/ts/engine/worker/messages/from-worker/recompute-colors-output.ts"));
@@ -749,6 +755,36 @@ exports.sendMessage = sendMessage;
 function addListener(worker, listener) {
     message_1.addListenerToWorker(worker, verb, function (data) {
         listener(data.engineMetrics);
+    });
+}
+exports.addListener = addListener;
+
+
+/***/ }),
+
+/***/ "./src/ts/engine/worker/messages/from-worker/perform-update-no-output.ts":
+/*!*******************************************************************************!*\
+  !*** ./src/ts/engine/worker/messages/from-worker/perform-update-no-output.ts ***!
+  \*******************************************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.sendMessage = exports.addListener = void 0;
+var zoom_1 = __webpack_require__(/*! ../../../../misc/zoom */ "./src/ts/misc/zoom.ts");
+var message_1 = __webpack_require__(/*! ../message */ "./src/ts/engine/worker/messages/message.ts");
+var verb = message_1.EVerb.PERFORM_UPDATE_NO_OUTPUT;
+function sendMessage(appliedZoom) {
+    var messageData = {
+        appliedZoom: appliedZoom,
+    };
+    message_1.sendMessageFromWorker(verb, messageData);
+}
+exports.sendMessage = sendMessage;
+function addListener(worker, listener) {
+    message_1.addListenerToWorker(worker, verb, function (data) {
+        var appliedZoom = zoom_1.Zoom.rehydrate(data.appliedZoom);
+        listener(appliedZoom);
     });
 }
 exports.addListener = addListener;
@@ -886,6 +922,7 @@ var EVerb;
     EVerb["DOWNLOAD_AS_SVG_OUTPUT"] = "download-as-svg-output";
     EVerb["PERFORM_UPDATE"] = "perform-update";
     EVerb["PERFORM_UPDATE_OUTPUT"] = "perform-update-output";
+    EVerb["PERFORM_UPDATE_NO_OUTPUT"] = "perform-update-no-output";
     EVerb["NEW_METRICS"] = "new-metrics";
 })(EVerb || (EVerb = {}));
 exports.EVerb = EVerb;

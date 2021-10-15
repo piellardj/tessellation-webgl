@@ -36,9 +36,14 @@ class WorkerEngine extends Engine {
     public performUpdate(zoomToApply: Zoom, viewport: Rectangle, wantedDepth: number, subdivisionBalance: number, colorVariation: number): boolean {
         const changedSomething = super.performUpdate(zoomToApply, viewport, wantedDepth, subdivisionBalance, colorVariation);
 
-        const polygonsVboBuffer = this.computePolygonsVboBuffer();
-        const linesVboBuffer = this.computeLinesVboBuffer();
-        MessagesToMain.PerformUpdateOutput.sendMessage(polygonsVboBuffer, linesVboBuffer, zoomToApply);
+        if (changedSomething) {
+            const polygonsVboBuffer = this.computePolygonsVboBuffer();
+            const linesVboBuffer = this.computeLinesVboBuffer();
+            MessagesToMain.PerformUpdateOutput.sendMessage(polygonsVboBuffer, linesVboBuffer, zoomToApply);
+        } else {
+            MessagesToMain.PerformUpdateNoOutput.sendMessage(zoomToApply);
+        }
+
         return changedSomething;
     }
 

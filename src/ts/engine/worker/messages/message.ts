@@ -7,6 +7,7 @@ enum EVerb {
     DOWNLOAD_AS_SVG_OUTPUT = "download-as-svg-output",
     PERFORM_UPDATE = "perform-update",
     PERFORM_UPDATE_OUTPUT = "perform-update-output",
+    PERFORM_UPDATE_NO_OUTPUT = "perform-update-no-output",
     NEW_METRICS = "new-metrics",
 }
 
