@@ -10,13 +10,15 @@ interface IMessageData {
     readonly polygonsVboBuffer: IVboBuffer;
     readonly linesVboBuffer: IVboBuffer;
     readonly appliedZoom: Zoom;
+    readonly newLayerAppeared: boolean;
 }
 
-function sendMessage(polygonsVboBuffer: IVboBuffer, linesVboBuffer: IVboBuffer, appliedZoom: Zoom): void {
+function sendMessage(polygonsVboBuffer: IVboBuffer, linesVboBuffer: IVboBuffer, appliedZoom: Zoom, newLayerAppeared: boolean): void {
     const messageData: IMessageData = {
         polygonsVboBuffer,
         linesVboBuffer,
         appliedZoom,
+        newLayerAppeared,
     };
 
     const transfer: ArrayBuffer[] = [
@@ -26,12 +28,12 @@ function sendMessage(polygonsVboBuffer: IVboBuffer, linesVboBuffer: IVboBuffer, 
     sendMessageFromWorker(verb, messageData, transfer);
 }
 
-function addListener(worker: Worker, listener: (polygonsVboBuffer: IVboBuffer, linesVboBuffer: IVboBuffer, appliedZoom: Zoom) => unknown): void {
+function addListener(worker: Worker, listener: (polygonsVboBuffer: IVboBuffer, linesVboBuffer: IVboBuffer, appliedZoom: Zoom, newLayerAppeared: boolean) => unknown): void {
     addListenerToWorker(worker, verb, (data: IMessageData) => {
         const polygonsVboBuffer = rehydrateVboBuffer(data.polygonsVboBuffer);
         const linesVboBuffer = rehydrateVboBuffer(data.linesVboBuffer);
         const appliedZoom = Zoom.rehydrate(data.appliedZoom);
-        listener(polygonsVboBuffer, linesVboBuffer, appliedZoom);
+        listener(polygonsVboBuffer, linesVboBuffer, appliedZoom, data.newLayerAppeared);
     });
 }
 

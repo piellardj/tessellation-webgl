@@ -6,7 +6,7 @@ import { Zoom } from "../misc/zoom";
 import { IVboBuffer, IVboPart, PlotterWebGLBasic } from "../plotter/plotter-webgl-basic";
 import { EPrimitiveType } from "../primitives/primitive-type-enum";
 import { IEngineMetrics, updateEngineMetricsIndicators } from "./engine-metrics";
-import { ISimulation } from "./simulation";
+import { computeLastLayerAlpha, ISimulation } from "./simulation";
 import * as MessagesFromWorker from "./worker/messages/from-worker/messages";
 import * as MessagesToWorker from "./worker/messages/to-worker/messages";
 
@@ -48,6 +48,9 @@ class SimulationMultithreaded implements ISimulation<PlotterWebGLBasic> {
     private pendingPerformUpdateCommand: PendingPerformUpdateCommand | null = null;
     private readonly performUpdateCommandThrottle: Throttle = new Throttle(100);
 
+    private lastLayerBirthTimestamp: number = 0;
+    private layersCount: number = 0;
+
     public constructor() {
         this.worker = new Worker(`script/worker.js?v=${Page.version}`);
 
@@ -63,6 +66,8 @@ class SimulationMultithreaded implements ISimulation<PlotterWebGLBasic> {
             this.cumulatedZoom = Zoom.noZoom();
             this.polygonsVboBuffer = polygonsVboBuffer;
             this.linesVboBuffer = linesVboBuffer;
+            this.lastLayerBirthTimestamp = performance.now();
+            this.layersCount = linesVboBuffer.bufferParts.length;
             this.hasSomethingNewToDraw = true;
 
             this.logCommandOutput("Reset");
@@ -78,11 +83,15 @@ class SimulationMultithreaded implements ISimulation<PlotterWebGLBasic> {
             this.isAwaitingCommandResult = false;
         });
 
-        MessagesFromWorker.PerformUpdateOutput.addListener(this.worker, (polygonsVboBuffer: IVboBuffer, linesVboBuffer: IVboBuffer, appliedZoom: Zoom) => {
+        MessagesFromWorker.PerformUpdateOutput.addListener(this.worker, (polygonsVboBuffer: IVboBuffer, linesVboBuffer: IVboBuffer, appliedZoom: Zoom, newlayerAppeared: boolean) => {
             const invAppliedZoom = appliedZoom.inverse();
             this.cumulatedZoom = Zoom.multiply(this.cumulatedZoom, invAppliedZoom); // keep the advance we had on the worker
             this.polygonsVboBuffer = polygonsVboBuffer;
             this.linesVboBuffer = linesVboBuffer;
+            if (newlayerAppeared) {
+                this.lastLayerBirthTimestamp = performance.now();
+            }
+            this.layersCount = linesVboBuffer.bufferParts.length;
             this.hasSomethingNewToDraw = true;
 
             this.logCommandOutput("Perform update");
@@ -118,10 +127,19 @@ class SimulationMultithreaded implements ISimulation<PlotterWebGLBasic> {
 
         plotter.initialize(backgroundColor, this.cumulatedZoom, scaling);
 
+        const emergingLayerAlpha = computeLastLayerAlpha(this.layersCount, this.lastLayerBirthTimestamp);
+
         if (this.polygonsVboBuffer) {
             let needToReupload = false;
-            const registerPolygonBufferPart = (bufferPart: IVboPart) => {
-                if (!plotter.registerPolygonsVboPartForDrawing(bufferPart.geometryId, 1)) {
+            const registerPolygonBufferPart = (bufferPart: IVboPart, index: number, array: IVboPart[]) => {
+                const isLastLayer = (index === array.length - 1);
+                if (emergingLayerAlpha >= 1 && !isLastLayer) {
+                    // if the last layer is opaque, no need to draw the previous ones
+                    return;
+                }
+
+                const alpha = isLastLayer ? emergingLayerAlpha : 1;
+                if (!plotter.registerPolygonsVboPartForDrawing(bufferPart.geometryId, alpha)) {
                     needToReupload = true;
                 }
             };
@@ -135,8 +153,10 @@ class SimulationMultithreaded implements ISimulation<PlotterWebGLBasic> {
 
         if (this.linesVboBuffer && linesColor) {
             let needToReupload = false;
-            const registerLinesBufferPart = (bufferPart: IVboPart) => {
-                if (!plotter.registerLinesVboPartForDrawing(bufferPart.geometryId, linesColor, 1)) {
+            const registerLinesBufferPart = (bufferPart: IVboPart, index: number, array: IVboPart[]) => {
+                const isLastLayer = (index === array.length - 1);
+                const alpha = isLastLayer ? emergingLayerAlpha : 1;
+                if (!plotter.registerLinesVboPartForDrawing(bufferPart.geometryId, linesColor, alpha)) {
                     needToReupload = true;
                 }
             };

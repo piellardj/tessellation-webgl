@@ -226,26 +226,22 @@ var Engine = (function () {
     };
     Engine.prototype.rebuildLayersCollections = function () {
         for (var iLayer = 0; iLayer < this.layers.length; iLayer++) {
-            var primitives = {
-                items: this.rootPrimitive.getChildrenOfDepth(iLayer),
-                geometryId: geometry_id_1.GeometryId.new(),
-            };
-            var outlines = {
-                items: [],
-                geometryId: geometry_id_1.GeometryId.new(),
-            };
+            var reparsedLayerPrimitives = this.rootPrimitive.getChildrenOfDepth(iLayer);
+            this.layers[iLayer].primitives.items = reparsedLayerPrimitives;
+            this.layers[iLayer].primitives.geometryId.registerChange();
+            var reparsedLayerOutlines = [];
             if (iLayer === 0) {
-                outlines.items.push(this.rootPrimitive.getOutline());
+                reparsedLayerOutlines.push(this.rootPrimitive.getOutline());
             }
             else {
                 var primitivesOfParentLayer = this.layers[iLayer - 1].primitives;
                 for (var _i = 0, _a = primitivesOfParentLayer.items; _i < _a.length; _i++) {
                     var primitive = _a[_i];
-                    outlines.items.push(primitive.subdivision);
+                    reparsedLayerOutlines.push(primitive.subdivision);
                 }
             }
-            this.layers[iLayer].primitives = primitives;
-            this.layers[iLayer].outlines = outlines;
+            this.layers[iLayer].outlines.items = reparsedLayerOutlines;
+            this.layers[iLayer].outlines.geometryId.registerChange();
         }
     };
     Object.defineProperty(Engine.prototype, "primitiveType", {
@@ -293,6 +289,7 @@ var parameters_1 = __webpack_require__(/*! ../parameters */ "./src/ts/parameters
 var plotter_svg_1 = __webpack_require__(/*! ../plotter/plotter-svg */ "./src/ts/plotter/plotter-svg.ts");
 var engine_1 = __webpack_require__(/*! ./engine */ "./src/ts/engine/engine.ts");
 var engine_metrics_1 = __webpack_require__(/*! ./engine-metrics */ "./src/ts/engine/engine-metrics.ts");
+var simulation_1 = __webpack_require__(/*! ./simulation */ "./src/ts/engine/simulation.ts");
 var SimulationMonothreaded = (function (_super) {
     __extends(SimulationMonothreaded, _super);
     function SimulationMonothreaded() {
@@ -316,17 +313,9 @@ var SimulationMonothreaded = (function (_super) {
             return;
         }
         var lastSolidLayer = this.layers.length - 1;
-        var emergingLayerAlpha = 0;
-        if (parameters_1.Parameters.blending && this.layers.length > 1) {
-            if (parameters_1.Parameters.zoomingSpeed > 0) {
-                var emergingTimeOfLastLayer = 1000 / Math.pow((1 + parameters_1.Parameters.zoomingSpeed), 2);
-                var lastLayer = this.layers[this.layers.length - 1];
-                var ageOfLastLayer = performance.now() - lastLayer.birthTimestamp;
-                if (ageOfLastLayer < emergingTimeOfLastLayer) {
-                    lastSolidLayer--;
-                    emergingLayerAlpha = ageOfLastLayer / emergingTimeOfLastLayer;
-                }
-            }
+        var emergingLayerAlpha = simulation_1.computeLastLayerAlpha(this.layers.length, this.layers[this.layers.length - 1].birthTimestamp);
+        if (emergingLayerAlpha < 1) {
+            lastSolidLayer--;
         }
         var emergingLayer = lastSolidLayer + 1;
         plotter.initialize(backgroundColor, this.cumulatedZoom, scaling);
@@ -398,6 +387,7 @@ var throttle_1 = __webpack_require__(/*! ../misc/throttle */ "./src/ts/misc/thro
 var web_1 = __webpack_require__(/*! ../misc/web */ "./src/ts/misc/web.ts");
 var zoom_1 = __webpack_require__(/*! ../misc/zoom */ "./src/ts/misc/zoom.ts");
 var engine_metrics_1 = __webpack_require__(/*! ./engine-metrics */ "./src/ts/engine/engine-metrics.ts");
+var simulation_1 = __webpack_require__(/*! ./simulation */ "./src/ts/engine/simulation.ts");
 var MessagesFromWorker = __importStar(__webpack_require__(/*! ./worker/messages/from-worker/messages */ "./src/ts/engine/worker/messages/from-worker/messages.ts"));
 var MessagesToWorker = __importStar(__webpack_require__(/*! ./worker/messages/to-worker/messages */ "./src/ts/engine/worker/messages/to-worker/messages.ts"));
 __webpack_require__(/*! ../page-interface-generated */ "./src/ts/page-interface-generated.ts");
@@ -412,6 +402,8 @@ var SimulationMultithreaded = (function () {
         this.pendingRecomputeColorsCommand = null;
         this.pendingPerformUpdateCommand = null;
         this.performUpdateCommandThrottle = new throttle_1.Throttle(100);
+        this.lastLayerBirthTimestamp = 0;
+        this.layersCount = 0;
         this.worker = new Worker("script/worker.js?v=" + Page.version);
         MessagesFromWorker.NewMetrics.addListener(this.worker, function (engineMetrics) {
             engine_metrics_1.updateEngineMetricsIndicators(engineMetrics);
@@ -423,6 +415,8 @@ var SimulationMultithreaded = (function () {
             _this.cumulatedZoom = zoom_1.Zoom.noZoom();
             _this.polygonsVboBuffer = polygonsVboBuffer;
             _this.linesVboBuffer = linesVboBuffer;
+            _this.lastLayerBirthTimestamp = performance.now();
+            _this.layersCount = linesVboBuffer.bufferParts.length;
             _this.hasSomethingNewToDraw = true;
             _this.logCommandOutput("Reset");
             _this.isAwaitingCommandResult = false;
@@ -434,11 +428,15 @@ var SimulationMultithreaded = (function () {
             _this.logCommandOutput("Recompute colors");
             _this.isAwaitingCommandResult = false;
         });
-        MessagesFromWorker.PerformUpdateOutput.addListener(this.worker, function (polygonsVboBuffer, linesVboBuffer, appliedZoom) {
+        MessagesFromWorker.PerformUpdateOutput.addListener(this.worker, function (polygonsVboBuffer, linesVboBuffer, appliedZoom, newlayerAppeared) {
             var invAppliedZoom = appliedZoom.inverse();
             _this.cumulatedZoom = zoom_1.Zoom.multiply(_this.cumulatedZoom, invAppliedZoom);
             _this.polygonsVboBuffer = polygonsVboBuffer;
             _this.linesVboBuffer = linesVboBuffer;
+            if (newlayerAppeared) {
+                _this.lastLayerBirthTimestamp = performance.now();
+            }
+            _this.layersCount = linesVboBuffer.bufferParts.length;
             _this.hasSomethingNewToDraw = true;
             _this.logCommandOutput("Perform update");
             _this.isAwaitingCommandResult = false;
@@ -465,36 +463,38 @@ var SimulationMultithreaded = (function () {
     SimulationMultithreaded.prototype.draw = function (plotter, scaling, backgroundColor, linesColor) {
         this.hasSomethingNewToDraw = false;
         plotter.initialize(backgroundColor, this.cumulatedZoom, scaling);
+        var emergingLayerAlpha = simulation_1.computeLastLayerAlpha(this.layersCount, this.lastLayerBirthTimestamp);
         if (this.polygonsVboBuffer) {
-            var needToReupload = false;
-            for (var _i = 0, _a = this.polygonsVboBuffer.bufferParts; _i < _a.length; _i++) {
-                var polygonsVboPart = _a[_i];
-                if (!plotter.registerPolygonsVboPartForDrawing(polygonsVboPart.geometryId, 1)) {
-                    needToReupload = true;
+            var needToReupload_1 = false;
+            var registerPolygonBufferPart = function (bufferPart, index, array) {
+                var isLastLayer = (index === array.length - 1);
+                if (emergingLayerAlpha >= 1 && !isLastLayer) {
+                    return;
                 }
-            }
-            if (needToReupload) {
+                var alpha = isLastLayer ? emergingLayerAlpha : 1;
+                if (!plotter.registerPolygonsVboPartForDrawing(bufferPart.geometryId, alpha)) {
+                    needToReupload_1 = true;
+                }
+            };
+            this.polygonsVboBuffer.bufferParts.forEach(registerPolygonBufferPart);
+            if (needToReupload_1) {
                 plotter.uploadPolygonsVbo(this.polygonsVboBuffer);
-                for (var _b = 0, _c = this.polygonsVboBuffer.bufferParts; _b < _c.length; _b++) {
-                    var polygonsVboPart = _c[_b];
-                    plotter.registerPolygonsVboPartForDrawing(polygonsVboPart.geometryId, 1);
-                }
+                this.polygonsVboBuffer.bufferParts.forEach(registerPolygonBufferPart);
             }
         }
         if (this.linesVboBuffer && linesColor) {
-            var needToReupload = false;
-            for (var _d = 0, _e = this.linesVboBuffer.bufferParts; _d < _e.length; _d++) {
-                var linesVboPart = _e[_d];
-                if (!plotter.registerLinesVboPartForDrawing(linesVboPart.geometryId, linesColor, 1)) {
-                    needToReupload = true;
+            var needToReupload_2 = false;
+            var registerLinesBufferPart = function (bufferPart, index, array) {
+                var isLastLayer = (index === array.length - 1);
+                var alpha = isLastLayer ? emergingLayerAlpha : 1;
+                if (!plotter.registerLinesVboPartForDrawing(bufferPart.geometryId, linesColor, alpha)) {
+                    needToReupload_2 = true;
                 }
-            }
-            if (needToReupload) {
+            };
+            this.linesVboBuffer.bufferParts.forEach(registerLinesBufferPart);
+            if (needToReupload_2) {
                 plotter.uploadLinesVbo(this.linesVboBuffer);
-                for (var _f = 0, _g = this.linesVboBuffer.bufferParts; _f < _g.length; _f++) {
-                    var linesVboPart = _g[_f];
-                    plotter.registerLinesVboPartForDrawing(linesVboPart.geometryId, linesColor, 1);
-                }
+                this.linesVboBuffer.bufferParts.forEach(registerLinesBufferPart);
             }
         }
         plotter.finalize();
@@ -555,6 +555,33 @@ var SimulationMultithreaded = (function () {
     return SimulationMultithreaded;
 }());
 exports.SimulationMultithreaded = SimulationMultithreaded;
+
+
+/***/ }),
+
+/***/ "./src/ts/engine/simulation.ts":
+/*!*************************************!*\
+  !*** ./src/ts/engine/simulation.ts ***!
+  \*************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.computeLastLayerAlpha = void 0;
+var parameters_1 = __webpack_require__(/*! ../parameters */ "./src/ts/parameters.ts");
+function computeLastLayerAlpha(layersCount, lastLayerBirthTimestamp) {
+    if (parameters_1.Parameters.blending && layersCount > 1) {
+        if (parameters_1.Parameters.zoomingSpeed > 0) {
+            var emergingTimeOfLastLayer = 1000 / Math.pow((1 + parameters_1.Parameters.zoomingSpeed), 2);
+            var ageOfLastLayer = performance.now() - lastLayerBirthTimestamp;
+            if (ageOfLastLayer < emergingTimeOfLastLayer) {
+                return ageOfLastLayer / emergingTimeOfLastLayer;
+            }
+        }
+    }
+    return 1;
+}
+exports.computeLastLayerAlpha = computeLastLayerAlpha;
 
 
 /***/ }),
@@ -801,12 +828,12 @@ var zoom_1 = __webpack_require__(/*! ../../../../misc/zoom */ "./src/ts/misc/zoo
 var vbo_types_1 = __webpack_require__(/*! ../../../../plotter/vbo-types */ "./src/ts/plotter/vbo-types.ts");
 var message_1 = __webpack_require__(/*! ../message */ "./src/ts/engine/worker/messages/message.ts");
 var verb = message_1.EVerb.PERFORM_UPDATE_OUTPUT;
-function sendMessage(polygonsVboBuffer, linesVboBuffer, appliedZoom, lastLayerBirthTimestamp) {
+function sendMessage(polygonsVboBuffer, linesVboBuffer, appliedZoom, newLayerAppeared) {
     var messageData = {
         polygonsVboBuffer: polygonsVboBuffer,
         linesVboBuffer: linesVboBuffer,
         appliedZoom: appliedZoom,
-        lastLayerBirthTimestamp: lastLayerBirthTimestamp,
+        newLayerAppeared: newLayerAppeared,
     };
     var transfer = [
         polygonsVboBuffer.buffer.buffer,
@@ -820,7 +847,7 @@ function addListener(worker, listener) {
         var polygonsVboBuffer = vbo_types_1.rehydrateVboBuffer(data.polygonsVboBuffer);
         var linesVboBuffer = vbo_types_1.rehydrateVboBuffer(data.linesVboBuffer);
         var appliedZoom = zoom_1.Zoom.rehydrate(data.appliedZoom);
-        listener(polygonsVboBuffer, linesVboBuffer, appliedZoom, data.lastLayerBirthTimestamp);
+        listener(polygonsVboBuffer, linesVboBuffer, appliedZoom, data.newLayerAppeared);
     });
 }
 exports.addListener = addListener;
@@ -876,11 +903,10 @@ exports.sendMessage = exports.addListener = void 0;
 var vbo_types_1 = __webpack_require__(/*! ../../../../plotter/vbo-types */ "./src/ts/plotter/vbo-types.ts");
 var message_1 = __webpack_require__(/*! ../message */ "./src/ts/engine/worker/messages/message.ts");
 var verb = message_1.EVerb.RESET_OUTPUT;
-function sendMessage(polygonsVboBuffer, linesVboBuffer, lastLayerBirthTimestamp) {
+function sendMessage(polygonsVboBuffer, linesVboBuffer) {
     var messageData = {
         polygonsVboBuffer: polygonsVboBuffer,
         linesVboBuffer: linesVboBuffer,
-        lastLayerBirthTimestamp: lastLayerBirthTimestamp,
     };
     var transfer = [
         polygonsVboBuffer.buffer.buffer,
@@ -893,7 +919,7 @@ function addListener(worker, listener) {
     message_1.addListenerToWorker(worker, verb, function (data) {
         var polygonsVboBuffer = vbo_types_1.rehydrateVboBuffer(data.polygonsVboBuffer);
         var linesVboBuffer = vbo_types_1.rehydrateVboBuffer(data.linesVboBuffer);
-        listener(polygonsVboBuffer, linesVboBuffer, data.lastLayerBirthTimestamp);
+        listener(polygonsVboBuffer, linesVboBuffer);
     });
 }
 exports.addListener = addListener;
@@ -2031,7 +2057,6 @@ Page.Checkbox.addObserver(controlId.MULTITHREADED_CHECKBOX_ID, function (checked
     web_1.setQueryStringValue(monothreadedQueryStringParamName, checked ? null : "1");
 });
 Page.Controls.setVisibility(controlId.PLOTTER_TABS_ID, !Parameters.multithreaded);
-Page.Controls.setVisibility(controlId.BLENDING_CHECKBOX_ID, !Parameters.multithreaded);
 
 
 /***/ }),

@@ -22,7 +22,7 @@ class GeometryId {
     }
 
     private constructor(
-        private readonly id: number,
+        public readonly id: number,
         private version: number
     ) { }
 }

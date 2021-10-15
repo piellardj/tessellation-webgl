@@ -206,26 +206,22 @@ var Engine = (function () {
     };
     Engine.prototype.rebuildLayersCollections = function () {
         for (var iLayer = 0; iLayer < this.layers.length; iLayer++) {
-            var primitives = {
-                items: this.rootPrimitive.getChildrenOfDepth(iLayer),
-                geometryId: geometry_id_1.GeometryId.new(),
-            };
-            var outlines = {
-                items: [],
-                geometryId: geometry_id_1.GeometryId.new(),
-            };
+            var reparsedLayerPrimitives = this.rootPrimitive.getChildrenOfDepth(iLayer);
+            this.layers[iLayer].primitives.items = reparsedLayerPrimitives;
+            this.layers[iLayer].primitives.geometryId.registerChange();
+            var reparsedLayerOutlines = [];
             if (iLayer === 0) {
-                outlines.items.push(this.rootPrimitive.getOutline());
+                reparsedLayerOutlines.push(this.rootPrimitive.getOutline());
             }
             else {
                 var primitivesOfParentLayer = this.layers[iLayer - 1].primitives;
                 for (var _i = 0, _a = primitivesOfParentLayer.items; _i < _a.length; _i++) {
                     var primitive = _a[_i];
-                    outlines.items.push(primitive.subdivision);
+                    reparsedLayerOutlines.push(primitive.subdivision);
                 }
             }
-            this.layers[iLayer].primitives = primitives;
-            this.layers[iLayer].outlines = outlines;
+            this.layers[iLayer].outlines.items = reparsedLayerOutlines;
+            this.layers[iLayer].outlines.geometryId.registerChange();
         }
     };
     Object.defineProperty(Engine.prototype, "primitiveType", {
@@ -484,12 +480,12 @@ var zoom_1 = __webpack_require__(/*! ../../../../misc/zoom */ "./src/ts/misc/zoo
 var vbo_types_1 = __webpack_require__(/*! ../../../../plotter/vbo-types */ "./src/ts/plotter/vbo-types.ts");
 var message_1 = __webpack_require__(/*! ../message */ "./src/ts/engine/worker/messages/message.ts");
 var verb = message_1.EVerb.PERFORM_UPDATE_OUTPUT;
-function sendMessage(polygonsVboBuffer, linesVboBuffer, appliedZoom, lastLayerBirthTimestamp) {
+function sendMessage(polygonsVboBuffer, linesVboBuffer, appliedZoom, newLayerAppeared) {
     var messageData = {
         polygonsVboBuffer: polygonsVboBuffer,
         linesVboBuffer: linesVboBuffer,
         appliedZoom: appliedZoom,
-        lastLayerBirthTimestamp: lastLayerBirthTimestamp,
+        newLayerAppeared: newLayerAppeared,
     };
     var transfer = [
         polygonsVboBuffer.buffer.buffer,
@@ -503,7 +499,7 @@ function addListener(worker, listener) {
         var polygonsVboBuffer = vbo_types_1.rehydrateVboBuffer(data.polygonsVboBuffer);
         var linesVboBuffer = vbo_types_1.rehydrateVboBuffer(data.linesVboBuffer);
         var appliedZoom = zoom_1.Zoom.rehydrate(data.appliedZoom);
-        listener(polygonsVboBuffer, linesVboBuffer, appliedZoom, data.lastLayerBirthTimestamp);
+        listener(polygonsVboBuffer, linesVboBuffer, appliedZoom, data.newLayerAppeared);
     });
 }
 exports.addListener = addListener;
@@ -559,11 +555,10 @@ exports.sendMessage = exports.addListener = void 0;
 var vbo_types_1 = __webpack_require__(/*! ../../../../plotter/vbo-types */ "./src/ts/plotter/vbo-types.ts");
 var message_1 = __webpack_require__(/*! ../message */ "./src/ts/engine/worker/messages/message.ts");
 var verb = message_1.EVerb.RESET_OUTPUT;
-function sendMessage(polygonsVboBuffer, linesVboBuffer, lastLayerBirthTimestamp) {
+function sendMessage(polygonsVboBuffer, linesVboBuffer) {
     var messageData = {
         polygonsVboBuffer: polygonsVboBuffer,
         linesVboBuffer: linesVboBuffer,
-        lastLayerBirthTimestamp: lastLayerBirthTimestamp,
     };
     var transfer = [
         polygonsVboBuffer.buffer.buffer,
@@ -576,7 +571,7 @@ function addListener(worker, listener) {
     message_1.addListenerToWorker(worker, verb, function (data) {
         var polygonsVboBuffer = vbo_types_1.rehydrateVboBuffer(data.polygonsVboBuffer);
         var linesVboBuffer = vbo_types_1.rehydrateVboBuffer(data.linesVboBuffer);
-        listener(polygonsVboBuffer, linesVboBuffer, data.lastLayerBirthTimestamp);
+        listener(polygonsVboBuffer, linesVboBuffer);
     });
 }
 exports.addListener = addListener;
@@ -893,7 +888,7 @@ var WorkerEngine = (function (_super) {
         _super.prototype.reset.call(this, viewport, primitiveType);
         var polygonsVboBuffer = this.computePolygonsVboBuffer();
         var linesVboBuffer = this.computeLinesVboBuffer();
-        MessagesToMain.ResetOutput.sendMessage(polygonsVboBuffer, linesVboBuffer, this.lastLayerBirthTimestamp);
+        MessagesToMain.ResetOutput.sendMessage(polygonsVboBuffer, linesVboBuffer);
     };
     WorkerEngine.prototype.recomputeColors = function (colorVariation) {
         _super.prototype.recomputeColors.call(this, colorVariation);
@@ -906,11 +901,14 @@ var WorkerEngine = (function (_super) {
         MessagesToMain.DownloadAsSvgOutput.sendMessage(svgOutput);
     };
     WorkerEngine.prototype.performUpdate = function (zoomToApply, viewport, wantedDepth, subdivisionBalance, colorVariation) {
+        var lastLayerIdPreUpdate = this.layers[this.layers.length - 1].primitives.geometryId.id;
         var changedSomething = _super.prototype.performUpdate.call(this, zoomToApply, viewport, wantedDepth, subdivisionBalance, colorVariation);
+        var lastLayerIdPostUpdate = this.layers[this.layers.length - 1].primitives.geometryId.id;
+        var newLayerAppeared = (lastLayerIdPreUpdate !== lastLayerIdPostUpdate);
         if (changedSomething) {
             var polygonsVboBuffer = this.computePolygonsVboBuffer();
             var linesVboBuffer = this.computeLinesVboBuffer();
-            MessagesToMain.PerformUpdateOutput.sendMessage(polygonsVboBuffer, linesVboBuffer, zoomToApply, this.lastLayerBirthTimestamp);
+            MessagesToMain.PerformUpdateOutput.sendMessage(polygonsVboBuffer, linesVboBuffer, zoomToApply, newLayerAppeared);
         }
         else {
             MessagesToMain.PerformUpdateNoOutput.sendMessage(zoomToApply);
@@ -922,10 +920,18 @@ var WorkerEngine = (function (_super) {
     };
     WorkerEngine.prototype.computePolygonsVboBuffer = function () {
         var lastLayer = this.layers[this.layers.length - 1];
-        return plotter_webgl_basic_1.PlotterWebGLBasic.buildPolygonsVboBuffer([{
+        var batchesOfPolygons = [{
                 items: lastLayer.primitives.items,
                 geometryId: lastLayer.primitives.geometryId.copy(),
-            }]);
+            }];
+        if (this.layers.length > 1) {
+            var layerBeforeLast = this.layers[this.layers.length - 2];
+            batchesOfPolygons.unshift({
+                items: layerBeforeLast.primitives.items,
+                geometryId: layerBeforeLast.primitives.geometryId.copy(),
+            });
+        }
+        return plotter_webgl_basic_1.PlotterWebGLBasic.buildPolygonsVboBuffer(batchesOfPolygons);
     };
     WorkerEngine.prototype.computeLinesVboBuffer = function () {
         var batchesOfLines = [];
@@ -948,13 +954,6 @@ var WorkerEngine = (function (_super) {
         svgPlotter.finalize();
         return svgPlotter.output();
     };
-    Object.defineProperty(WorkerEngine.prototype, "lastLayerBirthTimestamp", {
-        get: function () {
-            return this.layers[this.layers.length - 1].birthTimestamp;
-        },
-        enumerable: false,
-        configurable: true
-    });
     return WorkerEngine;
 }(engine_1.Engine));
 exports.WorkerEngine = WorkerEngine;
