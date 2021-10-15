@@ -2,7 +2,7 @@ import { Color } from "../misc/color";
 import { Rectangle } from "../misc/rectangle";
 import { Zoom } from "../misc/zoom";
 import { GeometryId } from "../plotter/geometry-id";
-import { BatchOfLines, IBatch } from "../plotter/types";
+import { BatchOfLines, IBatch, Line } from "../plotter/types";
 import { EVisibility, PrimitiveBase } from "../primitives/primitive-base";
 import { PrimitiveQuads } from "../primitives/primitive-quads";
 import { PrimitiveTriangles } from "../primitives/primitive-triangles";
@@ -249,27 +249,21 @@ abstract class Engine {
 
     private rebuildLayersCollections(): void {
         for (let iLayer = 0; iLayer < this.layers.length; iLayer++) {
-            const primitives: BatchOfPrimitives = {
-                items: this.rootPrimitive.getChildrenOfDepth(iLayer) as PrimitiveBase[],
-                geometryId: GeometryId.new(),
-            };
+            const reparsedLayerPrimitives = this.rootPrimitive.getChildrenOfDepth(iLayer) as PrimitiveBase[];
+            this.layers[iLayer].primitives.items = reparsedLayerPrimitives;
+            this.layers[iLayer].primitives.geometryId.registerChange();
 
-
-            const outlines: BatchOfLines = {
-                items: [],
-                geometryId: GeometryId.new(),
-            };
+            const reparsedLayerOutlines: Line[] = [];
             if (iLayer === 0) {
-                outlines.items.push(this.rootPrimitive.getOutline());
+                reparsedLayerOutlines.push(this.rootPrimitive.getOutline());
             } else {
                 const primitivesOfParentLayer = this.layers[iLayer - 1].primitives;
                 for (const primitive of primitivesOfParentLayer.items) {
-                    outlines.items.push(primitive.subdivision);
+                    reparsedLayerOutlines.push(primitive.subdivision);
                 }
             }
-
-            this.layers[iLayer].primitives = primitives;
-            this.layers[iLayer].outlines = outlines;
+            this.layers[iLayer].outlines.items = reparsedLayerOutlines;
+            this.layers[iLayer].outlines.geometryId.registerChange();
         }
     }
 

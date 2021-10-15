@@ -4,7 +4,7 @@ import { GeometryId } from "./geometry-id";
 
 
 interface IBatch<T> {
-    readonly items: T[];
+    items: T[];
     readonly geometryId: GeometryId;
 }
 
