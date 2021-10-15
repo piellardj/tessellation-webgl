@@ -112,7 +112,7 @@ class PlotterWebGLBasic extends PlotterCanvas {
             });
         }
 
-        const FLOATS_PER_VERTICE = 6;
+        const FLOATS_PER_VERTICE = 5;
         const buffer = new Float32Array(FLOATS_PER_VERTICE * totalNbVertices);
         let i = 0;
         for (const batchOfPolygons of batchesOfPolygons) {
@@ -128,21 +128,18 @@ class PlotterWebGLBasic extends PlotterCanvas {
                         buffer[i++] = red;
                         buffer[i++] = green;
                         buffer[i++] = blue;
-                        i++; // padding
 
                         buffer[i++] = polygon.vertices[iP].x;
                         buffer[i++] = polygon.vertices[iP].y;
                         buffer[i++] = red;
                         buffer[i++] = green;
                         buffer[i++] = blue;
-                        i++; // padding
 
                         buffer[i++] = polygon.vertices[iP + 1].x;
                         buffer[i++] = polygon.vertices[iP + 1].y;
                         buffer[i++] = red;
                         buffer[i++] = green;
                         buffer[i++] = blue;
-                        i++; // padding
                     }
                 }
             }
@@ -327,9 +324,9 @@ class PlotterWebGLBasic extends PlotterCanvas {
             const aColorLoc = this.shaderPolygons.a["aColor"].loc;
             gl.bindBuffer(gl.ARRAY_BUFFER, this.polygonsVbo.id);
             gl.enableVertexAttribArray(aPositionLoc);
-            gl.vertexAttribPointer(aPositionLoc, 2, gl.FLOAT, false, BYTES_PER_FLOAT * 6, 0);
+            gl.vertexAttribPointer(aPositionLoc, 2, gl.FLOAT, false, BYTES_PER_FLOAT * 5, 0);
             gl.enableVertexAttribArray(aColorLoc);
-            gl.vertexAttribPointer(aColorLoc, 4, gl.FLOAT, false, BYTES_PER_FLOAT * 6, BYTES_PER_FLOAT * 2);
+            gl.vertexAttribPointer(aColorLoc, 3, gl.FLOAT, false, BYTES_PER_FLOAT * 5, BYTES_PER_FLOAT * 2);
 
             this.shaderPolygons.u["uScreenSize"].value = [0.5 * this.width, -0.5 * this.height];
 

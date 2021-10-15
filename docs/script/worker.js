@@ -2178,7 +2178,7 @@ var PlotterWebGLBasic = (function (_super) {
                 geometryId: batchOfPolygons.geometryId.copy(),
             });
         }
-        var FLOATS_PER_VERTICE = 6;
+        var FLOATS_PER_VERTICE = 5;
         var buffer = new Float32Array(FLOATS_PER_VERTICE * totalNbVertices);
         var i = 0;
         for (var _c = 0, batchesOfPolygons_2 = batchesOfPolygons; _c < batchesOfPolygons_2.length; _c++) {
@@ -2195,19 +2195,16 @@ var PlotterWebGLBasic = (function (_super) {
                         buffer[i++] = red;
                         buffer[i++] = green;
                         buffer[i++] = blue;
-                        i++;
                         buffer[i++] = polygon.vertices[iP].x;
                         buffer[i++] = polygon.vertices[iP].y;
                         buffer[i++] = red;
                         buffer[i++] = green;
                         buffer[i++] = blue;
-                        i++;
                         buffer[i++] = polygon.vertices[iP + 1].x;
                         buffer[i++] = polygon.vertices[iP + 1].y;
                         buffer[i++] = red;
                         buffer[i++] = green;
                         buffer[i++] = blue;
-                        i++;
                     }
                 }
             }
@@ -2332,9 +2329,9 @@ var PlotterWebGLBasic = (function (_super) {
             var aColorLoc = this.shaderPolygons.a["aColor"].loc;
             gl_canvas_1.gl.bindBuffer(gl_canvas_1.gl.ARRAY_BUFFER, this.polygonsVbo.id);
             gl_canvas_1.gl.enableVertexAttribArray(aPositionLoc);
-            gl_canvas_1.gl.vertexAttribPointer(aPositionLoc, 2, gl_canvas_1.gl.FLOAT, false, BYTES_PER_FLOAT * 6, 0);
+            gl_canvas_1.gl.vertexAttribPointer(aPositionLoc, 2, gl_canvas_1.gl.FLOAT, false, BYTES_PER_FLOAT * 5, 0);
             gl_canvas_1.gl.enableVertexAttribArray(aColorLoc);
-            gl_canvas_1.gl.vertexAttribPointer(aColorLoc, 4, gl_canvas_1.gl.FLOAT, false, BYTES_PER_FLOAT * 6, BYTES_PER_FLOAT * 2);
+            gl_canvas_1.gl.vertexAttribPointer(aColorLoc, 3, gl_canvas_1.gl.FLOAT, false, BYTES_PER_FLOAT * 5, BYTES_PER_FLOAT * 2);
             this.shaderPolygons.u["uScreenSize"].value = [0.5 * this.width, -0.5 * this.height];
             for (var _i = 0, vbpPartsScheduledForDrawing_1 = vbpPartsScheduledForDrawing; _i < vbpPartsScheduledForDrawing_1.length; _i++) {
                 var vboPart = vbpPartsScheduledForDrawing_1[_i];
