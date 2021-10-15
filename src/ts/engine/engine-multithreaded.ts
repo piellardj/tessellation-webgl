@@ -181,7 +181,7 @@ class EngineMultithreaded implements IEngine<PlotterWebGLBasic> {
                 this.pendingPerformUpdateCommand = null;
                 this.pendingResetCommand = null;
 
-                console.log("Sending reset command");
+                // console.log("Sending reset command");
                 this.lastCommandSendingTimestamp = performance.now();
                 this.isAwaitingCommandResult = true;
                 MessagesToWorker.Reset.sendMessage(this.worker, command.viewport, command.primitiveType);
@@ -189,7 +189,7 @@ class EngineMultithreaded implements IEngine<PlotterWebGLBasic> {
                 const command = this.pendingRecomputeColorsCommand;
                 this.pendingRecomputeColorsCommand = null;
 
-                console.log("Sending recompute colors command");
+                // console.log("Sending recompute colors command");
                 this.lastCommandSendingTimestamp = performance.now();
                 this.isAwaitingCommandResult = true;
                 MessagesToWorker.RecomputeColors.sendMessage(this.worker, command.colorVariation);
@@ -198,7 +198,7 @@ class EngineMultithreaded implements IEngine<PlotterWebGLBasic> {
                     const command = this.pendingPerformUpdateCommand;
                     this.pendingPerformUpdateCommand = null;
 
-                    console.log("Sending update command");
+                    // console.log("Sending update command");
                     this.lastCommandSendingTimestamp = performance.now();
                     this.isAwaitingCommandResult = true;
                     MessagesToWorker.PerformUpdate.sendMessage(this.worker, this.cumulatedZoom, command.viewport, command.wantedDepth, command.subdivisionBalance, command.colorVariation);

@@ -283,7 +283,6 @@ var EngineMultithreaded = (function () {
                 this.pendingRecomputeColorsCommand = null;
                 this.pendingPerformUpdateCommand = null;
                 this.pendingResetCommand = null;
-                console.log("Sending reset command");
                 this.lastCommandSendingTimestamp = performance.now();
                 this.isAwaitingCommandResult = true;
                 MessagesToWorker.Reset.sendMessage(this.worker, command.viewport, command.primitiveType);
@@ -291,7 +290,6 @@ var EngineMultithreaded = (function () {
             else if (this.pendingRecomputeColorsCommand) {
                 var command = this.pendingRecomputeColorsCommand;
                 this.pendingRecomputeColorsCommand = null;
-                console.log("Sending recompute colors command");
                 this.lastCommandSendingTimestamp = performance.now();
                 this.isAwaitingCommandResult = true;
                 MessagesToWorker.RecomputeColors.sendMessage(this.worker, command.colorVariation);
@@ -300,7 +298,6 @@ var EngineMultithreaded = (function () {
                 this.performUpdateCommandThrottle.runIfAvailable(function () {
                     var command = _this.pendingPerformUpdateCommand;
                     _this.pendingPerformUpdateCommand = null;
-                    console.log("Sending update command");
                     _this.lastCommandSendingTimestamp = performance.now();
                     _this.isAwaitingCommandResult = true;
                     MessagesToWorker.PerformUpdate.sendMessage(_this.worker, _this.cumulatedZoom, command.viewport, command.wantedDepth, command.subdivisionBalance, command.colorVariation);
