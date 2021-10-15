@@ -8,7 +8,7 @@ import { IPlotter } from "../plotter/plotter-interface";
 import { PlotterSVG } from "../plotter/plotter-svg";
 import { Engine } from "./engine";
 import { IEngineMetrics, updateEngineMetricsIndicators } from "./engine-metrics";
-import { ISimulation } from "./simulation";
+import { computeComputeLastLayerAlpha, ISimulation } from "./simulation";
 
 
 class SimulationMonothreaded extends Engine implements ISimulation<IPlotter> {
@@ -33,18 +33,9 @@ class SimulationMonothreaded extends Engine implements ISimulation<IPlotter> {
         }
 
         let lastSolidLayer = this.layers.length - 1;
-        let emergingLayerAlpha = 0;
-        if (Parameters.blending && this.layers.length > 1) {
-            if (Parameters.zoomingSpeed > 0) {
-                const emergingTimeOfLastLayer = 1000 / Math.pow((1 + Parameters.zoomingSpeed), 2);
-                const lastLayer = this.layers[this.layers.length - 1];
-                const ageOfLastLayer = performance.now() - lastLayer.birthTimestamp;
-                if (ageOfLastLayer < emergingTimeOfLastLayer) {
-                    // last layer is still blending in
-                    lastSolidLayer--;
-                    emergingLayerAlpha = ageOfLastLayer / emergingTimeOfLastLayer;
-                }
-            }
+        const emergingLayerAlpha = computeComputeLastLayerAlpha(this.layers.length, this.layers[this.layers.length - 1].birthTimestamp);
+        if (emergingLayerAlpha < 1) {
+            lastSolidLayer--;
         }
         const emergingLayer = lastSolidLayer + 1;
 
