@@ -165,7 +165,7 @@ abstract class Engine {
             return true;
         } else {
             const prunedPrimitives = this.prunePrimitivesOutOfView(this.rootPrimitive, viewport);
-            const changedRootPrimitive = this.changeRootPrimitiveInNeeded();
+            const changedRootPrimitive = this.changeRootPrimitiveIfNeeded();
 
             if (prunedPrimitives) {
                 this.rebuildLayersCollections();
@@ -217,7 +217,7 @@ abstract class Engine {
         return true;
     }
 
-    private changeRootPrimitiveInNeeded(): boolean {
+    private changeRootPrimitiveIfNeeded(): boolean {
         const directChildrenOfRoot = this.rootPrimitive.getDirectChildren();
         if (directChildrenOfRoot.length === 1) {
             this.rootPrimitive = directChildrenOfRoot[0] as PrimitiveBase;

@@ -151,7 +151,7 @@ var Engine = (function () {
         }
         else {
             var prunedPrimitives = this.prunePrimitivesOutOfView(this.rootPrimitive, viewport);
-            var changedRootPrimitive = this.changeRootPrimitiveInNeeded();
+            var changedRootPrimitive = this.changeRootPrimitiveIfNeeded();
             if (prunedPrimitives) {
                 this.rebuildLayersCollections();
                 return true;
@@ -197,7 +197,7 @@ var Engine = (function () {
         }
         return true;
     };
-    Engine.prototype.changeRootPrimitiveInNeeded = function () {
+    Engine.prototype.changeRootPrimitiveIfNeeded = function () {
         var directChildrenOfRoot = this.rootPrimitive.getDirectChildren();
         if (directChildrenOfRoot.length === 1) {
             this.rootPrimitive = directChildrenOfRoot[0];
