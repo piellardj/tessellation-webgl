@@ -196,7 +196,7 @@ var Engine = (function () {
                 primitive.removeChild(child);
                 changedSomething = true;
             }
-            else if (visibility === primitive_base_1.EVisibility.VISIBLE) {
+            else if (visibility === primitive_base_1.EVisibility.PARTIALLY_VISIBLE) {
                 if (this.prunePrimitivesOutOfView(child, viewport)) {
                     changedSomething = true;
                 }
@@ -2445,7 +2445,7 @@ var tree_node_1 = __webpack_require__(/*! ../engine/tree-node */ "./src/ts/engin
 var EVisibility;
 (function (EVisibility) {
     EVisibility[EVisibility["OUT_OF_VIEW"] = 0] = "OUT_OF_VIEW";
-    EVisibility[EVisibility["VISIBLE"] = 1] = "VISIBLE";
+    EVisibility[EVisibility["PARTIALLY_VISIBLE"] = 1] = "PARTIALLY_VISIBLE";
     EVisibility[EVisibility["COVERS_VIEW"] = 2] = "COVERS_VIEW";
 })(EVisibility || (EVisibility = {}));
 exports.EVisibility = EVisibility;
@@ -2616,17 +2616,17 @@ var PrimitiveQuads = (function (_super) {
             return primitive_base_1.EVisibility.COVERS_VIEW;
         }
         else if (viewTopLeftInside || viewTopRightInside || viewBottomLeftInside || viewBottomRightInside) {
-            return primitive_base_1.EVisibility.VISIBLE;
+            return primitive_base_1.EVisibility.PARTIALLY_VISIBLE;
         }
         else if (viewport.containsPoint(this.topLeft) || viewport.containsPoint(this.topRight) ||
             viewport.containsPoint(this.bottomLeft) || viewport.containsPoint(this.bottomRight)) {
-            return primitive_base_1.EVisibility.VISIBLE;
+            return primitive_base_1.EVisibility.PARTIALLY_VISIBLE;
         }
         else if (viewport.lineIntersectsBoundaries(this.topLeft, this.topRight) ||
             viewport.lineIntersectsBoundaries(this.topRight, this.bottomRight) ||
             viewport.lineIntersectsBoundaries(this.bottomRight, this.bottomLeft) ||
             viewport.lineIntersectsBoundaries(this.bottomLeft, this.topLeft)) {
-            return primitive_base_1.EVisibility.VISIBLE;
+            return primitive_base_1.EVisibility.PARTIALLY_VISIBLE;
         }
         else {
             return primitive_base_1.EVisibility.OUT_OF_VIEW;
@@ -2869,15 +2869,15 @@ var PrimitiveTriangles = (function (_super) {
             return primitive_base_1.EVisibility.COVERS_VIEW;
         }
         else if (viewTopLeftInside || viewTopRightInside || viewBottomLeftInside || viewBottomRightInside) {
-            return primitive_base_1.EVisibility.VISIBLE;
+            return primitive_base_1.EVisibility.PARTIALLY_VISIBLE;
         }
         else if (viewport.containsPoint(this.p1) || viewport.containsPoint(this.p2) || viewport.containsPoint(this.p3)) {
-            return primitive_base_1.EVisibility.VISIBLE;
+            return primitive_base_1.EVisibility.PARTIALLY_VISIBLE;
         }
         else if (viewport.lineIntersectsBoundaries(this.p1, this.p2) ||
             viewport.lineIntersectsBoundaries(this.p2, this.p3) ||
             viewport.lineIntersectsBoundaries(this.p3, this.p1)) {
-            return primitive_base_1.EVisibility.VISIBLE;
+            return primitive_base_1.EVisibility.PARTIALLY_VISIBLE;
         }
         else {
             return primitive_base_1.EVisibility.OUT_OF_VIEW;

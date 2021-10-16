@@ -236,7 +236,7 @@ abstract class Engine {
             if (visibility === EVisibility.OUT_OF_VIEW) {
                 primitive.removeChild(child);
                 changedSomething = true;
-            } else if (visibility === EVisibility.VISIBLE) {
+            } else if (visibility === EVisibility.PARTIALLY_VISIBLE) {
                 // if it is partially visible, some of its children may be completely out of view
                 if (this.prunePrimitivesOutOfView(child, viewport)) {
                     changedSomething = true;

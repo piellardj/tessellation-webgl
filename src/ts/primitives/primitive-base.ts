@@ -11,7 +11,7 @@ type Line = IPoint[];
 
 enum EVisibility {
     OUT_OF_VIEW,
-    VISIBLE,
+    PARTIALLY_VISIBLE,
     COVERS_VIEW,
 }
 
