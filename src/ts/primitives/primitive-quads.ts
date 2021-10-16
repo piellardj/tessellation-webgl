@@ -90,16 +90,21 @@ class PrimitiveQuads extends PrimitiveBase {
             return EVisibility.COVERS_VIEW;
         } else if (viewTopLeftInside || viewTopRightInside || viewBottomLeftInside || viewBottomRightInside) {
             return EVisibility.PARTIALLY_VISIBLE;
-        } else if (viewport.containsPoint(this.topLeft) || viewport.containsPoint(this.topRight) ||
-            viewport.containsPoint(this.bottomLeft) || viewport.containsPoint(this.bottomRight)) {
-            return EVisibility.PARTIALLY_VISIBLE;
-        } else if (viewport.lineIntersectsBoundaries(this.topLeft, this.topRight) ||
-            viewport.lineIntersectsBoundaries(this.topRight, this.bottomRight) ||
-            viewport.lineIntersectsBoundaries(this.bottomRight, this.bottomLeft) ||
-            viewport.lineIntersectsBoundaries(this.bottomLeft, this.topLeft)) {
-            return EVisibility.PARTIALLY_VISIBLE;
         } else {
-            return EVisibility.OUT_OF_VIEW;
+            const topLeftInside = viewport.containsPoint(this.topLeft);
+            const topRightInside = viewport.containsPoint(this.topRight);
+            const bottomLeftInside = viewport.containsPoint(this.bottomLeft);
+            const bottomRightInside = viewport.containsPoint(this.bottomRight);
+            if (topLeftInside || topRightInside || bottomLeftInside || bottomRightInside) {
+                return EVisibility.PARTIALLY_VISIBLE;
+            } else if (viewport.lineIntersectsBoundaries(this.topLeft, this.topRight) ||
+                viewport.lineIntersectsBoundaries(this.topRight, this.bottomRight) ||
+                viewport.lineIntersectsBoundaries(this.bottomRight, this.bottomLeft) ||
+                viewport.lineIntersectsBoundaries(this.bottomLeft, this.topLeft)) {
+                return EVisibility.PARTIALLY_VISIBLE;
+            } else {
+                return EVisibility.OUT_OF_VIEW;
+            }
         }
     }
 

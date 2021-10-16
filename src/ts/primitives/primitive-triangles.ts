@@ -84,14 +84,19 @@ class PrimitiveTriangles extends PrimitiveBase {
             return EVisibility.COVERS_VIEW;
         } else if (viewTopLeftInside || viewTopRightInside || viewBottomLeftInside || viewBottomRightInside) {
             return EVisibility.PARTIALLY_VISIBLE;
-        } else if (viewport.containsPoint(this.p1) || viewport.containsPoint(this.p2) || viewport.containsPoint(this.p3)) {
-            return EVisibility.PARTIALLY_VISIBLE;
-        } else if (viewport.lineIntersectsBoundaries(this.p1, this.p2) ||
-            viewport.lineIntersectsBoundaries(this.p2, this.p3) ||
-            viewport.lineIntersectsBoundaries(this.p3, this.p1)) {
-            return EVisibility.PARTIALLY_VISIBLE;
         } else {
-            return EVisibility.OUT_OF_VIEW;
+            const p1Inside = viewport.containsPoint(this.p1);
+            const p2Inside = viewport.containsPoint(this.p2);
+            const p3Inside = viewport.containsPoint(this.p3);
+            if (p1Inside || p2Inside || p3Inside) {
+                return EVisibility.PARTIALLY_VISIBLE;
+            } else if (viewport.lineIntersectsBoundaries(this.p1, this.p2) ||
+                viewport.lineIntersectsBoundaries(this.p2, this.p3) ||
+                viewport.lineIntersectsBoundaries(this.p3, this.p1)) {
+                return EVisibility.PARTIALLY_VISIBLE;
+            } else {
+                return EVisibility.OUT_OF_VIEW;
+            }
         }
     }
 
