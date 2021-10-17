@@ -77,8 +77,9 @@ var Engine = (function () {
     };
     Engine.prototype.performUpdate = function (zoomToApply, viewport, wantedDepth, subdivisionBalance, colorVariation) {
         var somethingChanged = false;
+        var viewportAfterZoom = viewport.computeNewRectangleAfterZoom(zoomToApply);
+        somethingChanged = this.handleRecycling(viewportAfterZoom) || somethingChanged;
         somethingChanged = this.applyZoom(zoomToApply) || somethingChanged;
-        somethingChanged = this.handleRecycling(viewport) || somethingChanged;
         somethingChanged = this.adjustLayersCount(wantedDepth, subdivisionBalance, colorVariation) || somethingChanged;
         if (somethingChanged) {
             for (var _i = 0, _a = this.layers; _i < _a.length; _i++) {
@@ -1612,6 +1613,20 @@ var Rectangle = (function () {
             }
         }
         return false;
+    };
+    Rectangle.prototype.computeNewRectangleAfterZoom = function (zoom) {
+        var inverseZoom = zoom.inverse();
+        var topLeftAfterZoom = {
+            x: this.topLeft.x,
+            y: this.topLeft.y,
+        };
+        inverseZoom.applyToPoint(topLeftAfterZoom);
+        var bottomRightAfterZoom = {
+            x: this.bottomRight.x,
+            y: this.bottomRight.y,
+        };
+        inverseZoom.applyToPoint(bottomRightAfterZoom);
+        return new Rectangle(topLeftAfterZoom.x, bottomRightAfterZoom.x, topLeftAfterZoom.y, bottomRightAfterZoom.y);
     };
     Object.defineProperty(Rectangle.prototype, "width", {
         get: function () {

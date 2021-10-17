@@ -1,4 +1,5 @@
 import { IPoint } from "./point";
+import { Zoom } from "./zoom";
 
 
 class Rectangle {
@@ -74,6 +75,21 @@ class Rectangle {
         }
 
         return false;
+    }
+
+    public computeNewRectangleAfterZoom(zoom: Zoom): Rectangle {
+        const inverseZoom = zoom.inverse();
+        const topLeftAfterZoom: IPoint = {
+            x: this.topLeft.x,
+            y: this.topLeft.y,
+        };
+        inverseZoom.applyToPoint(topLeftAfterZoom);
+        const bottomRightAfterZoom: IPoint = {
+            x: this.bottomRight.x,
+            y: this.bottomRight.y,
+        };
+        inverseZoom.applyToPoint(bottomRightAfterZoom);
+        return new Rectangle(topLeftAfterZoom.x, bottomRightAfterZoom.x, topLeftAfterZoom.y, bottomRightAfterZoom.y);
     }
 
     public get width(): number {
