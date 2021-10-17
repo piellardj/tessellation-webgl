@@ -2607,34 +2607,25 @@ var PrimitiveQuads = (function (_super) {
         }
     };
     PrimitiveQuads.prototype.computeVisibility = function (viewport) {
-        var viewportTopRight = { x: viewport.bottomRight.x, y: viewport.topLeft.y };
-        var viewportBottomLeft = { x: viewport.topLeft.x, y: viewport.bottomRight.y };
-        var viewTopLeftInside = this.isInside(viewport.topLeft);
-        var viewTopRightInside = this.isInside(viewportTopRight);
-        var viewBottomLeftInside = this.isInside(viewportBottomLeft);
-        var viewBottomRightInside = this.isInside(viewport.bottomRight);
-        if (viewTopLeftInside && viewTopRightInside && viewBottomLeftInside && viewBottomRightInside) {
-            return primitive_base_1.EVisibility.COVERS_VIEW;
+        var topLeftInside = viewport.containsPoint(this.topLeft);
+        var topRightInside = viewport.containsPoint(this.topRight);
+        var bottomLeftInside = viewport.containsPoint(this.bottomLeft);
+        var bottomRightInside = viewport.containsPoint(this.bottomRight);
+        if (topLeftInside && topRightInside && bottomLeftInside && bottomRightInside) {
+            return primitive_base_1.EVisibility.FULLY_VISIBLE;
         }
-        else if (viewTopLeftInside || viewTopRightInside || viewBottomLeftInside || viewBottomRightInside) {
+        else if (topLeftInside || topRightInside || bottomLeftInside || bottomRightInside) {
+            return primitive_base_1.EVisibility.PARTIALLY_VISIBLE;
+        }
+        else if (viewport.lineIntersectsBoundaries(this.topLeft, this.topRight) ||
+            viewport.lineIntersectsBoundaries(this.topRight, this.bottomRight) ||
+            viewport.lineIntersectsBoundaries(this.bottomRight, this.bottomLeft) ||
+            viewport.lineIntersectsBoundaries(this.bottomLeft, this.topLeft)) {
             return primitive_base_1.EVisibility.PARTIALLY_VISIBLE;
         }
         else {
-            var topLeftInside = viewport.containsPoint(this.topLeft);
-            var topRightInside = viewport.containsPoint(this.topRight);
-            var bottomLeftInside = viewport.containsPoint(this.bottomLeft);
-            var bottomRightInside = viewport.containsPoint(this.bottomRight);
-            if (topLeftInside && topRightInside && bottomLeftInside && bottomRightInside) {
-                return primitive_base_1.EVisibility.FULLY_VISIBLE;
-            }
-            else if (topLeftInside || topRightInside || bottomLeftInside || bottomRightInside) {
-                return primitive_base_1.EVisibility.PARTIALLY_VISIBLE;
-            }
-            else if (viewport.lineIntersectsBoundaries(this.topLeft, this.topRight) ||
-                viewport.lineIntersectsBoundaries(this.topRight, this.bottomRight) ||
-                viewport.lineIntersectsBoundaries(this.bottomRight, this.bottomLeft) ||
-                viewport.lineIntersectsBoundaries(this.bottomLeft, this.topLeft)) {
-                return primitive_base_1.EVisibility.PARTIALLY_VISIBLE;
+            if (this.isInside(viewport.topLeft)) {
+                return primitive_base_1.EVisibility.COVERS_VIEW;
             }
             else {
                 return primitive_base_1.EVisibility.OUT_OF_VIEW;

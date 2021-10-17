@@ -77,33 +77,26 @@ class PrimitiveQuads extends PrimitiveBase {
     }
 
     public computeVisibility(viewport: Rectangle): EVisibility {
-        const viewportTopRight: IPoint = { x: viewport.bottomRight.x, y: viewport.topLeft.y };
-        const viewportBottomLeft: IPoint = { x: viewport.topLeft.x, y: viewport.bottomRight.y };
-
-        const viewTopLeftInside = this.isInside(viewport.topLeft);
-        const viewTopRightInside = this.isInside(viewportTopRight);
-        const viewBottomLeftInside = this.isInside(viewportBottomLeft);
-        const viewBottomRightInside = this.isInside(viewport.bottomRight);
-
-        if (viewTopLeftInside && viewTopRightInside && viewBottomLeftInside && viewBottomRightInside) {
-            // the shape is convex so if all points are in view, the whole shape is in view
-            return EVisibility.COVERS_VIEW;
-        } else if (viewTopLeftInside || viewTopRightInside || viewBottomLeftInside || viewBottomRightInside) {
+        const topLeftInside = viewport.containsPoint(this.topLeft);
+        const topRightInside = viewport.containsPoint(this.topRight);
+        const bottomLeftInside = viewport.containsPoint(this.bottomLeft);
+        const bottomRightInside = viewport.containsPoint(this.bottomRight);
+        if (topLeftInside && topRightInside && bottomLeftInside && bottomRightInside) {
+            // viewport is convex so if all vertices are in view, the whole shape is in view
+            return EVisibility.FULLY_VISIBLE;
+        } else if (topLeftInside || topRightInside || bottomLeftInside || bottomRightInside) {
+            return EVisibility.PARTIALLY_VISIBLE;
+        } else if (viewport.lineIntersectsBoundaries(this.topLeft, this.topRight) ||
+            viewport.lineIntersectsBoundaries(this.topRight, this.bottomRight) ||
+            viewport.lineIntersectsBoundaries(this.bottomRight, this.bottomLeft) ||
+            viewport.lineIntersectsBoundaries(this.bottomLeft, this.topLeft)) {
             return EVisibility.PARTIALLY_VISIBLE;
         } else {
-            const topLeftInside = viewport.containsPoint(this.topLeft);
-            const topRightInside = viewport.containsPoint(this.topRight);
-            const bottomLeftInside = viewport.containsPoint(this.bottomLeft);
-            const bottomRightInside = viewport.containsPoint(this.bottomRight);
-            if (topLeftInside && topRightInside && bottomLeftInside && bottomRightInside) {
-                return EVisibility.FULLY_VISIBLE;
-            }else if (topLeftInside || topRightInside || bottomLeftInside || bottomRightInside) {
-                return EVisibility.PARTIALLY_VISIBLE;
-            } else if (viewport.lineIntersectsBoundaries(this.topLeft, this.topRight) ||
-                viewport.lineIntersectsBoundaries(this.topRight, this.bottomRight) ||
-                viewport.lineIntersectsBoundaries(this.bottomRight, this.bottomLeft) ||
-                viewport.lineIntersectsBoundaries(this.bottomLeft, this.topLeft)) {
-                return EVisibility.PARTIALLY_VISIBLE;
+            // at this point, we know that the primitive is not fully contained in the viewport,
+            // and that there are no intersection between edges and viewport bounds
+            // => either the shape is out of view or contains the whole viewport
+            if (this.isInside(viewport.topLeft)) {
+                return EVisibility.COVERS_VIEW;
             } else {
                 return EVisibility.OUT_OF_VIEW;
             }
