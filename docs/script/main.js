@@ -1262,6 +1262,7 @@ function main(simulation, plotter) {
     var MAX_DT = 1 / 30;
     var lastFrameTimestamp = performance.now();
     function mainLoop() {
+        plotter.resizeCanvas();
         var now = performance.now();
         var millisecondsSinceLastFrame = now - lastFrameTimestamp;
         lastFrameTimestamp = now;
@@ -1273,7 +1274,6 @@ function main(simulation, plotter) {
             needToRedraw = true;
         }
         if (needToRedraw && plotter.isReady) {
-            plotter.resizeCanvas();
             simulation.draw(plotter, parameters_1.Parameters.scaling, backgroundColor, linesColor());
             needToRedraw = false;
         }
@@ -2038,7 +2038,6 @@ var callReset = function () {
 };
 Page.Range.addObserver(controlId.BALANCE_RANGE_ID, callReset);
 Page.Button.addObserver(controlId.RESET_BUTTON_ID, callReset);
-Page.Canvas.Observers.canvasResize.push(callReset);
 Page.Tabs.addObserver(controlId.PRIMITIVE_TABS_ID, callReset);
 Page.Range.addObserver(controlId.COLOR_VARIATION_RANGE_ID, function () {
     callObservers(Parameters.recomputeColorsObservers);

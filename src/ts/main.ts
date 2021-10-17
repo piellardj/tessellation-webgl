@@ -67,6 +67,8 @@ function main<TPlotter extends PlotterCanvas>(simulation: ISimulation<TPlotter>,
     const MAX_DT = 1 / 30;
     let lastFrameTimestamp = performance.now();
     function mainLoop(): void {
+        plotter.resizeCanvas();
+
         const now = performance.now();
         const millisecondsSinceLastFrame = now - lastFrameTimestamp;
         lastFrameTimestamp = now;
@@ -83,7 +85,6 @@ function main<TPlotter extends PlotterCanvas>(simulation: ISimulation<TPlotter>,
         }
 
         if (needToRedraw && plotter.isReady) {
-            plotter.resizeCanvas();
             simulation.draw(plotter, Parameters.scaling, backgroundColor, linesColor());
             needToRedraw = false;
         }

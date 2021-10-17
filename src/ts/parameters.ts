@@ -136,7 +136,6 @@ const callReset = () => {
 
 Page.Range.addObserver(controlId.BALANCE_RANGE_ID, callReset);
 Page.Button.addObserver(controlId.RESET_BUTTON_ID, callReset);
-Page.Canvas.Observers.canvasResize.push(callReset);
 Page.Tabs.addObserver(controlId.PRIMITIVE_TABS_ID, callReset);
 
 Page.Range.addObserver(controlId.COLOR_VARIATION_RANGE_ID, () => {
