@@ -97,6 +97,7 @@ class TestEngine {
             if (newPrimitiveVisibilityStatus === EVisibility.COVERS_VIEW) { console.log("Primitive coverage: COVERS_VIEW"); }
             else if (newPrimitiveVisibilityStatus === EVisibility.OUT_OF_VIEW) { console.log("Primitive coverage: OUT_OF_VIEW"); }
             else if (newPrimitiveVisibilityStatus === EVisibility.PARTIALLY_VISIBLE) { console.log("Primitive coverage: PARTIALLY_VISIBLE"); }
+            else if (newPrimitiveVisibilityStatus === EVisibility.FULLY_VISIBLE) { console.log("Primitive coverage: FULLY_VISIBLE"); }
             else { throw new Error(`Unknown visibility ${newPrimitiveVisibilityStatus}`); }
 
             this.lastPrimitiveVisibilityStatus = newPrimitiveVisibilityStatus;

@@ -3371,7 +3371,8 @@ var EVisibility;
 (function (EVisibility) {
     EVisibility[EVisibility["OUT_OF_VIEW"] = 0] = "OUT_OF_VIEW";
     EVisibility[EVisibility["PARTIALLY_VISIBLE"] = 1] = "PARTIALLY_VISIBLE";
-    EVisibility[EVisibility["COVERS_VIEW"] = 2] = "COVERS_VIEW";
+    EVisibility[EVisibility["FULLY_VISIBLE"] = 2] = "FULLY_VISIBLE";
+    EVisibility[EVisibility["COVERS_VIEW"] = 3] = "COVERS_VIEW";
 })(EVisibility || (EVisibility = {}));
 exports.EVisibility = EVisibility;
 var PrimitiveBase = (function (_super) {
@@ -3548,7 +3549,10 @@ var PrimitiveQuads = (function (_super) {
             var topRightInside = viewport.containsPoint(this.topRight);
             var bottomLeftInside = viewport.containsPoint(this.bottomLeft);
             var bottomRightInside = viewport.containsPoint(this.bottomRight);
-            if (topLeftInside || topRightInside || bottomLeftInside || bottomRightInside) {
+            if (topLeftInside && topRightInside && bottomLeftInside && bottomRightInside) {
+                return primitive_base_1.EVisibility.FULLY_VISIBLE;
+            }
+            else if (topLeftInside || topRightInside || bottomLeftInside || bottomRightInside) {
                 return primitive_base_1.EVisibility.PARTIALLY_VISIBLE;
             }
             else if (viewport.lineIntersectsBoundaries(this.topLeft, this.topRight) ||
@@ -3805,7 +3809,10 @@ var PrimitiveTriangles = (function (_super) {
             var p1Inside = viewport.containsPoint(this.p1);
             var p2Inside = viewport.containsPoint(this.p2);
             var p3Inside = viewport.containsPoint(this.p3);
-            if (p1Inside || p2Inside || p3Inside) {
+            if (p1Inside && p2Inside && p3Inside) {
+                return primitive_base_1.EVisibility.FULLY_VISIBLE;
+            }
+            else if (p1Inside || p2Inside || p3Inside) {
                 return primitive_base_1.EVisibility.PARTIALLY_VISIBLE;
             }
             else if (viewport.lineIntersectsBoundaries(this.p1, this.p2) ||
@@ -3973,6 +3980,9 @@ var TestEngine = (function () {
             }
             else if (newPrimitiveVisibilityStatus === primitive_base_1.EVisibility.PARTIALLY_VISIBLE) {
                 console.log("Primitive coverage: PARTIALLY_VISIBLE");
+            }
+            else if (newPrimitiveVisibilityStatus === primitive_base_1.EVisibility.FULLY_VISIBLE) {
+                console.log("Primitive coverage: FULLY_VISIBLE");
             }
             else {
                 throw new Error("Unknown visibility " + newPrimitiveVisibilityStatus);

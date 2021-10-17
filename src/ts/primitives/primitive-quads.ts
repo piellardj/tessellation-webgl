@@ -95,7 +95,9 @@ class PrimitiveQuads extends PrimitiveBase {
             const topRightInside = viewport.containsPoint(this.topRight);
             const bottomLeftInside = viewport.containsPoint(this.bottomLeft);
             const bottomRightInside = viewport.containsPoint(this.bottomRight);
-            if (topLeftInside || topRightInside || bottomLeftInside || bottomRightInside) {
+            if (topLeftInside && topRightInside && bottomLeftInside && bottomRightInside) {
+                return EVisibility.FULLY_VISIBLE;
+            }else if (topLeftInside || topRightInside || bottomLeftInside || bottomRightInside) {
                 return EVisibility.PARTIALLY_VISIBLE;
             } else if (viewport.lineIntersectsBoundaries(this.topLeft, this.topRight) ||
                 viewport.lineIntersectsBoundaries(this.topRight, this.bottomRight) ||

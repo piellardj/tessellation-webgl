@@ -88,7 +88,9 @@ class PrimitiveTriangles extends PrimitiveBase {
             const p1Inside = viewport.containsPoint(this.p1);
             const p2Inside = viewport.containsPoint(this.p2);
             const p3Inside = viewport.containsPoint(this.p3);
-            if (p1Inside || p2Inside || p3Inside) {
+            if (p1Inside && p2Inside && p3Inside) {
+                return EVisibility.FULLY_VISIBLE;
+            } else if (p1Inside || p2Inside || p3Inside) {
                 return EVisibility.PARTIALLY_VISIBLE;
             } else if (viewport.lineIntersectsBoundaries(this.p1, this.p2) ||
                 viewport.lineIntersectsBoundaries(this.p2, this.p3) ||
