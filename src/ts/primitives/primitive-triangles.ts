@@ -71,31 +71,24 @@ class PrimitiveTriangles extends PrimitiveBase {
     }
 
     public computeVisibility(viewport: Rectangle): EVisibility {
-        const viewportTopRight: IPoint = { x: viewport.bottomRight.x, y: viewport.topLeft.y };
-        const viewportBottomLeft: IPoint = { x: viewport.topLeft.x, y: viewport.bottomRight.y };
-
-        const viewTopLeftInside = this.isInside(viewport.topLeft);
-        const viewTopRightInside = this.isInside(viewportTopRight);
-        const viewBottomLeftInside = this.isInside(viewportBottomLeft);
-        const viewBottomRightInside = this.isInside(viewport.bottomRight);
-
-        if (viewTopLeftInside && viewTopRightInside && viewBottomLeftInside && viewBottomRightInside) {
-            // the shape is convex so if all points are in view, the whole shape is in view
-            return EVisibility.COVERS_VIEW;
-        } else if (viewTopLeftInside || viewTopRightInside || viewBottomLeftInside || viewBottomRightInside) {
+        const p1InViewport = viewport.containsPoint(this.p1);
+        const p2InViewport = viewport.containsPoint(this.p2);
+        const p3InViewport = viewport.containsPoint(this.p3);
+        if (p1InViewport && p2InViewport && p3InViewport) {
+            // viewport is convex so if all vertices are in view, the whole shape is in view
+            return EVisibility.FULLY_VISIBLE;
+        } else if (p1InViewport || p2InViewport || p3InViewport) {
+            return EVisibility.PARTIALLY_VISIBLE;
+        } else if (viewport.lineIntersectsBoundaries(this.p1, this.p2) ||
+            viewport.lineIntersectsBoundaries(this.p2, this.p3) ||
+            viewport.lineIntersectsBoundaries(this.p3, this.p1)) {
             return EVisibility.PARTIALLY_VISIBLE;
         } else {
-            const p1Inside = viewport.containsPoint(this.p1);
-            const p2Inside = viewport.containsPoint(this.p2);
-            const p3Inside = viewport.containsPoint(this.p3);
-            if (p1Inside && p2Inside && p3Inside) {
-                return EVisibility.FULLY_VISIBLE;
-            } else if (p1Inside || p2Inside || p3Inside) {
-                return EVisibility.PARTIALLY_VISIBLE;
-            } else if (viewport.lineIntersectsBoundaries(this.p1, this.p2) ||
-                viewport.lineIntersectsBoundaries(this.p2, this.p3) ||
-                viewport.lineIntersectsBoundaries(this.p3, this.p1)) {
-                return EVisibility.PARTIALLY_VISIBLE;
+            // at this point, we know that the primitive is not fully contained in the viewport,
+            // and that there are no intersection between edges and viewport bounds
+            // => either the shape is out of view or contains the whole viewport
+            if (this.isInside(viewport.topLeft)) {
+                return EVisibility.COVERS_VIEW;
             } else {
                 return EVisibility.OUT_OF_VIEW;
             }

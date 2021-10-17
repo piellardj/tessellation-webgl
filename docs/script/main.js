@@ -3793,32 +3793,23 @@ var PrimitiveTriangles = (function (_super) {
         }
     };
     PrimitiveTriangles.prototype.computeVisibility = function (viewport) {
-        var viewportTopRight = { x: viewport.bottomRight.x, y: viewport.topLeft.y };
-        var viewportBottomLeft = { x: viewport.topLeft.x, y: viewport.bottomRight.y };
-        var viewTopLeftInside = this.isInside(viewport.topLeft);
-        var viewTopRightInside = this.isInside(viewportTopRight);
-        var viewBottomLeftInside = this.isInside(viewportBottomLeft);
-        var viewBottomRightInside = this.isInside(viewport.bottomRight);
-        if (viewTopLeftInside && viewTopRightInside && viewBottomLeftInside && viewBottomRightInside) {
-            return primitive_base_1.EVisibility.COVERS_VIEW;
+        var p1InViewport = viewport.containsPoint(this.p1);
+        var p2InViewport = viewport.containsPoint(this.p2);
+        var p3InViewport = viewport.containsPoint(this.p3);
+        if (p1InViewport && p2InViewport && p3InViewport) {
+            return primitive_base_1.EVisibility.FULLY_VISIBLE;
         }
-        else if (viewTopLeftInside || viewTopRightInside || viewBottomLeftInside || viewBottomRightInside) {
+        else if (p1InViewport || p2InViewport || p3InViewport) {
+            return primitive_base_1.EVisibility.PARTIALLY_VISIBLE;
+        }
+        else if (viewport.lineIntersectsBoundaries(this.p1, this.p2) ||
+            viewport.lineIntersectsBoundaries(this.p2, this.p3) ||
+            viewport.lineIntersectsBoundaries(this.p3, this.p1)) {
             return primitive_base_1.EVisibility.PARTIALLY_VISIBLE;
         }
         else {
-            var p1Inside = viewport.containsPoint(this.p1);
-            var p2Inside = viewport.containsPoint(this.p2);
-            var p3Inside = viewport.containsPoint(this.p3);
-            if (p1Inside && p2Inside && p3Inside) {
-                return primitive_base_1.EVisibility.FULLY_VISIBLE;
-            }
-            else if (p1Inside || p2Inside || p3Inside) {
-                return primitive_base_1.EVisibility.PARTIALLY_VISIBLE;
-            }
-            else if (viewport.lineIntersectsBoundaries(this.p1, this.p2) ||
-                viewport.lineIntersectsBoundaries(this.p2, this.p3) ||
-                viewport.lineIntersectsBoundaries(this.p3, this.p1)) {
-                return primitive_base_1.EVisibility.PARTIALLY_VISIBLE;
+            if (this.isInside(viewport.topLeft)) {
+                return primitive_base_1.EVisibility.COVERS_VIEW;
             }
             else {
                 return primitive_base_1.EVisibility.OUT_OF_VIEW;
