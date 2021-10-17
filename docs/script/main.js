@@ -78,8 +78,8 @@ var Engine = (function () {
     Engine.prototype.performUpdate = function (zoomToApply, viewport, wantedDepth, subdivisionBalance, colorVariation) {
         var somethingChanged = false;
         somethingChanged = this.applyZoom(zoomToApply) || somethingChanged;
-        somethingChanged = this.adjustLayersCount(wantedDepth, subdivisionBalance, colorVariation) || somethingChanged;
         somethingChanged = this.handleRecycling(viewport) || somethingChanged;
+        somethingChanged = this.adjustLayersCount(wantedDepth, subdivisionBalance, colorVariation) || somethingChanged;
         if (somethingChanged) {
             for (var _i = 0, _a = this.layers; _i < _a.length; _i++) {
                 var layer = _a[_i];
