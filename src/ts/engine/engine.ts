@@ -82,9 +82,11 @@ abstract class Engine {
     public performUpdate(zoomToApply: Zoom, viewport: Rectangle, wantedDepth: number, subdivisionBalance: number, colorVariation: number): boolean {
         let somethingChanged = false;
 
-        const viewportAfterZoom = viewport.computeNewRectangleAfterZoom(zoomToApply);
-        somethingChanged = this.handleRecycling(viewportAfterZoom) || somethingChanged;
+        // const viewportAfterZoom = viewport.computeNewRectangleAfterZoom(zoomToApply);
+        console.log("Count before = " + this.layers[this.layers.length - 1].primitives.items.length);
         somethingChanged = this.applyZoom(zoomToApply) || somethingChanged;
+        somethingChanged = this.handleRecycling(viewport) || somethingChanged;
+        console.log("Count after = " + this.layers[this.layers.length - 1].primitives.items.length);
         somethingChanged = this.adjustLayersCount(wantedDepth, subdivisionBalance, colorVariation) || somethingChanged;
 
         if (somethingChanged) {
@@ -240,8 +242,8 @@ abstract class Engine {
             if (visibility === EVisibility.OUT_OF_VIEW) {
                 primitive.removeChild(child);
                 changedSomething = true;
-            } else if (visibility === EVisibility.PARTIALLY_VISIBLE) {
-                // if it is partially visible, some of its children may be completely out of view
+            } else if (visibility === EVisibility.PARTIALLY_VISIBLE || visibility === EVisibility.COVERS_VIEW) {
+                // if there is a part that is not visible, then some of its children may be completely out of view
                 if (this.prunePrimitivesOutOfView(child, viewport)) {
                     changedSomething = true;
                 }

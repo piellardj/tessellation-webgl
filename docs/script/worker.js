@@ -57,9 +57,10 @@ var Engine = (function () {
     };
     Engine.prototype.performUpdate = function (zoomToApply, viewport, wantedDepth, subdivisionBalance, colorVariation) {
         var somethingChanged = false;
-        var viewportAfterZoom = viewport.computeNewRectangleAfterZoom(zoomToApply);
-        somethingChanged = this.handleRecycling(viewportAfterZoom) || somethingChanged;
+        console.log("Count before = " + this.layers[this.layers.length - 1].primitives.items.length);
         somethingChanged = this.applyZoom(zoomToApply) || somethingChanged;
+        somethingChanged = this.handleRecycling(viewport) || somethingChanged;
+        console.log("Count after = " + this.layers[this.layers.length - 1].primitives.items.length);
         somethingChanged = this.adjustLayersCount(wantedDepth, subdivisionBalance, colorVariation) || somethingChanged;
         if (somethingChanged) {
             for (var _i = 0, _a = this.layers; _i < _a.length; _i++) {
@@ -199,7 +200,7 @@ var Engine = (function () {
                 primitive.removeChild(child);
                 changedSomething = true;
             }
-            else if (visibility === primitive_base_1.EVisibility.PARTIALLY_VISIBLE) {
+            else if (visibility === primitive_base_1.EVisibility.PARTIALLY_VISIBLE || visibility === primitive_base_1.EVisibility.COVERS_VIEW) {
                 if (this.prunePrimitivesOutOfView(child, viewport)) {
                     changedSomething = true;
                 }
