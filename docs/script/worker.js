@@ -179,13 +179,15 @@ var Engine = (function () {
         return true;
     };
     Engine.prototype.changeRootPrimitiveIfNeeded = function () {
+        var changedSomething = false;
         var directChildrenOfRoot = this.rootPrimitive.getDirectChildren();
-        if (directChildrenOfRoot.length === 1) {
+        while (directChildrenOfRoot.length === 1) {
             this.rootPrimitive = directChildrenOfRoot[0];
             this.layers.shift();
-            return true;
+            changedSomething = true;
+            directChildrenOfRoot = this.rootPrimitive.getDirectChildren();
         }
-        return false;
+        return changedSomething;
     };
     Engine.prototype.prunePrimitivesOutOfView = function (primitive, viewport) {
         var changedSomething = false;

@@ -220,13 +220,15 @@ abstract class Engine {
     }
 
     private changeRootPrimitiveIfNeeded(): boolean {
-        const directChildrenOfRoot = this.rootPrimitive.getDirectChildren();
-        if (directChildrenOfRoot.length === 1) {
+        let changedSomething = false;
+        let directChildrenOfRoot = this.rootPrimitive.getDirectChildren();
+        while (directChildrenOfRoot.length === 1) {
             this.rootPrimitive = directChildrenOfRoot[0] as PrimitiveBase;
             this.layers.shift();
-            return true;
+            changedSomething = true;
+            directChildrenOfRoot = this.rootPrimitive.getDirectChildren();
         }
-        return false;
+        return changedSomething;
     }
 
     private prunePrimitivesOutOfView(primitive: PrimitiveBase, viewport: Rectangle): boolean {
