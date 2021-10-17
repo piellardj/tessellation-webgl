@@ -1213,19 +1213,15 @@ var Rectangle = (function () {
         }
         return false;
     };
+    Rectangle.prototype.copy = function () {
+        return new Rectangle(this.left, this.right, this.top, this.bottom);
+    };
     Rectangle.prototype.computeNewRectangleAfterZoom = function (zoom) {
         var inverseZoom = zoom.inverse();
-        var topLeftAfterZoom = {
-            x: this.topLeft.x,
-            y: this.topLeft.y,
-        };
-        inverseZoom.applyToPoint(topLeftAfterZoom);
-        var bottomRightAfterZoom = {
-            x: this.bottomRight.x,
-            y: this.bottomRight.y,
-        };
-        inverseZoom.applyToPoint(bottomRightAfterZoom);
-        return new Rectangle(topLeftAfterZoom.x, bottomRightAfterZoom.x, topLeftAfterZoom.y, bottomRightAfterZoom.y);
+        var result = this.copy();
+        inverseZoom.applyToPoint(result.topLeft);
+        inverseZoom.applyToPoint(result.bottomRight);
+        return result;
     };
     Object.defineProperty(Rectangle.prototype, "width", {
         get: function () {

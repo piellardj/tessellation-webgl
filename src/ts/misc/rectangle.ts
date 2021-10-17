@@ -77,19 +77,16 @@ class Rectangle {
         return false;
     }
 
+    public copy(): Rectangle {
+        return new Rectangle(this.left, this.right, this.top, this.bottom);
+    }
+
     public computeNewRectangleAfterZoom(zoom: Zoom): Rectangle {
         const inverseZoom = zoom.inverse();
-        const topLeftAfterZoom: IPoint = {
-            x: this.topLeft.x,
-            y: this.topLeft.y,
-        };
-        inverseZoom.applyToPoint(topLeftAfterZoom);
-        const bottomRightAfterZoom: IPoint = {
-            x: this.bottomRight.x,
-            y: this.bottomRight.y,
-        };
-        inverseZoom.applyToPoint(bottomRightAfterZoom);
-        return new Rectangle(topLeftAfterZoom.x, bottomRightAfterZoom.x, topLeftAfterZoom.y, bottomRightAfterZoom.y);
+        const result = this.copy();
+        inverseZoom.applyToPoint(result.topLeft);
+        inverseZoom.applyToPoint(result.bottomRight);
+        return result;
     }
 
     public get width(): number {
