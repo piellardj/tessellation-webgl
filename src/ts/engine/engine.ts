@@ -82,11 +82,9 @@ abstract class Engine {
     public performUpdate(zoomToApply: Zoom, viewport: Rectangle, wantedDepth: number, subdivisionBalance: number, colorVariation: number): boolean {
         let somethingChanged = false;
 
-        // const viewportAfterZoom = viewport.computeNewRectangleAfterZoom(zoomToApply);
-        console.log("Count before = " + this.layers[this.layers.length - 1].primitives.items.length);
+        const viewportAfterZoom = viewport.computeNewRectangleAfterZoom(zoomToApply);
+        somethingChanged = this.handleRecycling(viewportAfterZoom) || somethingChanged;
         somethingChanged = this.applyZoom(zoomToApply) || somethingChanged;
-        somethingChanged = this.handleRecycling(viewport) || somethingChanged;
-        console.log("Count after = " + this.layers[this.layers.length - 1].primitives.items.length);
         somethingChanged = this.adjustLayersCount(wantedDepth, subdivisionBalance, colorVariation) || somethingChanged;
 
         if (somethingChanged) {

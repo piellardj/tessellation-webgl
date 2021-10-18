@@ -77,10 +77,9 @@ var Engine = (function () {
     };
     Engine.prototype.performUpdate = function (zoomToApply, viewport, wantedDepth, subdivisionBalance, colorVariation) {
         var somethingChanged = false;
-        console.log("Count before = " + this.layers[this.layers.length - 1].primitives.items.length);
+        var viewportAfterZoom = viewport.computeNewRectangleAfterZoom(zoomToApply);
+        somethingChanged = this.handleRecycling(viewportAfterZoom) || somethingChanged;
         somethingChanged = this.applyZoom(zoomToApply) || somethingChanged;
-        somethingChanged = this.handleRecycling(viewport) || somethingChanged;
-        console.log("Count after = " + this.layers[this.layers.length - 1].primitives.items.length);
         somethingChanged = this.adjustLayersCount(wantedDepth, subdivisionBalance, colorVariation) || somethingChanged;
         if (somethingChanged) {
             for (var _i = 0, _a = this.layers; _i < _a.length; _i++) {
