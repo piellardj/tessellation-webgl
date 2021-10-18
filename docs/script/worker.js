@@ -199,7 +199,7 @@ var Engine = (function () {
                 primitive.removeChild(child);
                 changedSomething = true;
             }
-            else if (visibility === primitive_base_1.EVisibility.PARTIALLY_VISIBLE || visibility === primitive_base_1.EVisibility.COVERS_VIEW) {
+            else if (visibility !== primitive_base_1.EVisibility.FULLY_VISIBLE) {
                 if (this.prunePrimitivesOutOfView(child, viewport)) {
                     changedSomething = true;
                 }
