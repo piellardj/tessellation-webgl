@@ -1,4 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 var Page;
 (function (Page) {
     var Demopage;
@@ -44,7 +43,6 @@ var Page;
     })(Demopage = Page.Demopage || (Page.Demopage = {}));
 })(Page || (Page = {}));
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 var Page;
 (function (Page) {
     var Helpers;
@@ -163,7 +161,6 @@ var Page;
     })(Helpers = Page.Helpers || (Page.Helpers = {}));
 })(Page || (Page = {}));
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 var Page;
 (function (Page) {
     var Controls;
@@ -184,7 +181,6 @@ var Page;
         Controls.setVisibility = setVisibility;
     })(Controls = Page.Controls || (Page.Controls = {}));
 })(Page || (Page = {}));
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 (function (Page) {
     var Sections;
     (function (Sections) {
@@ -245,7 +241,6 @@ var Page;
 })(Page || (Page = {}));
 
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 var Page;
 (function (Page) {
     var Tabs;
@@ -413,7 +408,6 @@ var Page;
 })(Page || (Page = {}));
 
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 var Page;
 (function (Page) {
     var Range;
@@ -427,7 +421,10 @@ var Page;
                 this.progressLeftElement = container.querySelector(".range-progress-left");
                 this.tooltipElement = container.querySelector("output.range-tooltip");
                 this.id = this.inputElement.id;
-                this.nbDecimalsToDisplay = Range.getMaxNbDecimals(+this.inputElement.min, +this.inputElement.max, +this.inputElement.step);
+                var inputMin = +this.inputElement.min;
+                var inputMax = +this.inputElement.max;
+                var inputStep = +this.inputElement.step;
+                this.nbDecimalsToDisplay = Range.getMaxNbDecimals(inputMin, inputMax, inputStep);
                 this.inputElement.addEventListener("input", function (event) {
                     event.stopPropagation();
                     _this.reloadValue();
@@ -568,7 +565,8 @@ var Page;
             Cache.load();
             Storage.applyStoredState();
         });
-        var isIE11 = !!window.MSInputMethodContext && !!document["documentMode"];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        var isIE11 = !!window.MSInputMethodContext && !!document.documentMode;
         /**
          * Callback will be called every time the value changes.
          * @return {boolean} Whether or not the observer was added
@@ -629,7 +627,6 @@ var Page;
 })(Page || (Page = {}));
 
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 var Page;
 (function (Page) {
     var Checkbox;
@@ -767,7 +764,6 @@ var Page;
     })(Checkbox = Page.Checkbox || (Page.Checkbox = {}));
 })(Page || (Page = {}));
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 var Page;
 (function (Page) {
     var Button;
@@ -838,7 +834,6 @@ var Page;
 })(Page || (Page = {}));
 
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 var Page;
 (function (Page) {
     var ColorPicker;
@@ -950,12 +945,12 @@ var Page;
             }
             Object.defineProperty(ColorPicker.prototype, "value", {
                 get: function () {
-                    return this.element.dataset.currentColor;
+                    return this.element.dataset["currentColor"];
                 },
                 set: function (newValue) {
                     var previousValue = this.value;
                     if (previousValue !== newValue) {
-                        this.element.dataset.currentColor = newValue;
+                        this.element.dataset["currentColor"] = newValue;
                         this.updateVisiblePart();
                         var rgb = ColorSpace.hexToRgb(newValue);
                         for (var _i = 0, _a = this.observers; _i < _a.length; _i++) {
@@ -1120,19 +1115,19 @@ var Page;
             Popup.prototype.updateAppearance = function () {
                 var rgb = ColorSpace.hsvToRgb(this.hsv);
                 var hexString = ColorSpace.rgbToHex(rgb);
-                var rgbString = "rgb(" + rgb.r + ", " + rgb.g + ", " + rgb.b + ")"; // real coor
-                var hslString = "hsl(" + Math.round(this.hsv.h) + ", 100%, 50%)"; // pure color
+                var rgbString = "rgb(".concat(rgb.r, ", ").concat(rgb.g, ", ").concat(rgb.b, ")"); // real coor
+                var hslString = "hsl(".concat(Math.round(this.hsv.h), ", 100%, 50%)"); // pure color
                 // colors
-                this.hueColorFilter.style.background = "linear-gradient(to right, white, " + hslString + ")";
+                this.hueColorFilter.style.background = "linear-gradient(to right, white, ".concat(hslString, ")");
                 this.hueCursor.style.background = hslString;
                 this.valueSaturationCursor.style.background = rgbString;
                 this.previewColor.style.background = rgbString;
                 // text
                 this.previewHexaValue.value = hexString.substring(1);
-                this.previewRgbValue.textContent = rgb.r + ", " + rgb.g + ", " + rgb.b;
+                this.previewRgbValue.textContent = "".concat(rgb.r, ", ").concat(rgb.g, ", ").concat(rgb.b);
                 var percentSaturation = Popup.percentageString(this.hsv.s);
                 var percentValue = Popup.percentageString(this.hsv.v);
-                this.previewHslValue.textContent = Math.round(this.hsv.h) + "\u00B0, " + percentSaturation + ", " + percentValue;
+                this.previewHslValue.textContent = "".concat(Math.round(this.hsv.h), "\u00B0, ").concat(percentSaturation, ", ").concat(percentValue);
                 // cursors positions
                 this.hueCursor.style.left = Popup.percentageString(this.hsv.h / 360);
                 this.valueSaturationCursor.style.left = percentSaturation;
@@ -1348,7 +1343,6 @@ var Page;
     })(ColorPicker = Page.ColorPicker || (Page.ColorPicker = {}));
 })(Page || (Page = {}));
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 var Page;
 (function (Page) {
     var FileControl;
@@ -1373,7 +1367,7 @@ var Page;
             }
             FileUpload.prototype.clear = function () {
                 this.inputElement.value = "";
-                this.labelSpanElement.innerText = this.labelSpanElement.dataset.placeholder;
+                this.labelSpanElement.innerText = this.labelSpanElement.dataset["placeholder"];
             };
             FileUpload.truncate = function (name) {
                 if (name.length > FileUpload.filenameMaxSize) {
@@ -1483,7 +1477,6 @@ var Page;
 
 
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 var Page;
 (function (Page) {
     var Canvas;
@@ -1600,11 +1593,11 @@ var Page;
         }
         var Mouse;
         (function (Mouse) {
-            var mousePosition = [];
+            var mousePosition = [0, 0];
             var clientMousePosition = [0, 0];
             var isMouseDownInternal = false;
             function getMousePosition() {
-                return mousePosition.slice();
+                return [mousePosition[0], mousePosition[1]];
             }
             Mouse.getMousePosition = getMousePosition;
             function setMousePosition(x, y) {
@@ -1701,9 +1694,7 @@ var Page;
                 });
             }
         })(Mouse || (Mouse = {}));
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        var Touch;
-        (function (Touch) {
+        (function Touch() {
             var currentTouches = [];
             var currentDistance = 0; // for pinching management
             function computeDistance(firstTouch, secondTouch) {
@@ -1796,7 +1787,7 @@ var Page;
                 window.addEventListener("touchend", handleTouchEnd);
                 window.addEventListener("touchmove", handleTouchMove, { passive: false });
             }
-        })(Touch || (Touch = {}));
+        })();
         var Indicators;
         (function (Indicators) {
             var indicatorSpansCache = {};

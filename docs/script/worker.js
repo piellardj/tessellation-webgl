@@ -355,11 +355,11 @@ function sendMessage(output) {
     var messageData = {
         output: output,
     };
-    message_1.sendMessageFromWorker(verb, messageData);
+    (0, message_1.sendMessageFromWorker)(verb, messageData);
 }
 exports.sendMessage = sendMessage;
 function addListener(worker, listener) {
-    message_1.addListenerToWorker(worker, verb, function (data) {
+    (0, message_1.addListenerToWorker)(worker, verb, function (data) {
         listener(data.output);
     });
 }
@@ -427,11 +427,11 @@ function sendMessage(engineMetrics) {
     var messageData = {
         engineMetrics: engineMetrics,
     };
-    message_1.sendMessageFromWorker(verb, messageData);
+    (0, message_1.sendMessageFromWorker)(verb, messageData);
 }
 exports.sendMessage = sendMessage;
 function addListener(worker, listener) {
-    message_1.addListenerToWorker(worker, verb, function (data) {
+    (0, message_1.addListenerToWorker)(worker, verb, function (data) {
         listener(data.engineMetrics);
     });
 }
@@ -456,11 +456,11 @@ function sendMessage(appliedZoom) {
     var messageData = {
         appliedZoom: appliedZoom,
     };
-    message_1.sendMessageFromWorker(verb, messageData);
+    (0, message_1.sendMessageFromWorker)(verb, messageData);
 }
 exports.sendMessage = sendMessage;
 function addListener(worker, listener) {
-    message_1.addListenerToWorker(worker, verb, function (data) {
+    (0, message_1.addListenerToWorker)(worker, verb, function (data) {
         var appliedZoom = zoom_1.Zoom.rehydrate(data.appliedZoom);
         listener(appliedZoom);
     });
@@ -494,13 +494,13 @@ function sendMessage(polygonsVboBuffer, linesVboBuffer, appliedZoom, newLayerApp
         polygonsVboBuffer.buffer.buffer,
         linesVboBuffer.buffer.buffer,
     ];
-    message_1.sendMessageFromWorker(verb, messageData, transfer);
+    (0, message_1.sendMessageFromWorker)(verb, messageData, transfer);
 }
 exports.sendMessage = sendMessage;
 function addListener(worker, listener) {
-    message_1.addListenerToWorker(worker, verb, function (data) {
-        var polygonsVboBuffer = vbo_types_1.rehydrateVboBuffer(data.polygonsVboBuffer);
-        var linesVboBuffer = vbo_types_1.rehydrateVboBuffer(data.linesVboBuffer);
+    (0, message_1.addListenerToWorker)(worker, verb, function (data) {
+        var polygonsVboBuffer = (0, vbo_types_1.rehydrateVboBuffer)(data.polygonsVboBuffer);
+        var linesVboBuffer = (0, vbo_types_1.rehydrateVboBuffer)(data.linesVboBuffer);
         var appliedZoom = zoom_1.Zoom.rehydrate(data.appliedZoom);
         listener(polygonsVboBuffer, linesVboBuffer, appliedZoom, data.newLayerAppeared);
     });
@@ -531,13 +531,13 @@ function sendMessage(polygonsVboBuffer, linesVboBuffer) {
         polygonsVboBuffer.buffer.buffer,
         linesVboBuffer.buffer.buffer,
     ];
-    message_1.sendMessageFromWorker(verb, messageData, transfer);
+    (0, message_1.sendMessageFromWorker)(verb, messageData, transfer);
 }
 exports.sendMessage = sendMessage;
 function addListener(worker, listener) {
-    message_1.addListenerToWorker(worker, verb, function (data) {
-        var polygonsVboBuffer = vbo_types_1.rehydrateVboBuffer(data.polygonsVboBuffer);
-        var linesVboBuffer = vbo_types_1.rehydrateVboBuffer(data.linesVboBuffer);
+    (0, message_1.addListenerToWorker)(worker, verb, function (data) {
+        var polygonsVboBuffer = (0, vbo_types_1.rehydrateVboBuffer)(data.polygonsVboBuffer);
+        var linesVboBuffer = (0, vbo_types_1.rehydrateVboBuffer)(data.linesVboBuffer);
         listener(polygonsVboBuffer, linesVboBuffer);
     });
 }
@@ -567,13 +567,13 @@ function sendMessage(polygonsVboBuffer, linesVboBuffer) {
         polygonsVboBuffer.buffer.buffer,
         linesVboBuffer.buffer.buffer,
     ];
-    message_1.sendMessageFromWorker(verb, messageData, transfer);
+    (0, message_1.sendMessageFromWorker)(verb, messageData, transfer);
 }
 exports.sendMessage = sendMessage;
 function addListener(worker, listener) {
-    message_1.addListenerToWorker(worker, verb, function (data) {
-        var polygonsVboBuffer = vbo_types_1.rehydrateVboBuffer(data.polygonsVboBuffer);
-        var linesVboBuffer = vbo_types_1.rehydrateVboBuffer(data.linesVboBuffer);
+    (0, message_1.addListenerToWorker)(worker, verb, function (data) {
+        var polygonsVboBuffer = (0, vbo_types_1.rehydrateVboBuffer)(data.polygonsVboBuffer);
+        var linesVboBuffer = (0, vbo_types_1.rehydrateVboBuffer)(data.linesVboBuffer);
         listener(polygonsVboBuffer, linesVboBuffer);
     });
 }
@@ -681,11 +681,11 @@ function sendMessage(worker, width, height, scaling, backgroundColor, linesColor
         backgroundColor: backgroundColor,
         linesColor: linesColor,
     };
-    message_1.sendMessageToWorker(worker, verb, messageData);
+    (0, message_1.sendMessageToWorker)(worker, verb, messageData);
 }
 exports.sendMessage = sendMessage;
 function addListener(listener) {
-    message_1.addListenerFromWorker(verb, function (data) {
+    (0, message_1.addListenerFromWorker)(verb, function (data) {
         var backgroundColor = color_1.Color.rehydrate(data.backgroundColor);
         var linesColor;
         if (data.linesColor) {
@@ -760,11 +760,11 @@ function sendMessage(worker, zoomToApply, viewport, wantedDepth, subdivisionBala
         subdivisionBalance: subdivisionBalance,
         colorVariation: colorVariation,
     };
-    message_1.sendMessageToWorker(worker, verb, messageData);
+    (0, message_1.sendMessageToWorker)(worker, verb, messageData);
 }
 exports.sendMessage = sendMessage;
 function addListener(listener) {
-    message_1.addListenerFromWorker(verb, function (data) {
+    (0, message_1.addListenerFromWorker)(verb, function (data) {
         var viewport = rectangle_1.Rectangle.rehydrate(data.viewport);
         var zoomToApply = zoom_1.Zoom.rehydrate(data.zoomToApply);
         listener(zoomToApply, viewport, data.wantedDepth, data.subdivisionBalance, data.colorVariation);
@@ -790,11 +790,11 @@ function sendMessage(worker, colorVariation) {
     var messageData = {
         colorVariation: colorVariation,
     };
-    message_1.sendMessageToWorker(worker, verb, messageData);
+    (0, message_1.sendMessageToWorker)(worker, verb, messageData);
 }
 exports.sendMessage = sendMessage;
 function addListener(listener) {
-    message_1.addListenerFromWorker(verb, function (data) {
+    (0, message_1.addListenerFromWorker)(verb, function (data) {
         listener(data.colorVariation);
     });
 }
@@ -820,11 +820,11 @@ function sendMessage(worker, viewport, primitiveType) {
         viewport: viewport,
         primitiveType: primitiveType,
     };
-    message_1.sendMessageToWorker(worker, verb, messageData);
+    (0, message_1.sendMessageToWorker)(worker, verb, messageData);
 }
 exports.sendMessage = sendMessage;
 function addListener(listener) {
-    message_1.addListenerFromWorker(verb, function (data) {
+    (0, message_1.addListenerFromWorker)(verb, function (data) {
         var viewport = rectangle_1.Rectangle.rehydrate(data.viewport);
         listener(viewport, data.primitiveType);
     });
@@ -1077,12 +1077,12 @@ var Color = (function () {
             var rHex = this.r.toString(16).padStart(2, "0");
             var gHex = this.g.toString(16).padStart(2, "0");
             var bHex = this.b.toString(16).padStart(2, "0");
-            this.hexString = "#" + rHex + gHex + bHex;
+            this.hexString = "#".concat(rHex).concat(gHex).concat(bHex);
         }
         return this.hexString;
     };
     Color.prototype.toRgbaString = function (alpha) {
-        return "rgba(" + this.r + ", " + this.g + ", " + this.b + ", " + alpha + ")";
+        return "rgba(".concat(this.r, ", ").concat(this.g, ", ").concat(this.b, ", ").concat(alpha, ")");
     };
     Color.prototype.computeCloseColor = function (colorVariation) {
         return new Color(Color.computeCloseChannelValue(this.r, colorVariation), Color.computeCloseChannelValue(this.g, colorVariation), Color.computeCloseChannelValue(this.b, colorVariation));
@@ -1601,7 +1601,7 @@ function loadSource(filename, callback) {
         var cached_1 = cachedSources[filename];
         var url = "./shaders/" + filename;
         if (typeof Page.version !== "undefined") {
-            url += "?v=" + Page.version;
+            url += "?v=".concat(Page.version);
         }
         var xhr_1 = new XMLHttpRequest();
         xhr_1.open("GET", url, true);
@@ -1613,14 +1613,14 @@ function loadSource(filename, callback) {
                     cached_1.failed = false;
                 }
                 else {
-                    console.error("Cannot load '" + filename + "' shader source: " + xhr_1.statusText);
+                    console.error("Cannot load '".concat(filename, "' shader source: ").concat(xhr_1.statusText));
                     cached_1.failed = true;
                 }
                 callAndClearCallbacks(cached_1);
             }
         };
         xhr_1.onerror = function () {
-            console.error("Cannot load '" + filename + "' shader source: " + xhr_1.statusText);
+            console.error("Cannot load '".concat(filename, "' shader source: ").concat(xhr_1.statusText));
             cached_1.pending = false;
             cached_1.failed = true;
             callAndClearCallbacks(cached_1);
@@ -1977,12 +1977,12 @@ var PlotterSVG = (function () {
     PlotterSVG.prototype.initialize = function (backgroundColor, zoom, scaling) {
         this.lines = [];
         this.lines.push("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>");
-        this.lines.push("<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" viewBox=\"0 0 " + this.width + " " + this.height + "\">");
-        this.lines.push("<rect fill=\"" + backgroundColor.toHexaString() + "\" stroke=\"none\" x=\"0\" y=\"0\" width=\"" + this.width + "\" height=\"" + this.height + "\"/>");
-        this.lines.push("\t<g transform=\"scale(" + scaling + ")\" transform-origin=\"" + 0.5 * this.width + " " + 0.5 * this.height + "\">");
+        this.lines.push("<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" viewBox=\"0 0 ".concat(this.width, " ").concat(this.height, "\">"));
+        this.lines.push("<rect fill=\"".concat(backgroundColor.toHexaString(), "\" stroke=\"none\" x=\"0\" y=\"0\" width=\"").concat(this.width, "\" height=\"").concat(this.height, "\"/>"));
+        this.lines.push("\t<g transform=\"scale(".concat(scaling, ")\" transform-origin=\"").concat(0.5 * this.width, " ").concat(0.5 * this.height, "\">"));
         var zoomTranslate = zoom.translate;
-        this.lines.push("\t\t<g transform=\"translate(" + zoomTranslate.x + ", " + zoomTranslate.y + ")\">");
-        this.lines.push("\t\t\t<g transform=\"scale(" + zoom.scale + ")\" transform-origin=\"" + 0.5 * this.width + " " + 0.5 * this.height + "\">");
+        this.lines.push("\t\t<g transform=\"translate(".concat(zoomTranslate.x, ", ").concat(zoomTranslate.y, ")\">"));
+        this.lines.push("\t\t\t<g transform=\"scale(".concat(zoom.scale, ")\" transform-origin=\"").concat(0.5 * this.width, " ").concat(0.5 * this.height, "\">"));
     };
     PlotterSVG.prototype.finalize = function () {
         this.lines.push("\t\t\t</g>");
@@ -1992,20 +1992,20 @@ var PlotterSVG = (function () {
     };
     PlotterSVG.prototype.drawLines = function (batchOfLines, thickness, color, alpha) {
         if (alpha > 0 && batchOfLines) {
-            this.lines.push("\t\t\t\t<g stroke=\"" + color.toHexaString() + "\" fill=\"none\" opacity=\"" + alpha + "\">");
+            this.lines.push("\t\t\t\t<g stroke=\"".concat(color.toHexaString(), "\" fill=\"none\" opacity=\"").concat(alpha, "\">"));
             var halfWidth = 0.5 * this.width;
             var halfHeight = 0.5 * this.height;
             for (var _i = 0, _a = batchOfLines.items; _i < _a.length; _i++) {
                 var line = _a[_i];
                 var path = [];
                 if (line.length >= 2) {
-                    path.push("M" + (line[0].x + halfWidth) + " " + (line[0].y + halfHeight));
+                    path.push("M".concat(line[0].x + halfWidth, " ").concat(line[0].y + halfHeight));
                     for (var iP = 1; iP < line.length; iP++) {
-                        path.push("L" + (line[iP].x + halfWidth) + " " + (line[iP].y + halfHeight));
+                        path.push("L".concat(line[iP].x + halfWidth, " ").concat(line[iP].y + halfHeight));
                     }
                 }
                 if (path.length > 0) {
-                    this.lines.push("\t\t\t\t\t<path stroke-width=\"" + thickness + "\" d=\"" + path.join() + "\"/>");
+                    this.lines.push("\t\t\t\t\t<path stroke-width=\"".concat(thickness, "\" d=\"").concat(path.join(), "\"/>"));
                 }
             }
             this.lines.push("\t\t\t\t</g>");
@@ -2013,7 +2013,7 @@ var PlotterSVG = (function () {
     };
     PlotterSVG.prototype.drawPolygons = function (batchOfPolygons, alpha) {
         if (alpha > 0 && batchOfPolygons) {
-            this.lines.push("\t\t\t\t<g stroke=\"none\" opacity=\"" + alpha + "\">");
+            this.lines.push("\t\t\t\t<g stroke=\"none\" opacity=\"".concat(alpha, "\">"));
             var halfWidth = 0.5 * this.width;
             var halfHeight = 0.5 * this.height;
             for (var _i = 0, _a = batchOfPolygons.items; _i < _a.length; _i++) {
@@ -2021,13 +2021,13 @@ var PlotterSVG = (function () {
                 if (polygon.vertices.length >= 3) {
                     var path = [];
                     if (polygon.vertices.length >= 3) {
-                        path.push("M" + (polygon.vertices[0].x + halfWidth) + " " + (polygon.vertices[0].y + halfHeight));
+                        path.push("M".concat(polygon.vertices[0].x + halfWidth, " ").concat(polygon.vertices[0].y + halfHeight));
                         for (var iP = 1; iP < polygon.vertices.length; iP++) {
-                            path.push("L" + (polygon.vertices[iP].x + halfWidth) + " " + (polygon.vertices[iP].y + halfHeight));
+                            path.push("L".concat(polygon.vertices[iP].x + halfWidth, " ").concat(polygon.vertices[iP].y + halfHeight));
                         }
                     }
                     if (path.length > 0) {
-                        this.lines.push("\t\t\t\t\t<path fill=\"" + polygon.color.toHexaString() + "\" d=\"" + path.join() + "\"/>");
+                        this.lines.push("\t\t\t\t\t<path fill=\"".concat(polygon.color.toHexaString(), "\" d=\"").concat(path.join(), "\"/>"));
                     }
                 }
             }
@@ -2377,7 +2377,7 @@ var PlotterWebGLBasic = (function (_super) {
             (vboPart1.alpha === vboPart2.alpha);
     };
     PlotterWebGLBasic.asyncLoadShader = function (vertexFilename, fragmentFilename, callback) {
-        var id = vertexFilename + "__" + fragmentFilename + "__" + Math.random();
+        var id = "".concat(vertexFilename, "__").concat(fragmentFilename, "__").concat(Math.random());
         Loader.registerLoadingObject(id);
         ShaderManager.buildShader({
             fragmentFilename: fragmentFilename,
@@ -2389,7 +2389,7 @@ var PlotterWebGLBasic = (function (_super) {
                 callback(builtShader);
             }
             else {
-                Page.Demopage.setErrorMessage(name + "-shader-error", "Failed to build '" + name + "' shader.");
+                Page.Demopage.setErrorMessage("".concat(name, "-shader-error"), "Failed to build '".concat(name, "' shader."));
             }
         });
     };
