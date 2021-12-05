@@ -1,6 +1,9 @@
 {
   "name": "tessellation-webgl",
   "homepage": "https://piellardj.github.io/tessellation-webgl",
+  "author": "Jérémie PIELLARD <jeremie.piellard@gmail.com> (https://github.com/piellardj)",
+  "repository": "github:piellardj/tessellation-webgl",
+  "private": true,
   "scripts": {
     "pre-commit": "npm run rebuild && npm run lint",
     "http-server": "http-server ./docs -p 8080",
@@ -12,8 +15,6 @@
     "rebuild": "npm run clean && npm run build",
     "webpack": "webpack --config src/config/webpack.config.js"
   },
-  "author": "Jérémie PIELLARD <jeremie.piellard@gmail.com> (https://github.com/piellardj)",
-  "repository": "github:piellardj/tessellation-webgl",
   "devDependencies": {
     "@types/fs-extra": "^9.0.12",
     "@types/node": "^16.7.1",
