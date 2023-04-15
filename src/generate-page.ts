@@ -13,6 +13,10 @@ const data = {
 
     ],
     githubProjectName: "tessellation-webgl",
+    readme: {
+        filepath: path.join(__dirname, "..", "README.md"),
+        branchName: "main"
+    },
     additionalLinks: [],
     styleFiles: [],
     scriptFiles: [
