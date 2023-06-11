@@ -607,8 +607,7 @@ var EVerb;
     EVerb["PERFORM_UPDATE_OUTPUT"] = "perform-update-output";
     EVerb["PERFORM_UPDATE_NO_OUTPUT"] = "perform-update-no-output";
     EVerb["NEW_METRICS"] = "new-metrics";
-})(EVerb || (EVerb = {}));
-exports.EVerb = EVerb;
+})(EVerb || (exports.EVerb = EVerb = {}));
 function sendMessage(target, verb, data, transfer) {
     var messageData = {
         verb: verb,
@@ -2485,8 +2484,7 @@ var EVisibility;
     EVisibility[EVisibility["PARTIALLY_VISIBLE"] = 1] = "PARTIALLY_VISIBLE";
     EVisibility[EVisibility["FULLY_VISIBLE"] = 2] = "FULLY_VISIBLE";
     EVisibility[EVisibility["COVERS_VIEW"] = 3] = "COVERS_VIEW";
-})(EVisibility || (EVisibility = {}));
-exports.EVisibility = EVisibility;
+})(EVisibility || (exports.EVisibility = EVisibility = {}));
 var PrimitiveBase = (function (_super) {
     __extends(PrimitiveBase, _super);
     function PrimitiveBase(color) {
@@ -2958,8 +2956,7 @@ var EPrimitiveType;
     EPrimitiveType["QUADS"] = "quads";
     EPrimitiveType["TRIANGLES"] = "triangles";
     EPrimitiveType["NESTED_TRIANGLES"] = "triangles-nested";
-})(EPrimitiveType || (EPrimitiveType = {}));
-exports.EPrimitiveType = EPrimitiveType;
+})(EPrimitiveType || (exports.EPrimitiveType = EPrimitiveType = {}));
 
 
 /***/ })
