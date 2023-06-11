@@ -7,6 +7,8 @@ Unfortunately, WebGL doesn't support geometry nor tessellation shaders. I perfor
 
 See it live [here](https://piellardj.github.io/tessellation-webgl/).
 
+[![Donate](https://raw.githubusercontent.com/piellardj/piellardj.github.io/master/images/readme/donate-paypal.svg)](https://www.paypal.com/donate/?hosted_button_id=AF7H7GEJTL95E)
+
 ## Preview
 
 ![Illustration 1](src/readme/illustration_1.jpg)
